@@ -1,17 +1,17 @@
 module Main where
 
+import Test.HUnit
 import HelloWorld (sayHello)
 import System.Exit (exitFailure, exitSuccess)
 
+-- Define the test
+test1 :: Test
+test1 = TestCase (assertEqual "Should say Hello to Userd" "Hello, User!" (sayHello "User"))
+
+-- Run the test
 main :: IO ()
 main = do
-    let result = sayHello "User"
-    let expected = "Hello, User!"
-    
-    if result == expected
-        then do
-            putStrLn "Test Passed!"
-            exitSuccess
-        else do
-            putStrLn $ "Test Failed: expected " ++ expected ++ " but got " ++ result
-            exitFailure
+    counts <- runTestTT test1
+    if errors counts + failures counts == 0
+        then exitSuccess
+        else exitFailure
