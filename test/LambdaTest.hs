@@ -4,7 +4,7 @@ import Test.HUnit
 import System.Exit (exitFailure, exitSuccess)
 import Lambda
 
-applyTwice = \f -> (\x -> f (f x))
+-- applyTwice = \f -> (\x -> f (f x))
 square :: Int -> Int
 square x = x^2
 
@@ -48,7 +48,6 @@ tests :: Test
 tests = TestList
     [ testSimpleSquare
     , testDoubleApplication
-    [ testDoubleApplication
     , yFactTests
     , safeHeadTests
     , addMaybesTests
