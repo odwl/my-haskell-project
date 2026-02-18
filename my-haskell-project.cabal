@@ -27,4 +27,3 @@ test-suite lambda-test
     other-modules:    Lambda
     default-language: Haskell2010
     build-depends:    base >= 4.14 && < 5, HUnit
-    ghc-options:      -main-is LambdaTest
