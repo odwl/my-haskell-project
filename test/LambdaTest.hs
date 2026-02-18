@@ -2,23 +2,31 @@ module LambdaTest where
 
 import Test.HUnit
 import System.Exit (exitFailure, exitSuccess)
+import Data.Function (fix) -- The standard library 'y'
 
 testSimpleSquare :: Test 
-testSimpleSquare = TestCase $ do
-    let square = \x -> x^2
-    assertEqual "should square 2" 4 (square 2)
-
+testSimpleSquare = TestCase $ assertEqual "should square 2" 4 (square 2)
+  where
+    square = \x -> x^2
+    
 testDoubleApplication :: Test 
-  
-testDoubleApplication = TestCase  $ do 
-    let applyTwice = \f -> (\x -> f (f x))
-    let square = \x -> x^2
-    assertEqual "should give 16 " 16 (applyTwice square 2)
+testDoubleApplication = TestCase  $ assertEqual "should give 16 " 16 (applyTwice square 2)
+  where 
+    applyTwice = \f -> (\x -> f (f x))
+    square x = x^2
+    
+
+testYFact :: Test 
+testYFact = TestCase $ assertEqual "Should be 6" 6 (fact 3)
+  where 
+    step f n = if n == 0 then 1 else n * f (n - 1)
+    fact = fix step
 
 tests :: Test
 tests = TestList 
     [ TestLabel "Simple Square"    testSimpleSquare
     , TestLabel "Double Apply"     testDoubleApplication
+    , TestLabel "YFactorial"       testYFact
     ]
 
 main :: IO ()
