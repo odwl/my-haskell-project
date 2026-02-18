@@ -1,4 +1,4 @@
-module LambdaTest where
+module Main where
 
 import Test.HUnit
 import System.Exit (exitFailure, exitSuccess)
@@ -24,10 +24,16 @@ yFactTests = TestLabel "YFact" $ TestList
     ]
 
 safeHeadTests :: Test
-safeHeadTests = TestLabel "SafeHead" $ TestList
-    [ TestCase $ assertEqual "Empty"     (Nothing :: Maybe Int) (safeHead [])
-    , TestCase $ assertEqual "Populated" (Just "1")             (safeHead ["1", "2", "3"])
+safeHeadTests = TestLabel "SafeHead Parametrized" $ TestList 
+    [ TestCase (assertEqual msg expected (safeHead input)) 
+    | (msg, expected, input) <- cases 
     ]
+  where
+    cases = 
+        [ ("Empty List", Nothing,       [] :: [Int])
+        , ("Populated",  Just 1,        [1, 2, 3])
+        , ("Single",     Just 10,       [10])
+        ]
 
 tests :: Test
 tests = TestList
@@ -37,23 +43,8 @@ tests = TestList
     , safeHeadTests
     ]
 
--- tests = TestList
-
-
--- testHead :: Test
--- testHead = TestCase $ assertEqual "Should be Nothing" (Nothing :: Maybe Int) (safeHead [])
-
--- testHeadbis :: Test
--- testHeadbis = TestCase $ assertEqual "Should be Nothing" (Just "1") (safeHead ["1", "2", "ploc"])
-
-
-        -- if null l then Nothing else Just (head l)
-
-
-
 main :: IO ()
 main = do
-    putStrLn (head ["1", "2", "3"])
     putStrLn "\n--- Running: Lambda Suite ---"
     counts <- runTestTT tests
     if errors counts + failures counts == 0
