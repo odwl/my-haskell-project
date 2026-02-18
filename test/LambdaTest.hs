@@ -15,25 +15,31 @@ testDoubleApplication = TestCase  $ assertEqual "should give 16 " 16 (applyTwice
     applyTwice = \f -> (\x -> f (f x))
     square x = x^2
 
+(-->) :: (Show a, Eq a) => a -> a -> Test
+got --> expected = TestCase $ assertEqual "" expected got
+
 yFactTests :: Test 
 yFactTests = TestLabel "YFact" $ TestList
-    [ TestCase $ assertEqual "fact 0" 1 (fact 0)
-    , TestCase $ assertEqual "fact 1" 1 (fact 1)
-    , TestCase $ assertEqual "fact 2" 2 (fact 2)
-    , TestCase $ assertEqual "fact 3" 6 (fact 3)
+    [ fact 0 --> 1
+    , fact 1 --> 1
+    , fact 2 --> 2
+    , fact 3 --> 6
     ]
 
 safeHeadTests :: Test
-safeHeadTests = TestLabel "SafeHead Parametrized" $ TestList 
-    [ TestCase (assertEqual msg expected (safeHead input)) 
-    | (msg, expected, input) <- cases 
+safeHeadTests = TestLabel "SafeHead" $ TestList 
+    [ safeHead ([] :: [Int]) --> Nothing
+    , safeHead [1,2,3] --> Just 1
+    , safeHead [10] --> Just 10 
     ]
-  where
-    cases = 
-        [ ("Empty List", Nothing,       [] :: [Int])
-        , ("Populated",  Just 1,        [1, 2, 3])
-        , ("Single",     Just 10,       [10])
-        ]
+
+addMaybesTests :: Test 
+addMaybesTests = TestLabel "AddMaybe" $ TestList
+    [ addMaybes (Just 1) (Just 1) --> Just 2
+    , addMaybes Nothing  (Just 1) --> Nothing
+    , addMaybes (Just 1) Nothing  --> Nothing
+    , addMaybes Nothing  Nothing  --> Nothing
+    ]
 
 tests :: Test
 tests = TestList
@@ -41,6 +47,7 @@ tests = TestList
     , TestLabel "Double Apply"     testDoubleApplication
     , yFactTests
     , safeHeadTests
+    , addMaybesTests
     ]
 
 main :: IO ()
