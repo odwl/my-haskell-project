@@ -11,6 +11,7 @@ test1 = TestCase (assertEqual "Should say Hello to Userd" "Hello, User!" (sayHel
 -- Run the test
 main :: IO ()
 main = do
+    putStrLn "\n--- Running: HelloWorld Suite ---"
     counts <- runTestTT test1
     if errors counts + failures counts == 0
         then exitSuccess
