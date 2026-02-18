@@ -3,14 +3,23 @@ module LambdaTest where
 import Test.HUnit
 import System.Exit (exitFailure, exitSuccess)
 
-test2 :: Test 
-test2 = TestCase (assertEqual "should square 2" 4 ((\a -> a^2) 2))
+testSimpleSquare :: Test 
+testSimpleSquare = TestCase $ do
+    let square = \x -> x^2
+    assertEqual "should square 2" 4 (square 2)
 
-testSquare :: Test 
-testSquare = TestCase (assertEqual "should give 16 " 16 ((\f -> (\x -> f (f x))) (\a -> a^2) 2))
+testDoubleApplication :: Test 
+  
+testDoubleApplication = TestCase  $ do 
+    let applyTwice = \f -> (\x -> f (f x))
+    let square = \x -> x^2
+    assertEqual "should give 16 " 16 (applyTwice square 2)
 
 tests :: Test
-tests = TestList [test2, testSquare]
+tests = TestList 
+    [ TestLabel "Simple Square"    testSimpleSquare
+    , TestLabel "Double Apply"     testDoubleApplication
+    ]
 
 main :: IO ()
 main = do
