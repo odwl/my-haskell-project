@@ -1,4 +1,4 @@
-module Lambda (safeHead, fact, addMaybes, applyTwice) where 
+module Lambda (safeHead, fact, addMaybes, applyTwice, safeDiv) where 
 
 import Data.Function (fix)
 import Control.Applicative (liftA2)
@@ -17,3 +17,7 @@ addMaybes = liftA2 (+)
 
 applyTwice :: (a -> a) -> a -> a
 applyTwice f x = f (f x)
+
+safeDiv :: Int -> Int -> Maybe Int
+safeDiv _ 0 = Nothing
+safeDiv x y = Just (div x y)

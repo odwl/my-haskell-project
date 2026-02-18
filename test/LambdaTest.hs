@@ -44,6 +44,14 @@ addMaybesTests = TestLabel "AddMaybe" $ TestList
     , addMaybes Nothing  Nothing  --> Nothing
     ] 
 
+safeDivTests :: Test
+safeDivTests = TestLabel "SafeDiv" $ TestList
+    [ safeDiv 10 2 --> Just 5
+    , safeDiv 10 0 --> Nothing
+    , safeDiv 10 3 --> Just 3
+    , safeDiv 0 10 --> Just 0
+    ]
+
 tests :: Test
 tests = TestList
     [ testSimpleSquare
@@ -51,6 +59,7 @@ tests = TestList
     , yFactTests
     , safeHeadTests
     , addMaybesTests
+    , safeDivTests
     ]
 
 main :: IO ()
