@@ -1,17 +1,19 @@
-module Lambda (safeHead, fact, addMaybes) where 
+module Lambda (safeHead, fact, addMaybes, applyTwice) where 
 
 import Data.Function (fix)
 import Control.Applicative (liftA2)
 
 -- factorial using fix.
-step f n = if n == 0 then 1 else n * f (n - 1)
+fact :: Int -> Int
 fact = fix step
+  where step f n = if n == 0 then 1 else n * f (n - 1)
 
 safeHead :: [a] -> Maybe a
 safeHead []    = Nothing
 safeHead (x:_) = Just x
 
 addMaybes :: Maybe Int -> Maybe Int -> Maybe Int
--- addMaybes (Just x) (Just y) = Just (x + y)
--- addMaybes _ _ = Nothing
 addMaybes = liftA2 (+)
+
+applyTwice :: (a -> a) -> a -> a
+applyTwice f x = f (f x)

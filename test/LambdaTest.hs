@@ -4,16 +4,19 @@ import Test.HUnit
 import System.Exit (exitFailure, exitSuccess)
 import Lambda
 
+applyTwice = \f -> (\x -> f (f x))
+square :: Int -> Int
+square x = x^2
+
 testSimpleSquare :: Test
-testSimpleSquare = TestCase $ assertEqual "should square 2" 4 (square 2)
-  where
-    square = \x -> x^2
+testSimpleSquare = TestLabel "Simple Square" $ TestList
+    [ square 2 --> 4 ]
 
 testDoubleApplication :: Test
-testDoubleApplication = TestCase  $ assertEqual "should give 16 " 16 (applyTwice square 2)
-  where
-    applyTwice = \f -> (\x -> f (f x))
-    square x = x^2
+testDoubleApplication = TestLabel "Double Apply" $ TestList
+    [ applyTwice square 2 --> 16
+    , applyTwice (+1) 10  --> 12
+    ]
 
 (-->) :: (Show a, Eq a) => a -> a -> Test
 got --> expected = TestCase $ assertEqual "" expected got
@@ -39,12 +42,13 @@ addMaybesTests = TestLabel "AddMaybe" $ TestList
     , addMaybes Nothing  (Just 1) --> Nothing
     , addMaybes (Just 1) Nothing  --> Nothing
     , addMaybes Nothing  Nothing  --> Nothing
-    ]
+    ] 
 
 tests :: Test
 tests = TestList
-    [ TestLabel "Simple Square"    testSimpleSquare
-    , TestLabel "Double Apply"     testDoubleApplication
+    [ testSimpleSquare
+    , testDoubleApplication
+    [ testDoubleApplication
     , yFactTests
     , safeHeadTests
     , addMaybesTests
