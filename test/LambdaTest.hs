@@ -76,7 +76,7 @@ functorReaderTests = testGroup "functor reader id"
       ]
 
 instance (CoArbitrary a, Arbitrary b) => Arbitrary (MyReader a b) where
-    arbitrary = fmap mkReader arbitrary
+    arbitrary = fmap MyReader arbitrary
 
 instance Show (MyReader a b) where
     show _ = "<MyReader function>"
@@ -89,7 +89,7 @@ prop_myReaderIdentity r x = eqReader (fmap id r) r x
 
 functorMyReaderTests :: TestTree
 functorMyReaderTests = testGroup "functor myreader id"
-    [ testCase "hardcoded (+1) 5" $ runMyReader (fmap id (mkReader (+1))) 5 @?= (+1) (5 :: Int)
+    [ testCase "hardcoded (+1) 5" $ runMyReader (fmap id (MyReader (+1))) 5 @?= (+1) (5 :: Int)
     , testProperty "Reader Identity Law" prop_myReaderIdentity ]
 
 tests :: TestTree
