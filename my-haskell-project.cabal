@@ -10,27 +10,26 @@ executable my-program
     build-depends:    base >= 4.14 && < 5
     ghc-options:      -main-is HelloWorld
 
--- Defines the test suite
-test-suite my-test
-    type:             exitcode-stdio-1.0
-    main-is:          HelloWorld_Test.hs
-    hs-source-dirs:   test, src
-    -- Note: We include 'src' here so the test can find HelloWorld.hs
-    other-modules:    HelloWorld
-    default-language: Haskell2010
-    build-depends:    base >= 4.14 && < 5, HUnit
+-- -- Defines the test suite
+-- test-suite my-test
+--     type:             exitcode-stdio-1.0
+--     main-is:          HelloWorld_Test.hs
+--     hs-source-dirs:   test, src
+--     -- Note: We include 'src' here so the test can find HelloWorld.hs
+--     other-modules:    HelloWorld
+--     default-language: Haskell2010
+--     build-depends:    base >= 4.14 && < 5, HUnit
 
 test-suite lambda-test
     type:             exitcode-stdio-1.0
     main-is:          LambdaTest.hs
     hs-source-dirs:   test, src
 
-    exposed-modules:  Lambda
-
-    other-modules:    Lambda,Lambda.Functor
+    other-modules:    Lambda, Lambda.Functor, Lambda.FunctorTest
 
     default-language: Haskell2010
     build-depends:    base >= 4.14 && < 5,
                       tasty, 
                       tasty-hunit,
-                      tasty-quickcheck
+                      tasty-quickcheck,
+                    --   my-haskell-project
