@@ -21,7 +21,7 @@ prop_maybeComposition f g m = fmap (f . g) m == (fmap f . fmap g) m
 
 functorMaybeTests :: TestTree
 functorMaybeTests = testGroup "Functor Maybe"
-    [ testCase "Hardcoded Just 10" $ fmap id (Just (10 :: Int)) @?= Just 10
+    [ testCase "Hardcoded Just 10" $ fmap id (Just 10) @?= Just 10
     , testCase "Hardcoded Nothing" $ fmap id (Nothing :: Maybe Int) @?= Nothing
     , testProperty "Identity Law" prop_maybeIdentity
     , testProperty "Composition Law" prop_maybeComposition
@@ -33,7 +33,7 @@ functorMaybeTests = testGroup "Functor Maybe"
 instance Arbitrary a => Arbitrary (MyMaybe a) where
     arbitrary = frequency 
         [ (1, pure MyNothing)
-        , (3, fmap MyJust arbitrary)
+        , (3, fmap pure arbitrary)
         ]
 
 prop_myFunctorIdentity :: MyMaybe Int -> Bool
