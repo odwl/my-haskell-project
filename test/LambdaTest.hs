@@ -1,94 +1,82 @@
 module Main where
 
-import Test.HUnit
-import System.Exit (exitFailure, exitSuccess)
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 import Lambda
 
-import Test.QuickCheck
-
--- The rule: Mapping 'id' over a Maybe should equal the original Maybe.
-prop_functorIdentity :: Maybe Int -> Bool
-prop_functorIdentity m = fmap id m == m
-
-qcToHUnit :: String -> (Maybe Int -> Bool) -> Test
-qcToHUnit name prop = TestLabel name $ TestCase $ do
-    -- quickCheckResult runs the test and returns a Result object
-    result <- quickCheckResult prop 
-    -- We tell HUnit to fail if the QuickCheck result isn't a success
-    assertBool "QuickCheck found a failing property!" (isSuccess result)
-
-(-->) :: (Show a, Eq a) => a -> a -> Test
-got --> expected = TestCase $ assertEqual "" expected got
-
--- applyTwice = \f -> (\x -> f (f x))
 square :: Int -> Int
 square x = x^2
 
-testSimpleSquare :: Test
-testSimpleSquare = TestLabel "Simple Square" $ TestList
-    [ square 2 --> 4 ]
-
-testDoubleApplication :: Test
-testDoubleApplication = TestLabel "Double Apply" $ TestList
-    [ applyTwice square 2 --> 16
-    , applyTwice (+1) 10  --> 12
+testDoubleApplication :: TestTree
+testDoubleApplication = testGroup "Double Apply Tests"
+    [ testCase "Apply square twice" $ applyTwice square 2 @?= 16
+    , testCase "Apply (+1) twice"   $ applyTwice (+1) 10  @?= 12
     ]
 
-
-yFactTests :: Test 
-yFactTests = TestLabel "YFact" $ TestList
-    [ fact 0 --> 1
-    , fact 1 --> 1
-    , fact 2 --> 2
-    , fact 3 --> 6
+safeDivTests :: TestTree
+safeDivTests = testGroup "SafeDiv Tests"
+    [ testCase "Divides evenly"                 $ safeDiv 10 2 @?= Just 5
+    , testCase "Division by zero yields Nothing" $ safeDiv 10 0 @?= Nothing
+    , testCase "Integer division truncates"     $ safeDiv 10 3 @?= Just 3
+    , testCase "Zero divided by number is zero" $ safeDiv 0 10 @?= Just 0
     ]
 
-safeHeadTests :: Test
-safeHeadTests = TestLabel "SafeHead" $ TestList 
-    [ safeHead ([] :: [Int]) --> Nothing
-    , safeHead [1,2,3] --> Just 1
-    , safeHead [10] --> Just 10 
+prop_functorIdentity :: Maybe Int -> Bool
+prop_functorIdentity m = fmap id m == m
+
+unitTests :: TestTree
+unitTests = testGroup "Unit Tests (HUnit)"
+    [ testCase "Hardcoded Just 10" $ fmap id (Just (10 :: Int)) @?= Just 10,
+      testCase "Hardcoded Nothing" $ fmap id (Nothing :: Maybe Int) @?= Nothing]
+
+propertyTests :: TestTree
+propertyTests = testGroup "Property Tests (QuickCheck)"
+    [ testProperty "Functor Identity Law" prop_functorIdentity ]
+
+yFactTests :: TestTree
+yFactTests = testGroup "YFact"
+    [ testCase "fact 0" $ fact 0 @?= 1
+    , testCase "fact 1" $ fact 1 @?= 1
+    , testCase "fact 2" $ fact 2 @?= 2
+    , testCase "fact 3" $ fact 3 @?= 6
     ]
 
-addMaybesTests :: Test 
-addMaybesTests = TestLabel "AddMaybe" $ TestList
-    [ addMaybes (Just 1) (Just 1) --> Just 2
-    , addMaybes Nothing  (Just 1) --> Nothing
-    , addMaybes (Just 1) Nothing  --> Nothing
-    , addMaybes Nothing  Nothing  --> Nothing
-    ] 
-
-safeDivTests :: Test
-safeDivTests = TestLabel "SafeDiv" $ TestList
-    [ safeDiv 10 2 --> Just 5
-    , safeDiv 10 0 --> Nothing
-    , safeDiv 10 3 --> Just 3
-    , safeDiv 0 10 --> Just 0
+safeHeadTests :: TestTree
+safeHeadTests = testGroup "SafeHead"
+    [ testCase "empty list" $ safeHead ([] :: [Int]) @?= Nothing
+    , testCase "multiple elements" $ safeHead [1,2,3] @?= Just 1
+    , testCase "single element" $ safeHead [10] @?= Just 10 
     ]
 
-functorIdTest :: Test
-functorIdTest = TestLabel "FunctorId" $ TestList    
-    [ fmap id (Just 10) --> Just 10
-    , fmap id (Nothing :: Maybe Int) --> Nothing
+addMaybesTests :: TestTree
+addMaybesTests = testGroup "AddMaybe"
+    [ testCase "Just + Just" $ addMaybes (Just 1) (Just 1) @?= Just 2
+    , testCase "Nothing + Just" $ addMaybes Nothing (Just 1) @?= Nothing
+    , testCase "Just + Nothing" $ addMaybes (Just 1) Nothing @?= Nothing
+    , testCase "Nothing + Nothing" $ addMaybes Nothing Nothing @?= Nothing
     ]
 
-tests :: Test
-tests = TestList
-    [ testSimpleSquare
+safeDivTestsTasty :: TestTree
+safeDivTestsTasty = testGroup "SafeDiv"
+    [ testCase "Divides evenly" $ safeDiv 10 2 @?= Just 5
+    , testCase "Division by zero" $ safeDiv 10 0 @?= Nothing
+    , testCase "Truncates" $ safeDiv 10 3 @?= Just 3
+    , testCase "Zero numerator" $ safeDiv 0 10 @?= Just 0
+    ]
+
+tests :: TestTree
+tests = testGroup "Lambda Suite"
+    [ safeDivTestsTasty
     , testDoubleApplication
+    , unitTests
+    , propertyTests
     , yFactTests
     , safeHeadTests
     , addMaybesTests
-    , safeDivTests
-    , functorIdTest
-    , TestLabel "Old HUnit Test" $ TestCase (assertEqual "" (Just 10) (fmap id (Just 10)))
-    , qcToHUnit "QuickCheck: Functor Identity" prop_functorIdentity
     ]
 
 main :: IO ()
 main = do
     putStrLn "\n--- Running: Lambda Suite ---"
-    counts <- runTestTT tests
-    if errors counts + failures counts == 0
-        then exitSuccess
-        else exitFailure
+    defaultMain tests
