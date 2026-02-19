@@ -5,7 +5,6 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Lambda
 
-
 testDoubleApplication :: TestTree
 testDoubleApplication = testGroup "Double Apply Tests"
     [ testCase "Apply (+1) twice"   $ applyTwice (+1) 10  @?= 12
