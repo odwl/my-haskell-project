@@ -1,7 +1,6 @@
 module Lambda (
   safeHead, fact, addMaybes, 
-  applyTwice, safeDiv, MyMaybe(..),
-  MyReader(..), runMyReader) 
+  applyTwice, safeDiv) 
   where 
 
 import Data.Function (fix)
