@@ -4,6 +4,19 @@ import Test.HUnit
 import System.Exit (exitFailure, exitSuccess)
 import Lambda
 
+import Test.QuickCheck
+
+-- The rule: Mapping 'id' over a Maybe should equal the original Maybe.
+prop_functorIdentity :: Maybe Int -> Bool
+prop_functorIdentity m = fmap id m == m
+
+qcToHUnit :: String -> (Maybe Int -> Bool) -> Test
+qcToHUnit name prop = TestLabel name $ TestCase $ do
+    -- quickCheckResult runs the test and returns a Result object
+    result <- quickCheckResult prop 
+    -- We tell HUnit to fail if the QuickCheck result isn't a success
+    assertBool "QuickCheck found a failing property!" (isSuccess result)
+
 (-->) :: (Show a, Eq a) => a -> a -> Test
 got --> expected = TestCase $ assertEqual "" expected got
 
@@ -68,6 +81,8 @@ tests = TestList
     , addMaybesTests
     , safeDivTests
     , functorIdTest
+    , TestLabel "Old HUnit Test" $ TestCase (assertEqual "" (Just 10) (fmap id (Just 10)))
+    , qcToHUnit "QuickCheck: Functor Identity" prop_functorIdentity
     ]
 
 main :: IO ()
