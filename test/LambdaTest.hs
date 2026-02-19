@@ -4,6 +4,9 @@ import Test.HUnit
 import System.Exit (exitFailure, exitSuccess)
 import Lambda
 
+(-->) :: (Show a, Eq a) => a -> a -> Test
+got --> expected = TestCase $ assertEqual "" expected got
+
 -- applyTwice = \f -> (\x -> f (f x))
 square :: Int -> Int
 square x = x^2
@@ -18,8 +21,6 @@ testDoubleApplication = TestLabel "Double Apply" $ TestList
     , applyTwice (+1) 10  --> 12
     ]
 
-(-->) :: (Show a, Eq a) => a -> a -> Test
-got --> expected = TestCase $ assertEqual "" expected got
 
 yFactTests :: Test 
 yFactTests = TestLabel "YFact" $ TestList
@@ -52,6 +53,12 @@ safeDivTests = TestLabel "SafeDiv" $ TestList
     , safeDiv 0 10 --> Just 0
     ]
 
+functorIdTest :: Test
+functorIdTest = TestLabel "FunctorId" $ TestList    
+    [ fmap id (Just 10) --> Just 10
+    , fmap id (Nothing :: Maybe Int) --> Nothing
+    ]
+
 tests :: Test
 tests = TestList
     [ testSimpleSquare
@@ -60,6 +67,7 @@ tests = TestList
     , safeHeadTests
     , addMaybesTests
     , safeDivTests
+    , functorIdTest
     ]
 
 main :: IO ()
