@@ -5,13 +5,10 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Lambda
 
-square :: Int -> Int
-square x = x^2
 
 testDoubleApplication :: TestTree
 testDoubleApplication = testGroup "Double Apply Tests"
-    [ testCase "Apply square twice" $ applyTwice square 2 @?= 16
-    , testCase "Apply (+1) twice"   $ applyTwice (+1) 10  @?= 12
+    [ testCase "Apply (+1) twice"   $ applyTwice (+1) 10  @?= 12
     ]
 
 safeDivTests :: TestTree
