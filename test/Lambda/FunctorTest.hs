@@ -1,12 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Lambda.FunctorTest where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.Show.Functions ()
--- import Lambda
 import Lambda.Functor (
     MyMaybe(..),
     MyReader(..), runMyReader)
@@ -36,7 +34,7 @@ functorMaybeTests = testGroup "Functor Maybe"
 instance Arbitrary a => Arbitrary (MyMaybe a) where
     arbitrary = frequency 
         [ (1, pure MyNothing)
-        , (3, MyJust <$> arbitrary)
+        , (3, fmap MyJust arbitrary)
         ]
 
 prop_myFunctorIdentity :: MyMaybe Int -> Bool
@@ -60,8 +58,8 @@ functorMyMaybeTests = testGroup "Functor MyMaybe"
 prop_readerIdentity :: Reader Int Int -> Int -> Bool
 prop_readerIdentity r x = runReader (fmap id r) x == runReader r x
 
-instance (CoArbitrary r, Arbitrary a) => Arbitrary (ReaderT r Identity a) where
-    arbitrary = fmap (ReaderT . (Identity .)) arbitrary
+instance (CoArbitrary r, Arbitrary a) => Arbitrary (Reader r a) where
+    arbitrary = fmap reader arbitrary
 
 prop_readerComposition :: (Int -> Int) -> (Int -> Int) -> Reader Int Int -> Int -> Bool
 prop_readerComposition f g r x = 
@@ -71,11 +69,14 @@ prop_readerComposition f g r x =
 
 instance Show (ReaderT r m a) where
     show _ = "<ReaderT function>"
+instance Show (Reader r a) where
+    show _ = "<Reader function>"
 
 functorReaderTests :: TestTree
 functorReaderTests = testGroup "functor reader id"
     [ testCase "hardcoded (+1) 5" $
         let rdr = ReaderT (Identity . (+1))
+        let rdr = reader (+1)
         in runReader (fmap id rdr) 5 @?= runReader rdr 5
     , testProperty "Reader Identity Law" prop_readerIdentity
     , testProperty "Composition Law" prop_readerComposition
