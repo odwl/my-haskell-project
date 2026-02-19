@@ -56,18 +56,14 @@ prop_functorIdentity m = fmap id m == m
 functorIdTests :: TestTree
 functorIdTests = testGroup "Unit Tests (HUnit)"
     [ testCase "Hardcoded Just 10" $ fmap id (Just (10 :: Int)) @?= Just 10,
-      testCase "Hardcoded Nothing" $ fmap id (Nothing :: Maybe Int) @?= Nothing]
-
-functorIdQuickTests :: TestTree
-functorIdQuickTests = testGroup "Property Tests (QuickCheck)"
-    [ testProperty "Functor Identity Law" prop_functorIdentity ]
+      testCase "Hardcoded Nothing" $ fmap id (Nothing :: Maybe Int) @?= Nothing,
+      testProperty "Functor Identity Law" prop_functorIdentity]
 
 tests :: TestTree
 tests = testGroup "Lambda Suite"
     [ addMaybesTests
     , safeHeadTests
     , yFactTests
-    , functorIdQuickTests
     , functorIdTests
     , testDoubleApplication
     , safeDivTestsTasty
