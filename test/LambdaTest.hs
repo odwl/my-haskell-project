@@ -22,18 +22,6 @@ safeDivTests = testGroup "SafeDiv Tests"
     , testCase "Zero divided by number is zero" $ safeDiv 0 10 @?= Just 0
     ]
 
-prop_functorIdentity :: Maybe Int -> Bool
-prop_functorIdentity m = fmap id m == m
-
-unitTests :: TestTree
-unitTests = testGroup "Unit Tests (HUnit)"
-    [ testCase "Hardcoded Just 10" $ fmap id (Just (10 :: Int)) @?= Just 10,
-      testCase "Hardcoded Nothing" $ fmap id (Nothing :: Maybe Int) @?= Nothing]
-
-propertyTests :: TestTree
-propertyTests = testGroup "Property Tests (QuickCheck)"
-    [ testProperty "Functor Identity Law" prop_functorIdentity ]
-
 yFactTests :: TestTree
 yFactTests = testGroup "YFact"
     [ testCase "fact 0" $ fact 0 @?= 1
@@ -65,15 +53,27 @@ safeDivTestsTasty = testGroup "SafeDiv"
     , testCase "Zero numerator" $ safeDiv 0 10 @?= Just 0
     ]
 
+prop_functorIdentity :: Maybe Int -> Bool
+prop_functorIdentity m = fmap id m == m
+
+functorIdTests :: TestTree
+functorIdTests = testGroup "Unit Tests (HUnit)"
+    [ testCase "Hardcoded Just 10" $ fmap id (Just (10 :: Int)) @?= Just 10,
+      testCase "Hardcoded Nothing" $ fmap id (Nothing :: Maybe Int) @?= Nothing]
+
+functorIdQuickTests :: TestTree
+functorIdQuickTests = testGroup "Property Tests (QuickCheck)"
+    [ testProperty "Functor Identity Law" prop_functorIdentity ]
+
 tests :: TestTree
 tests = testGroup "Lambda Suite"
-    [ safeDivTestsTasty
-    , testDoubleApplication
-    , unitTests
-    , propertyTests
-    , yFactTests
+    [ addMaybesTests
     , safeHeadTests
-    , addMaybesTests
+    , yFactTests
+    , functorIdQuickTests
+    , functorIdTests
+    , testDoubleApplication
+    , safeDivTestsTasty
     ]
 
 main :: IO ()
