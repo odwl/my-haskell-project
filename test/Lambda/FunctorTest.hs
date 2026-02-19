@@ -9,7 +9,6 @@ import Lambda.Functor (
     MyMaybe(..),
     MyReader(..), runMyReader)
 import Control.Monad.Reader
-import Control.Monad.Identity
 
 -- ==========================================
 -- 1. Standard Maybe Tests
@@ -67,15 +66,12 @@ prop_readerComposition f g r x =
         rightSide = (fmap f . fmap g) r
     in runReader leftSide x == runReader rightSide x
 
-instance Show (ReaderT r m a) where
-    show _ = "<ReaderT function>"
 instance Show (Reader r a) where
     show _ = "<Reader function>"
 
 functorReaderTests :: TestTree
 functorReaderTests = testGroup "functor reader id"
     [ testCase "hardcoded (+1) 5" $
-        let rdr = ReaderT (Identity . (+1))
         let rdr = reader (+1)
         in runReader (fmap id rdr) 5 @?= runReader rdr 5
     , testProperty "Reader Identity Law" prop_readerIdentity
