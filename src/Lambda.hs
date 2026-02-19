@@ -1,4 +1,8 @@
-module Lambda (safeHead, fact, addMaybes, applyTwice, safeDiv) where 
+module Lambda (
+  safeHead, fact, addMaybes, 
+  applyTwice, safeDiv, MyMaybe(..),
+  MyReader, mkReader, runMyReader) 
+  where 
 
 import Data.Function (fix)
 import Control.Applicative (liftA2)
@@ -21,3 +25,20 @@ applyTwice f x = f (f x)
 safeDiv :: Int -> Int -> Maybe Int
 safeDiv _ 0 = Nothing
 safeDiv x y = Just (div x y)
+
+data MyMaybe a = MyNothing | MyJust a deriving (Show, Eq)
+instance Functor MyMaybe where
+  fmap _ MyNothing = MyNothing
+  fmap f (MyJust x) = MyJust (f x)
+
+newtype MyReader a b = Ploc { unwrap :: a -> b }
+instance Functor (MyReader c) where 
+  fmap f (Ploc g) = Ploc (f.g)
+
+-- The "Smart Constructor"
+-- Outside modules call this, and it secretly uses Ploc under the hood
+mkReader :: (a -> b) -> MyReader a b
+mkReader f = Ploc f
+
+runMyReader :: MyReader a b -> a -> b
+runMyReader = unwrap
