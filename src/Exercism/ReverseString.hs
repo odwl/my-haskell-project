@@ -3,7 +3,7 @@ module Exercism.ReverseString (reverseString) where
 import Data.List
 
 reverseString :: [a] -> [a]
-reverseString = foldl (\acc x -> x:acc) []
+reverseString = foldl' (\acc x -> x:acc) []
 
 -- reverseStringSlow :: [a] -> [a]
 -- reverseStringSlow xs = go [] xs where 
