@@ -3,8 +3,8 @@ module Lambda.FunctorTest where
 
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck(testProperty, Arbitrary, CoArbitrary, arbitrary, frequency)
-import Text.Show.Functions ()
+import Test.Tasty.QuickCheck
+import Text.Show.Functions
 import Lambda.Functor (
     MyMaybe(..),
     MyReader(..), runMyReader)
@@ -64,15 +64,6 @@ prop_readerIdentity r x =  eqReader (fmap id r) r x
 instance (CoArbitrary a, Arbitrary b) => Arbitrary (Reader a b) where
     arbitrary = fmap reader arbitrary
 
-prop_readerComposition :: (Int -> Int) -> (Int -> Int) -> Reader Int Int -> Int -> Bool
-prop_readerComposition f g r x = 
-    let leftSide  = fmap (f . g) r
-        rightSide = (fmap f . fmap g) r
-    in eqReader leftSide rightSide x
-
-instance Show (Reader r a) where
-    show _ = "<Reader function>"
-
 functorReaderTests :: TestTree
 functorReaderTests = testGroup "functor reader id"
     [ testCase "hardcoded (+1) 5" $
@@ -82,26 +73,38 @@ functorReaderTests = testGroup "functor reader id"
     , testProperty "Composition Law" prop_readerComposition
       ]
 
+prop_readerComposition :: (Int -> Int) -> (Int -> Int) -> Reader Int Int -> Int -> Bool
+prop_readerComposition f g r x = 
+    let leftSide  = fmap (f . g) r
+        rightSide = (fmap f . fmap g) r
+    in eqReader leftSide rightSide x
+
+instance Show (Reader r a) where
+    show _ = "<Reader function>"
+
+
+
 -- ==========================================
 -- 4. Custom MyReader Tests
 -- ==========================================
-instance (CoArbitrary a, Arbitrary b) => Arbitrary (MyReader a b) where
-    arbitrary = fmap MyReader arbitrary
 
-instance Show (MyReader a b) where
-    show _ = "<MyReader function>"
+eqMyReader :: (Eq b, Show b) => MyReader a b -> MyReader a b -> a -> Property
+eqMyReader m1 m2 x = runMyReader m1 x === runMyReader m2 x
 
-eqMyReader :: Eq b => MyReader a b -> MyReader a b -> a -> Bool
-eqMyReader m1 m2 x = runMyReader m1 x == runMyReader m2 x
+-- pattern FnReader :: MyReader a b -> Fun a b
+-- pattern FnReader r <- (MyReader . applyFun -> r)
 
-prop_myReaderIdentity :: MyReader Int Int -> Int -> Bool
-prop_myReaderIdentity r x = eqMyReader (fmap id r) r x
+prop_myReaderIdentity :: Fun Int String -> Int -> Property
+prop_myReaderIdentity fun val =
+    let r = MyReader (applyFun fun)
+    in eqMyReader (fmap id r) r val
 
-prop_myReaderComposition :: (Int -> Int) -> (Int -> Int) -> MyReader Int Int -> Int -> Bool
-prop_myReaderComposition f g r x = 
-    let leftSide  = fmap (f . g) r
+prop_myReaderComposition :: Fun Int Int -> Fun Int Int -> Fun Int Int -> Int -> Property
+prop_myReaderComposition (Fn f) (Fn g) (Fn rawR) val = 
+    let r = MyReader rawR
+        leftSide  = fmap (f . g) r
         rightSide = (fmap f . fmap g) r
-    in eqMyReader leftSide rightSide x
+    in eqMyReader leftSide rightSide val
 
 functorMyReaderTests :: TestTree
 functorMyReaderTests = testGroup "Functor MyReader"
@@ -109,6 +112,8 @@ functorMyReaderTests = testGroup "Functor MyReader"
     , testProperty "Identity Law" prop_myReaderIdentity
     , testProperty "Composition Law" prop_myReaderComposition
     ]
+
+
 
 
 -- ==========================================
