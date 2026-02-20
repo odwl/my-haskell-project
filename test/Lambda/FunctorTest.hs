@@ -11,10 +11,10 @@ import Text.Show.Functions
 -- ==========================================
 -- 1. Standard Maybe Tests
 -- ==========================================
-prop_maybeIdentity :: Maybe Int -> Property
+prop_maybeIdentity :: Maybe String -> Property
 prop_maybeIdentity m = fmap id m === m
 
-prop_maybeComposition :: Fun Int Int -> Fun Int Int -> Maybe Int -> Property
+prop_maybeComposition :: Fun String Int -> Fun Int String -> Maybe Int -> Property
 prop_maybeComposition (Fn f) (Fn g) m = fmap (f . g) m === (fmap f . fmap g) m
 
 functorMaybeTests :: TestTree
@@ -31,7 +31,7 @@ functorMaybeTests = testGroup "Functor Maybe"
 instance Arbitrary a => Arbitrary (MyMaybe a) where
     arbitrary = frequency 
         [ (1, pure MyNothing)
-        , (3, fmap pure arbitrary)
+        , (3, fmap MyJust arbitrary)
         ]
 
 prop_myFunctorIdentity :: MyMaybe String -> Property
@@ -42,9 +42,7 @@ prop_myFunctorComposition (Fn f) (Fn g) m = fmap (g . f) m === (fmap g . fmap f)
 
 functorMyMaybeTests :: TestTree
 functorMyMaybeTests = testGroup "Functor MyMaybe"
-    [ testCase "Hardcoded MyJust 10" $ fmap id (MyJust (10 :: Int)) @?= MyJust 10
-    , testCase "Hardcoded MyNothing" $ fmap id (MyNothing :: MyMaybe Int) @?= MyNothing
-    , testProperty "Identity Law" prop_myFunctorIdentity
+    [ testProperty "Identity Law" prop_myFunctorIdentity
     , testProperty "Composition Law" prop_myFunctorComposition
     ]
 
@@ -69,11 +67,8 @@ prop_readerComposition (Fn f) (Fn g) (Fn rawR) val =
     in eqReader leftSide rightSide val
 
 functorReaderTests :: TestTree
-functorReaderTests = testGroup "functor reader id"
-    [ testCase "hardcoded (+1) 5" $
-        let rdr = reader (+1)
-        in runReader (fmap id rdr) 5 @?= runReader rdr 5
-    , testProperty "Reader Identity Law" prop_readerIdentity
+functorReaderTests = testGroup "Functor Reader"
+    [ testProperty "Reader Identity Law" prop_readerIdentity
     , testProperty "Composition Law" prop_readerComposition
       ]
 
@@ -85,8 +80,8 @@ eqMyReader :: (Eq b, Show b) => MyReader a b -> MyReader a b -> a -> Property
 eqMyReader m1 m2 x = runMyReader m1 x === runMyReader m2 x
 
 prop_myReaderIdentity :: Fun Int String -> Int -> Property
-prop_myReaderIdentity fun val =
-    let r = MyReader (applyFun fun)
+prop_myReaderIdentity (Fn rawR) val =
+    let r = MyReader rawR
     in eqMyReader (fmap id r) r val
 
 prop_myReaderComposition :: Fun String Int -> Fun Int String -> Fun Int Int -> Int -> Property
@@ -98,8 +93,7 @@ prop_myReaderComposition (Fn f) (Fn g) (Fn rawR) val =
 
 functorMyReaderTests :: TestTree
 functorMyReaderTests = testGroup "Functor MyReader"
-    [ testCase "Hardcoded (+1) 5" $ runMyReader (fmap id (MyReader (+1))) 5 @?= (+1) (5 :: Int)
-    , testProperty "Identity Law" prop_myReaderIdentity
+    [ testProperty "Identity Law" prop_myReaderIdentity
     , testProperty "Composition Law" prop_myReaderComposition
     ]
 
