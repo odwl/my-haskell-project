@@ -36,10 +36,10 @@ instance Arbitrary a => Arbitrary (MyMaybe a) where
         , (3, fmap pure arbitrary)
         ]
 
-prop_myFunctorIdentity :: MyMaybe Int -> Bool
+prop_myFunctorIdentity :: MyMaybe String -> Bool
 prop_myFunctorIdentity m = fmap id m == m
 
-prop_myFunctorComposition :: (Int -> Int) -> (Int -> Int) -> MyMaybe Int -> Bool
+prop_myFunctorComposition :: (Int -> String) -> (String -> Int) -> MyMaybe String -> Bool
 prop_myFunctorComposition f g m = fmap (f . g) m == (fmap f . fmap g) m
 
 functorMyMaybeTests :: TestTree
@@ -55,14 +55,20 @@ functorMyMaybeTests = testGroup "Functor MyMaybe"
 -- ==========================================
 
 -- A custom operator for "Extensional Equality" of Readers
-eqReader :: Eq a => Reader r a -> Reader r a -> r -> Bool
-eqReader r1 r2 x = runReader r1 x == runReader r2 x
+eqReader :: (Eq a, Show a) => Reader r a -> Reader r a -> r -> Property
+eqReader r1 r2 x = runReader r1 x === runReader r2 x
 
-prop_readerIdentity :: Reader Int Int -> Int -> Bool
-prop_readerIdentity r x =  eqReader (fmap id r) r x
+prop_readerIdentity :: Fun Int Int -> Int -> Property
+prop_readerIdentity (Fn rawR) x =  
+    let r = reader rawR
+    in eqReader (fmap id r) r x
 
-instance (CoArbitrary a, Arbitrary b) => Arbitrary (Reader a b) where
-    arbitrary = fmap reader arbitrary
+prop_readerComposition :: Fun String Int -> Fun Int String -> Fun Int Int -> Int -> Property
+prop_readerComposition (Fn f) (Fn g) (Fn rawR) val =
+    let r = reader rawR
+        leftSide  = fmap (f . g) r
+        rightSide = (fmap f . fmap g) r
+    in eqReader leftSide rightSide val
 
 functorReaderTests :: TestTree
 functorReaderTests = testGroup "functor reader id"
@@ -72,17 +78,6 @@ functorReaderTests = testGroup "functor reader id"
     , testProperty "Reader Identity Law" prop_readerIdentity
     , testProperty "Composition Law" prop_readerComposition
       ]
-
-prop_readerComposition :: (Int -> Int) -> (Int -> Int) -> Reader Int Int -> Int -> Bool
-prop_readerComposition f g r x = 
-    let leftSide  = fmap (f . g) r
-        rightSide = (fmap f . fmap g) r
-    in eqReader leftSide rightSide x
-
-instance Show (Reader r a) where
-    show _ = "<Reader function>"
-
-
 
 -- ==========================================
 -- 4. Custom MyReader Tests
@@ -99,8 +94,8 @@ prop_myReaderIdentity fun val =
     let r = MyReader (applyFun fun)
     in eqMyReader (fmap id r) r val
 
-prop_myReaderComposition :: Fun Int Int -> Fun Int Int -> Fun Int Int -> Int -> Property
-prop_myReaderComposition (Fn f) (Fn g) (Fn rawR) val = 
+prop_myReaderComposition :: Fun String Int -> Fun Int String -> Fun Int Int -> Int -> Property
+prop_myReaderComposition (Fn f) (Fn g) (Fn rawR) val =
     let r = MyReader rawR
         leftSide  = fmap (f . g) r
         rightSide = (fmap f . fmap g) r
@@ -112,9 +107,6 @@ functorMyReaderTests = testGroup "Functor MyReader"
     , testProperty "Identity Law" prop_myReaderIdentity
     , testProperty "Composition Law" prop_myReaderComposition
     ]
-
-
-
 
 -- ==========================================
 -- Master Test Tree
