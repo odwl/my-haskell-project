@@ -20,39 +20,42 @@ test-suite my-test
     default-language: Haskell2010
     build-depends:    base >= 4.14 && < 5, HUnit
 
-
-
+-- The main library for the project
+library
+    exposed-modules:  Exercism.ReverseString,
+                      Exercism.Pangram,
+                      Lambda,
+                      Lambda.Functor
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    build-depends:    base >= 4.14 && < 5,
+                      containers,
+                      mtl,
+                      transformers
 
 test-suite lambda-test
     type:             exitcode-stdio-1.0
     main-is:          LambdaTest.hs
-    hs-source-dirs:   test, src
-    other-modules:    Lambda, Lambda.Functor, Lambda.FunctorTest
+    hs-source-dirs:   test
+    other-modules:    Lambda.FunctorTest, MonadTest
     default-language: Haskell2010
     build-depends:    base >= 4.14 && < 5,
+                      my-haskell-project,
                       checkers,
                       mtl,
                       tasty,
                       tasty-hunit,
                       tasty-quickcheck,
-                      transformers,
-
-library
-    exposed-modules:  Exercism.ReverseString
-    hs-source-dirs:   src
-    default-language: Haskell2010
-    build-depends:    base >= 4.14 && < 5
+                      transformers
 
 test-suite exercism-test
     type:             exitcode-stdio-1.0
     main-is:          ExercismTest.hs
-    other-modules:    Exercism.ReverseStringTest
+    other-modules:    Exercism.ReverseStringTest, Exercism.PangramTest
     hs-source-dirs:   test
     default-language: Haskell2010
     build-depends:    base >= 4.14 && < 5,
                       my-haskell-project,
                       tasty,
                       tasty-hunit,
-                      tasty-quickcheck,
-                      tasty-bench,
-                      deepseq
+                      tasty-quickcheck
