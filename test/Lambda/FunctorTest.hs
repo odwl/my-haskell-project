@@ -61,7 +61,7 @@ eqReader r1 r2 x = runReader r1 x == runReader r2 x
 prop_readerIdentity :: Reader Int Int -> Int -> Bool
 prop_readerIdentity r x =  eqReader (fmap id r) r x
 
-instance (CoArbitrary r, Arbitrary a) => Arbitrary (Reader r a) where
+instance (CoArbitrary a, Arbitrary b) => Arbitrary (Reader a b) where
     arbitrary = fmap reader arbitrary
 
 prop_readerComposition :: (Int -> Int) -> (Int -> Int) -> Reader Int Int -> Int -> Bool
@@ -86,7 +86,7 @@ functorReaderTests = testGroup "functor reader id"
 -- 4. Custom MyReader Tests
 -- ==========================================
 instance (CoArbitrary a, Arbitrary b) => Arbitrary (MyReader a b) where
-    arbitrary = fmap MyReader arbitrary -- Or 'mkReader' if using smart constructors
+    arbitrary = fmap MyReader arbitrary
 
 instance Show (MyReader a b) where
     show _ = "<MyReader function>"
