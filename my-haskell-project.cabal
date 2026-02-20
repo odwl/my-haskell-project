@@ -29,8 +29,9 @@ test-suite lambda-test
 
     default-language: Haskell2010
     build-depends:    base >= 4.14 && < 5,
+                      checkers,
+                      mtl,
                       tasty,
                       tasty-hunit,
                       tasty-quickcheck,
                       transformers,
-                      mtl

@@ -3,7 +3,7 @@ module Lambda.FunctorTest where
 
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import Test.Tasty.QuickCheck(testProperty, Arbitrary, CoArbitrary, arbitrary, frequency)
 import Text.Show.Functions ()
 import Lambda.Functor (
     MyMaybe(..),
@@ -54,8 +54,12 @@ functorMyMaybeTests = testGroup "Functor MyMaybe"
 -- 3. Standard Reader (Function) Tests
 -- ==========================================
 
+-- A custom operator for "Extensional Equality" of Readers
+eqReader :: Eq a => Reader r a -> Reader r a -> r -> Bool
+eqReader r1 r2 x = runReader r1 x == runReader r2 x
+
 prop_readerIdentity :: Reader Int Int -> Int -> Bool
-prop_readerIdentity r x = runReader (fmap id r) x == runReader r x
+prop_readerIdentity r x =  eqReader (fmap id r) r x
 
 instance (CoArbitrary r, Arbitrary a) => Arbitrary (Reader r a) where
     arbitrary = fmap reader arbitrary
@@ -64,7 +68,7 @@ prop_readerComposition :: (Int -> Int) -> (Int -> Int) -> Reader Int Int -> Int 
 prop_readerComposition f g r x = 
     let leftSide  = fmap (f . g) r
         rightSide = (fmap f . fmap g) r
-    in runReader leftSide x == runReader rightSide x
+    in eqReader leftSide rightSide x
 
 instance Show (Reader r a) where
     show _ = "<Reader function>"
@@ -87,17 +91,17 @@ instance (CoArbitrary a, Arbitrary b) => Arbitrary (MyReader a b) where
 instance Show (MyReader a b) where
     show _ = "<MyReader function>"
 
-eqReader :: Eq b => MyReader a b -> MyReader a b -> a -> Bool
-eqReader m1 m2 x = runMyReader m1 x == runMyReader m2 x
+eqMyReader :: Eq b => MyReader a b -> MyReader a b -> a -> Bool
+eqMyReader m1 m2 x = runMyReader m1 x == runMyReader m2 x
 
 prop_myReaderIdentity :: MyReader Int Int -> Int -> Bool
-prop_myReaderIdentity r x = eqReader (fmap id r) r x
+prop_myReaderIdentity r x = eqMyReader (fmap id r) r x
 
 prop_myReaderComposition :: (Int -> Int) -> (Int -> Int) -> MyReader Int Int -> Int -> Bool
 prop_myReaderComposition f g r x = 
     let leftSide  = fmap (f . g) r
         rightSide = (fmap f . fmap g) r
-    in eqReader leftSide rightSide x
+    in eqMyReader leftSide rightSide x
 
 functorMyReaderTests :: TestTree
 functorMyReaderTests = testGroup "Functor MyReader"
