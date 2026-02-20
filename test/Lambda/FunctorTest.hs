@@ -1,23 +1,21 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Lambda.FunctorTest where
 
+import Control.Monad.Reader
+import Lambda.Functor (MyMaybe (..), MyReader (..), runMyReader)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.Show.Functions
-import Lambda.Functor (
-    MyMaybe(..),
-    MyReader(..), runMyReader)
-import Control.Monad.Reader
 
 -- ==========================================
 -- 1. Standard Maybe Tests
 -- ==========================================
-prop_maybeIdentity :: Maybe Int -> Bool
-prop_maybeIdentity m = fmap id m == m
+prop_maybeIdentity :: Maybe Int -> Property
+prop_maybeIdentity m = fmap id m === m
 
-prop_maybeComposition :: (Int -> Int) -> (Int -> Int) -> Maybe Int -> Bool
-prop_maybeComposition f g m = fmap (f . g) m == (fmap f . fmap g) m
+prop_maybeComposition :: Fun Int Int -> Fun Int Int -> Maybe Int -> Property
+prop_maybeComposition (Fn f) (Fn g) m = fmap (f . g) m === (fmap f . fmap g) m
 
 functorMaybeTests :: TestTree
 functorMaybeTests = testGroup "Functor Maybe"
@@ -36,11 +34,11 @@ instance Arbitrary a => Arbitrary (MyMaybe a) where
         , (3, fmap pure arbitrary)
         ]
 
-prop_myFunctorIdentity :: MyMaybe String -> Bool
-prop_myFunctorIdentity m = fmap id m == m
+prop_myFunctorIdentity :: MyMaybe String -> Property
+prop_myFunctorIdentity m = fmap id m === m
 
-prop_myFunctorComposition :: (Int -> String) -> (String -> Int) -> MyMaybe String -> Bool
-prop_myFunctorComposition f g m = fmap (f . g) m == (fmap f . fmap g) m
+prop_myFunctorComposition :: Fun Int String -> Fun String Int -> MyMaybe Int -> Property
+prop_myFunctorComposition (Fn f) (Fn g) m = fmap (g . f) m === (fmap g . fmap f) m
 
 functorMyMaybeTests :: TestTree
 functorMyMaybeTests = testGroup "Functor MyMaybe"
@@ -58,7 +56,7 @@ functorMyMaybeTests = testGroup "Functor MyMaybe"
 eqReader :: (Eq a, Show a) => Reader r a -> Reader r a -> r -> Property
 eqReader r1 r2 x = runReader r1 x === runReader r2 x
 
-prop_readerIdentity :: Fun Int Int -> Int -> Property
+prop_readerIdentity :: Fun Int String -> Int -> Property
 prop_readerIdentity (Fn rawR) x =  
     let r = reader rawR
     in eqReader (fmap id r) r x
@@ -85,9 +83,6 @@ functorReaderTests = testGroup "functor reader id"
 
 eqMyReader :: (Eq b, Show b) => MyReader a b -> MyReader a b -> a -> Property
 eqMyReader m1 m2 x = runMyReader m1 x === runMyReader m2 x
-
--- pattern FnReader :: MyReader a b -> Fun a b
--- pattern FnReader r <- (MyReader . applyFun -> r)
 
 prop_myReaderIdentity :: Fun Int String -> Int -> Property
 prop_myReaderIdentity fun val =
