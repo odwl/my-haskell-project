@@ -7,44 +7,68 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.Show.Functions
+import Test.QuickCheck.Checkers
+import Test.QuickCheck.Classes (functor)
+
+tastyBatch :: TestBatch -> TestTree
+tastyBatch (name, tests) = testProperties name tests
 
 -- ==========================================
 -- 1. Standard Maybe Tests
 -- ==========================================
-prop_maybeIdentity :: Maybe String -> Property
-prop_maybeIdentity m = fmap id m === m
+-- prop_maybeIdentity :: Maybe String -> Property
+-- prop_maybeIdentity m = fmap id m === m
 
-prop_maybeComposition :: Fun String Int -> Fun Int String -> Maybe Int -> Property
-prop_maybeComposition (Fn f) (Fn g) m = fmap (f . g) m === (fmap f . fmap g) m
+-- prop_maybeComposition :: Fun String Int -> Fun Int String -> Maybe Int -> Property
+-- prop_maybeComposition (Fn f) (Fn g) m = fmap (f . g) m === (fmap f . fmap g) m
 
 functorMaybeTests :: TestTree
 functorMaybeTests = testGroup "Functor Maybe"
     [ testCase "Hardcoded Just 10" $ fmap id (Just 10) @?= Just 10
     , testCase "Hardcoded Nothing" $ fmap id (Nothing :: Maybe Int) @?= Nothing
-    , testProperty "Identity Law" prop_maybeIdentity
-    , testProperty "Composition Law" prop_maybeComposition
+    , tastyBatch (functor (undefined :: Maybe (Int, String, Int)))
+    -- , testProperty "Identity Law" prop_maybeIdentity
+    -- , testProperty "Composition Law" prop_maybeComposition
     ]
 
 -- ==========================================
 -- 2. Custom MyMaybe Tests
 -- ==========================================
+
 instance Arbitrary a => Arbitrary (MyMaybe a) where
     arbitrary = frequency 
         [ (1, pure MyNothing)
         , (3, fmap MyJust arbitrary)
         ]
 
-prop_myFunctorIdentity :: MyMaybe String -> Property
-prop_myFunctorIdentity m = fmap id m === m
+-- Tell checkers how to compare MyMaybe
+instance Eq a => EqProp (MyMaybe a) where 
+    (=-=) = eq
 
-prop_myFunctorComposition :: Fun Int String -> Fun String Int -> MyMaybe Int -> Property
-prop_myFunctorComposition (Fn f) (Fn g) m = fmap (g . f) m === (fmap g . fmap f) m
-
+-- Generate all functor tests automatically
 functorMyMaybeTests :: TestTree
-functorMyMaybeTests = testGroup "Functor MyMaybe"
-    [ testProperty "Identity Law" prop_myFunctorIdentity
-    , testProperty "Composition Law" prop_myFunctorComposition
-    ]
+functorMyMaybeTests = tastyBatch $ functor (undefined :: MyMaybe (Int, String, Int))
+
+-- ==========================================
+-- 2. Custom MyMaybe Tests
+-- ==========================================
+-- instance Arbitrary a => Arbitrary (MyMaybe a) where
+--     arbitrary = frequency 
+--         [ (1, pure MyNothing)
+--         , (3, fmap MyJust arbitrary)
+--         ]
+
+-- prop_myFunctorIdentity :: MyMaybe String -> Property
+-- prop_myFunctorIdentity m = fmap id m === m
+
+-- prop_myFunctorComposition :: Fun Int String -> Fun String Int -> MyMaybe Int -> Property
+-- prop_myFunctorComposition (Fn f) (Fn g) m = fmap (g . f) m === (fmap g . fmap f) m
+
+-- functorMyMaybeTests :: TestTree
+-- functorMyMaybeTests = testGroup "Functor MyMaybe"
+--     [ testProperty "Identity Law" prop_myFunctorIdentity
+--     , testProperty "Composition Law" prop_myFunctorComposition
+--     ]
 
 -- ==========================================
 -- 3. Standard Reader (Function) Tests
