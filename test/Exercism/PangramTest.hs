@@ -1,12 +1,21 @@
 {-# LANGUAGE RecordWildCards #-}
 module Exercism.PangramTest (pangramTests) where
 
-import Data.Char (toUpper, toLower)
-import Data.List (delete)
 import Exercism.Pangram (isPangram)
-import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty ( TestTree, testGroup )
+import Test.Tasty.HUnit ( testCase, (@?=) )
 import Test.Tasty.QuickCheck
+    ( Property,
+      listOf,
+      shuffle,
+      suchThat,
+      (===),
+      counterexample,
+      forAll,
+      testProperty,
+      Arbitrary(arbitrary),
+      Gen )
+import Data.Char (toLower)
 
 pangramTests :: TestTree
 pangramTests = testGroup "Pangram"
@@ -26,30 +35,50 @@ prop_prependPangram s =
     let alphabet = "abcdefghijklmnopqrstuvwxyz"
     in isPangram (s ++ alphabet) === True
 
-randomCase :: Char -> Gen Char
-randomCase c = elements [toLower c, toUpper c]
+-- randomCase :: Char -> Gen Char 
+-- randomCase c = elements [toLower c, toUpper c]
 
 -- This generator builds strings that are guaranteed to be missing one specific letter and no others.
 -- It includes uppercase, lowercase, numbers, unicodes and punctuation!
 genMissingLetterString :: Gen (Char, String) 
 genMissingLetterString = do
+    shuffledAlphabet <- shuffle (zip ['a'..'z'] ['A'..'Z'])
 
--- Other idea 
+    let ((banned_lower, _), toBeUsed) = case shuffledAlphabet of
+            []     -> error "CRITICAL: The hardcoded alphabet was somehow empty!"
+            (x:xs) -> (x, xs)
+    
+    let flatToBeUsed = (>>=) toBeUsed (\(l, u) -> [l, u])
 
+    -- let flatToBeUsed = [char | (l, u) <- toBeUsed, char <- [l, u]]
+    -- let flatToBeUsed = do
+    --         (l, u) <- toBeUsed
+    --         return [l, u]
 
-    shuffleAlphabet <- shuffle $ zip ['a'..'z'] ['A'..'Z']
-    let (bannedChar : baseChars) = shuffleAlphabet
-
-    let banned_lower = fst bannedChar
     let safeCharGen = suchThat arbitrary ((/= banned_lower) . toLower)
     noise <- listOf safeCharGen
 
-    let baseChars2 = concatMap (\(lower, upper) -> [lower, upper]) baseChars
-
-    let combinedString = baseChars2 ++ noise
-    
-    shuffledString <- shuffle combinedString 
+    shuffledString <- shuffle (noise ++ flatToBeUsed)
     pure (banned_lower, shuffledString)
+
+
+
+
+
+    -- (bannedChar : baseChars) <- shuffle $ zip ['a'..'z'] ['A'..'Z']
+    -- ((banned_lower, _) : baseChars) <- shuffle $ zip ['a'..'z'] ['A'..'Z']
+
+
+
+    -- let (bannedChar : baseChars) = shuffleAlphabet
+    
+    -- let banned_lower = fst bannedChar
+    -- let safeCharGen = suchThat arbitrary ((/= banned_lower) . toLower)
+    -- noise <- listOf safeCharGen
+    -- let baseChars2 = concatMap (\(lower, upper) -> [lower, upper]) baseChars
+    -- let combinedString = baseChars2 ++ noise
+    -- shuffledString <- shuffle combinedString 
+    -- pure (banned_lower, shuffledString)
 
 
 

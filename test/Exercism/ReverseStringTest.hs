@@ -1,9 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
 module Exercism.ReverseStringTest where
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty ( TestTree, testGroup )
+import Test.Tasty.HUnit ( testCase, (@?=) )
 import Test.Tasty.QuickCheck
+    ( Property, (===), (==>), testProperty )
 import Exercism.ReverseString (reverseString)
 
 -- ==========================================

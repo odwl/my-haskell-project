@@ -1,6 +1,6 @@
 module Exercism.ReverseString (reverseString) where
 
-import Data.List
+import Data.List ( foldl' )
 
 reverseString :: [a] -> [a]
 reverseString = foldl' (\acc x -> x:acc) []
