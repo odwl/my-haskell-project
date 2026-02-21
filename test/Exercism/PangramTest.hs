@@ -6,6 +6,7 @@ import Test.Tasty ( TestTree, testGroup )
 import Test.Tasty.HUnit ( testCase, (@?=) )
 import Test.Tasty.QuickCheck
     ( Property,
+      elements,
       listOf,
       shuffle,
       suchThat,
@@ -15,7 +16,9 @@ import Test.Tasty.QuickCheck
       testProperty,
       Arbitrary(arbitrary),
       Gen )
-import Data.Char (toLower)
+import Data.Char (toLower, toUpper)
+import Data.List (delete)
+import Control.Monad (join)
 
 pangramTests :: TestTree
 pangramTests = testGroup "Pangram"
@@ -35,74 +38,15 @@ prop_prependPangram s =
     let alphabet = "abcdefghijklmnopqrstuvwxyz"
     in isPangram (s ++ alphabet) === True
 
--- randomCase :: Char -> Gen Char 
--- randomCase c = elements [toLower c, toUpper c]
-
 -- This generator builds strings that are guaranteed to be missing one specific letter and no others.
 -- It includes uppercase, lowercase, numbers, unicodes and punctuation!
 genMissingLetterString :: Gen (Char, String) 
 genMissingLetterString = do
-    shuffledAlphabet <- shuffle (zip ['a'..'z'] ['A'..'Z'])
-
-    let ((banned_lower, _), toBeUsed) = case shuffledAlphabet of
-            []     -> error "CRITICAL: The hardcoded alphabet was somehow empty!"
-            (x:xs) -> (x, xs)
-    
-    let flatToBeUsed = (>>=) toBeUsed (\(l, u) -> [l, u])
-
-    -- let flatToBeUsed = [char | (l, u) <- toBeUsed, char <- [l, u]]
-    -- let flatToBeUsed = do
-    --         (l, u) <- toBeUsed
-    --         return [l, u]
-
+    (banned_lower, toBeUsed) <- genBannedLetterAndRemainingAlphabet
     let safeCharGen = suchThat arbitrary ((/= banned_lower) . toLower)
     noise <- listOf safeCharGen
-
-    shuffledString <- shuffle (noise ++ flatToBeUsed)
+    shuffledString <- shuffle (noise ++ toBeUsed)
     pure (banned_lower, shuffledString)
-
-
-
-
-
-    -- (bannedChar : baseChars) <- shuffle $ zip ['a'..'z'] ['A'..'Z']
-    -- ((banned_lower, _) : baseChars) <- shuffle $ zip ['a'..'z'] ['A'..'Z']
-
-
-
-    -- let (bannedChar : baseChars) = shuffleAlphabet
-    
-    -- let banned_lower = fst bannedChar
-    -- let safeCharGen = suchThat arbitrary ((/= banned_lower) . toLower)
-    -- noise <- listOf safeCharGen
-    -- let baseChars2 = concatMap (\(lower, upper) -> [lower, upper]) baseChars
-    -- let combinedString = baseChars2 ++ noise
-    -- shuffledString <- shuffle combinedString 
-    -- pure (banned_lower, shuffledString)
-
-
-
-    -- shuffledAlphabet <- shuffle (['a'..'z'])
-    -- -- The end string will contain all letters but missingChar ind its upper case + some noises.
-    -- let (missingChar : baseChars) = shuffledAlphabet
-    -- coinFlip <- elements [True, False]
-
-
-
-    
-    -- requiredChars <- mapM (\c -> do
-    --     coinFlip <- elements [True, False]
-    --     pure (if coinFlip then c else toUpper c)
-    --   ) baseChars
-      
-    -- let safeCharGen = suchThat arbitrary ((/= missingChar) . toLower)
-    -- noise <- listOf safeCharGen
-    
-    -- -- We make sure to use 'requiredChars' here instead of 'baseChars'
-    -- let combinedString = baseChars ++ noise
-    
-    -- shuffledString <- shuffle combinedString 
-    -- pure (missingChar, shuffledString)
 
 prop_missingLetterIsNotPangram :: Property
 prop_missingLetterIsNotPangram = 
@@ -127,3 +71,14 @@ cases :: [Case]
 cases = [ Case "empty sentence" "" False
         , Case "perfect lower case" "abcdefghijklmnopqrstuvwxyz" True
         ]
+
+-- Generates a tuple where the first element is a random lowercase letter (the "banned" letter),
+-- and the second element is a list containing all other letters of the alphabet in both
+-- lowercase and uppercase. This ensures the resulting list contains every letter except the banned one.
+genBannedLetterAndRemainingAlphabet :: Gen (Char, [Char])
+genBannedLetterAndRemainingAlphabet = do
+    let alphabet = ['a'..'z']
+    bannedLetter <- elements alphabet
+    let remainingLetters = delete bannedLetter alphabet
+    let remainingLettersBothCases = join ( fmap (\c -> [c, toUpper c]) remainingLetters)
+    pure (bannedLetter, remainingLettersBothCases)
