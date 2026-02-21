@@ -2,7 +2,7 @@
 
 module Exercism.PangramTest (pangramTests) where
 
-import Control.Monad (join)
+import Control.Monad (forM)
 import Data.Char (toLower, toUpper)
 import Data.List (delete)
 import Exercism.Pangram (isPangram)
@@ -36,7 +36,8 @@ quickCheckPangramTests =
     "QuickCheck"
     [ testProperty "pangram remains pangram when prepending any string" prop_prependPangram,
       testProperty "empty string is never a pangram" $ not (isPangram ""),
-      testProperty "missing letter is not a pangram" prop_missingLetterIsNotPangram
+      testProperty "missing letter is not a pangram" prop_missingLetterIsNotPangram,
+      testProperty "guaranteed pangram is recognized" prop_guaranteedPangram
     ]
 
 prop_prependPangram :: String -> Property
@@ -61,6 +62,12 @@ prop_missingLetterIsNotPangram =
     checkNotPangram (bannedChar, testString) =
       counterexample ("Banned letter: " ++ show bannedChar ++ "\nString: " ++ show testString) $
         isPangram testString === False
+
+prop_guaranteedPangram :: Property
+prop_guaranteedPangram =
+  forAll genPangramWithNoise $ \s ->
+    counterexample ("Pangram with noise: " ++ show s) $
+      isPangram s === True
 
 -- ==========================================
 -- Test Some Examples
@@ -90,5 +97,14 @@ genBannedLetterAndRemainingAlphabet = do
   let alphabet = ['a' .. 'z']
   bannedLetter <- elements alphabet
   let remainingLetters = delete bannedLetter alphabet
-  let remainingLettersBothCases = join (fmap (\c -> [c, toUpper c]) remainingLetters)
-  pure (bannedLetter, remainingLettersBothCases)
+  remainingLettersRandomCase <- forM remainingLetters $ \c -> elements [c, toUpper c]
+  pure (bannedLetter, remainingLettersRandomCase)
+
+-- Generates a string that is guaranteed to be a pangram by including all letters
+-- in random cases and mixing them with arbitrary noise characters.
+genPangramWithNoise :: Gen String
+genPangramWithNoise = do
+  let alphabet = ['a' .. 'z']
+  alphabetRandomCase <- forM alphabet $ \c -> elements [c, toUpper c]
+  noise <- listOf arbitrary
+  shuffle (alphabetRandomCase ++ noise)
