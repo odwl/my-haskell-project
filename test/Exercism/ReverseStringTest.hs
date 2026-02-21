@@ -1,36 +1,41 @@
 {-# LANGUAGE RecordWildCards #-}
+
 module Exercism.ReverseStringTest where
 
-import Test.Tasty ( TestTree, testGroup )
-import Test.Tasty.HUnit ( testCase, (@?=) )
-import Test.Tasty.QuickCheck
-    ( Property, (===), (==>), testProperty )
 import Exercism.ReverseString (reverseString)
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, (@?=))
+import Test.Tasty.QuickCheck
+  ( Property,
+    testProperty,
+    (===),
+    (==>),
+  )
 
 -- ==========================================
 -- Master Test Tree
 -- ==========================================
 
 reverseStringTests :: TestTree
-reverseStringTests = testGroup "ReverseString Suite"
-    [ quickCheckReverseTests
-    , exampleTests
+reverseStringTests =
+  testGroup
+    "reverseStringTests"
+    [ quickCheckReverseTests,
+      exampleTests
     ]
-
-
--- import Control.DeepSeq (nf)
--- let testData = [1..10000] :: [Int]
 
 -- ==========================================
 -- Test QuickChecks
 -- ==========================================
 
 quickCheckReverseTests :: TestTree
-quickCheckReverseTests = testGroup "QuickCheck"
-    [ testProperty "reverse" prop_reverseTwice
-    , testProperty "length" prop_lengthPreserve
-    , testProperty "concat" prop_reverseConcat
-    , testProperty "reverseHead"prop_reverseHead
+quickCheckReverseTests =
+  testGroup
+    "QuickCheck"
+    [ testProperty "reverse" prop_reverseTwice,
+      testProperty "length" prop_lengthPreserve,
+      testProperty "concat" prop_reverseConcat,
+      testProperty "reverseHead" prop_reverseHead
     ]
 
 prop_reverseTwice :: String -> Property
@@ -43,26 +48,29 @@ prop_reverseConcat :: String -> String -> Property
 prop_reverseConcat a b = reverseString (a ++ b) === reverseString b ++ reverseString a
 
 prop_reverseHead :: String -> Property
-prop_reverseHead s = 
-    not (null s) ==> head (reverseString s) === last s
-
+prop_reverseHead s =
+  not (null s) ==> head (reverseString s) === last s
 
 -- ==========================================
 -- Test Some Examples
 -- ==========================================
 
 exampleTests :: TestTree
-exampleTests = testGroup "Examples"
+exampleTests =
+  testGroup
+    "Examples"
     [ testCase explanation $ reverseString input @?= expected
-    | Case{..} <- cases
+      | Case {..} <- cases
     ]
 
-data Case = Case { explanation :: String, input :: String, expected :: String }
+data Case = Case {explanation :: String, input :: String, expected :: String}
+
 cases :: [Case]
-cases = [ Case "an empty string" "" ""
-        , Case "a word" "robot" "tobor"
-        , Case "a capitalized word" "Ramen" "nemaR"
-        , Case "a sentence with punctuation" "I'm hungry!" "!yrgnuh m'I"
-        , Case "a palindrome" "racecar" "racecar"
-        , Case "an even-sized word" "drawer" "reward"
-        ]
+cases =
+  [ Case "an empty string" "" "",
+    Case "a word" "robot" "tobor",
+    Case "a capitalized word" "Ramen" "nemaR",
+    Case "a sentence with punctuation" "I'm hungry!" "!yrgnuh m'I",
+    Case "a palindrome" "racecar" "racecar",
+    Case "an even-sized word" "drawer" "reward"
+  ]
