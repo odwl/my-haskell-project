@@ -7,4 +7,4 @@ import Data.Set (fromList, size)
 -- For this exercise, a sentence is a pangram if it contains each of the 26 letters in the English alphabet.
 
 isPangram :: String -> Bool
-isPangram s = size (fromList $ map toLower $ filter (\c -> isAlpha c && isAscii c) s) == length ['a' .. 'z']
+isPangram = (== length ['a' .. 'z']) . size . fromList . map toLower . filter isAlpha . filter isAscii
