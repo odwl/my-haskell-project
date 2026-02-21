@@ -1,4 +1,4 @@
-module MonadTest (monadTests) where
+module Lambda.MonadTest (monadTests) where
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -20,11 +20,11 @@ genEvenNum = fmap (\x -> 2*x)  randomNum
 
 genEvenNumBetter :: Gen Int
 -- genEvenNumBetter = choose (2, 100)
-genEvenNumBetter = liftA2 (+) randomNum randomNum 
--- genEvenNumBetter = do
---     x <- randomNum  -- "Draw" the first number
---     y <- randomNum  -- "Draw" the second number
---     return (x + y)  -- Add them and put the result back in the Gen box
+-- genEvenNumBetter = liftA2 (+) randomNum randomNum 
+genEvenNumBetter = do
+    x <- randomNum  -- "Draw" the first number
+    y <- randomNum  -- "Draw" the second number
+    return (x + y)  -- Add them and put the result back in the Gen box
 
 prop_genEven :: Property
 prop_genEven = forAll genEvenNum even

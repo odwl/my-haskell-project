@@ -4,7 +4,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Lambda
 import Lambda.FunctorTest (functorTests)
-import MonadTest (monadTests)
+import Lambda.MonadTest (monadTests)
 
 testDoubleApplication :: TestTree
 testDoubleApplication = testGroup "Double Apply Tests"
