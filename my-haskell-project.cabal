@@ -1,43 +1,55 @@
 cabal-version:      3.0
 name:               my-haskell-project
 version:            0.1.0.0
+synopsis:           Haskell learning project including Exercism exercises and lambda calculus
+author:             Olivier
+maintainer:         odewolf@gmail.com
 
--- Defines the main library/executable
-executable my-program
-    main-is:          HelloWorld.hs
-    hs-source-dirs:   src
-    default-language: Haskell2010
-    build-depends:    base >= 4.14 && < 5
-    ghc-options:      -main-is HelloWorld -Wall
+-- Common GHC warning flags
+common warnings
+    ghc-options: -Wall
 
--- -- Defines the test suite
-test-suite my-test
-    type:             exitcode-stdio-1.0
-    main-is:          HelloWorldTest.hs
-    hs-source-dirs:   test, src
-    -- Note: We include 'src' here so the test can find HelloWorld.hs
-    other-modules:    HelloWorld
-    default-language: Haskell2010
-    build-depends:    base >= 4.14 && < 5, HUnit
-
--- The main library for the project
-library
-    exposed-modules:  Exercism.ReverseString,
-                      Exercism.Pangram,
-                      Lambda,
-                      Lambda.Functor
-    hs-source-dirs:   src
-    default-language: Haskell2010
-    build-depends:    base >= 4.14 && < 5,
-                      containers,
-
+-- Common test dependencies, shared across all test suites
 common share-tests-deps
+    import:           warnings
     default-language: Haskell2010
     build-depends:    base >= 4.14 && < 5,
                       my-haskell-project,
                       tasty,
                       tasty-hunit,
                       tasty-quickcheck,
+
+-- The main library for the project
+library
+    import:           warnings
+    exposed-modules:  Exercism.ReverseString,
+                      Exercism.Pangram,
+                      Exercism.Bob,
+                      Lambda,
+                      Lambda.Functor
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    build-depends:    base >= 4.14 && < 5,
+                      containers
+
+-- Defines the main library/executable
+executable my-program
+    import:           warnings
+    main-is:          HelloWorld.hs
+    hs-source-dirs:   src
+    default-language: Haskell2010
+    build-depends:    base >= 4.14 && < 5
+    ghc-options:      -main-is HelloWorld
+
+-- Defines the test suite for HelloWorld
+test-suite my-test
+    import:           share-tests-deps
+    type:             exitcode-stdio-1.0
+    main-is:          HelloWorldTest.hs
+    hs-source-dirs:   test, src
+    -- Note: We include 'src' here so the test can find HelloWorld.hs
+    other-modules:    HelloWorld
+    build-depends:    HUnit
 
 test-suite lambda-test
     import:           share-tests-deps
@@ -47,12 +59,11 @@ test-suite lambda-test
     other-modules:    Lambda.FunctorTest, Lambda.MonadTest
     build-depends:    checkers,
                       mtl
-                      
+
 test-suite exercism-test
     import:           share-tests-deps
     type:             exitcode-stdio-1.0
     main-is:          ExercismTest.hs
-    other-modules:    Exercism.ReverseStringTest, Exercism.PangramTest
+    other-modules:    Exercism.ReverseStringTest, Exercism.PangramTest, Exercism.BobTest
     hs-source-dirs:   test
-    build-depends:    containers,
-    ghc-options:      -Wall
+    build-depends:    containers
