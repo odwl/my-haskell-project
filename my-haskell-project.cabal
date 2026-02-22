@@ -65,5 +65,5 @@ test-suite exercism-test
     type:             exitcode-stdio-1.0
     main-is:          ExercismTest.hs
     other-modules:    Exercism.ReverseStringTest, Exercism.PangramTest, Exercism.BobTest
-    hs-source-dirs:   test
+    hs-source-dirs:   test, src
     build-depends:    containers

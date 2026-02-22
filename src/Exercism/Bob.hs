@@ -21,4 +21,5 @@ hey input
   where
     isSilent = all isSpace input
     isQuestion = last input == '?'
-    isYelling = all isUpper $ filter isAlpha (init input)
+    -- isYelling = all isUpper $ filter isAlpha (init input)
+    isYelling = any isAlpha input && all isUpper (filter isAlpha input)
