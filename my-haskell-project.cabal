@@ -25,6 +25,7 @@ common share-tests-deps
 library
   import: warnings
   exposed-modules:
+    Exercism.Anagram
     Exercism.Bob
     Exercism.Pangram
     Exercism.ReverseString
@@ -79,9 +80,12 @@ test-suite exercism-test
   type: exitcode-stdio-1.0
   main-is: ExercismTest.hs
   other-modules:
+    Exercism.AnagramTest
     Exercism.BobTest
     Exercism.PangramTest
     Exercism.ReverseStringTest
 
   hs-source-dirs: test
-  build-depends: containers, QuickCheck
+  build-depends:
+    QuickCheck,
+    containers,

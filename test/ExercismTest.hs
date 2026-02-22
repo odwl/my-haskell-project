@@ -1,5 +1,6 @@
 module Main where
 
+import Exercism.AnagramTest (anagramTests)
 import Exercism.BobTest (bobTests)
 import Exercism.PangramTest (pangramTests)
 import Exercism.ReverseStringTest (reverseStringTests)
@@ -9,7 +10,8 @@ tests :: TestTree
 tests =
   testGroup
     "Exercism"
-    [ reverseStringTests,
+    [ anagramTests,
+      reverseStringTests,
       pangramTests,
       bobTests
     ]
