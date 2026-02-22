@@ -1,4 +1,4 @@
---command="cabal repl exercism-test"
---test="main"
+--command="cabal repl lib:my-haskell-project"
+--test=":! cabal test exercism-test -v0"
 --reload=src
 --reload=test

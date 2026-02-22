@@ -7,7 +7,9 @@ import Exercism.Bob (ResponseType (..), hey, responseString)
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck
-  ( Property,
+  ( Arbitrary (arbitrary),
+    Gen,
+    Property,
     elements,
     forAll,
     listOf,
@@ -34,7 +36,8 @@ quickCheckBobTests =
     "QuickCheck"
     [ testProperty "silence always gets the same response" prop_silence,
       testProperty "yelling always gets a yelling response" prop_yelling,
-      testProperty "questions get specific responses" prop_question_finished_by
+      testProperty "questions get specific responses" prop_question_finished_by,
+      testProperty "not a question gets specific responses" prop_not_a_question
     ]
 
 prop_silence :: Property
@@ -49,13 +52,27 @@ prop_yelling =
 
 -- Verifies that any input ending with a question mark (followed by optional whitespace)
 -- is treated as a question by Bob.
-prop_question_finished_by :: String -> Property
-prop_question_finished_by s =
-  forAll noiseGen $ \noise ->
-    elem (inputQuestion noise) (map responseString [CalmDown, Sure])
-  where
-    noiseGen = listOf (elements (filter isSpace ['\0' .. '\127']))
-    inputQuestion noise = hey (s ++ "?" ++ noise)
+prop_question_finished_by :: Property
+prop_question_finished_by = forAll genAQuestion $ \input -> elem (hey input) $ map responseString [CalmDown, Sure]
+
+prop_not_a_question :: Property
+prop_not_a_question = forAll genNotAQuestion $ \input -> elem (hey input) $ map responseString [Whoa, Whatever]
+
+genAQuestion :: Gen String
+genAQuestion = do
+  s <- arbitrary :: Gen String
+  noise <- genNoise
+  pure (s ++ "?" ++ noise)
+
+genNoise :: Gen String
+genNoise = listOf (elements (filter isSpace ['\0' .. '\127']))
+
+genNotAQuestion :: Gen String
+genNotAQuestion = do
+  s <- arbitrary :: Gen String
+  nonSpaceChar <- elements (filter (\c -> not (isSpace c) && c /= '?') ['\0' .. '\127'])
+  noise <- listOf (elements (filter isSpace ['\0' .. '\127']))
+  pure (s ++ [nonSpaceChar] ++ noise)
 
 -- ==========================================
 -- Example Tests
