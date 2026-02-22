@@ -2,7 +2,8 @@
 
 module Exercism.BobTest (bobTests, main) where
 
-import Exercism.Bob (hey)
+import Data.Char (isSpace)
+import Exercism.Bob (ResponseType (..), hey, responseString)
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck
@@ -32,18 +33,29 @@ quickCheckBobTests =
   testGroup
     "QuickCheck"
     [ testProperty "silence always gets the same response" prop_silence,
-      testProperty "yelling always gets a yelling response" prop_yelling
+      testProperty "yelling always gets a yelling response" prop_yelling,
+      testProperty "questions get specific responses" prop_question_finished_by
     ]
 
 prop_silence :: Property
 prop_silence =
   forAll (listOf (elements " \t\n")) $ \s ->
-    hey s === "Fine. Be that way!"
+    hey s === responseString Fine
 
 prop_yelling :: Property
 prop_yelling =
   forAll (listOf1 (elements ['A' .. 'Z'])) $ \s ->
-    hey s `elem` ["Whoa, chill out!", "Calm down, I know what I'm doing!"]
+    hey s `elem` map responseString [Whoa, CalmDown]
+
+-- Verifies that any input ending with a question mark (followed by optional whitespace)
+-- is treated as a question by Bob.
+prop_question_finished_by :: String -> Property
+prop_question_finished_by s =
+  forAll noiseGen $ \noise ->
+    elem (inputQuestion noise) (map responseString [CalmDown, Sure])
+  where
+    noiseGen = listOf (elements (filter isSpace ['\0' .. '\127']))
+    inputQuestion noise = hey (s ++ "?" ++ noise)
 
 -- ==========================================
 -- Example Tests
@@ -61,18 +73,18 @@ data Case = Case {explanation :: String, input :: String, expected :: String}
 
 cases :: [Case]
 cases =
-  [ Case "stating something" "Tom-ay-to, tom-aaaah-to." "Whatever.",
-    Case "shouting" "WATCH OUT!" "Whoa, chill out!",
-    Case "shouting gibberish" "FCECDFCAAB" "Whoa, chill out!",
-    Case "asking a question" "Does this cryogenic chamber make me look fat?" "Sure.",
-    Case "asking a numeric question" "You are, what, like 15?" "Sure.",
-    Case "asking a question in yelling" "TO THE WEST?" "Calm down, I know what I'm doing!",
-    Case "talking forcefully" "Let's go make out behind the gym!" "Whatever.",
-    Case "silence" "" "Fine. Be that way!",
-    Case "prolonged silence" "   " "Fine. Be that way!",
-    Case "only numbers" "1, 2, 3" "Whatever.",
-    Case "shouting numbers" "1, 2, 3 GO!" "Whoa, chill out!",
-    Case "question with no letters" "4?" "Sure."
+  [ Case "stating something" "Tom-ay-to, tom-aaaah-to." (responseString Whatever),
+    Case "shouting" "WATCH OUT!" (responseString Whoa),
+    Case "shouting gibberish" "FCECDFCAAB" (responseString Whoa),
+    Case "asking a question" "Does this cryogenic chamber make me look fat?" (responseString Sure),
+    Case "asking a numeric question" "You are, what, like 15?" (responseString Sure),
+    Case "asking a question in yelling" "TO THE WEST?" (responseString CalmDown),
+    Case "talking forcefully" "Let's go make out behind the gym!" (responseString Whatever),
+    Case "silence" "" (responseString Fine),
+    Case "prolonged silence" "   " (responseString Fine),
+    Case "only numbers" "1, 2, 3" (responseString Whatever),
+    Case "shouting numbers" "1, 2, 3 GO!" (responseString Whoa),
+    Case "question with no letters" "4?" (responseString Sure)
   ]
 
 main :: IO ()

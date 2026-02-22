@@ -45,16 +45,6 @@ prop_prependPangram s =
   let alphabet = "abcdefghijklmnopqrstuvwxyz"
    in isPangram (s ++ alphabet) === True
 
--- This generator builds strings that are guaranteed to be missing one specific letter and no others.
--- It includes uppercase, lowercase, numbers, unicodes and punctuation!
-genMissingLetterString :: Gen (Char, String)
-genMissingLetterString = do
-  (banned_lower, toBeUsed) <- genBannedLetterAndRemainingAlphabet
-  let safeCharGen = suchThat arbitrary ((/= banned_lower) . toLower)
-  noise <- listOf safeCharGen
-  shuffledString <- shuffle (noise ++ toBeUsed)
-  pure (banned_lower, shuffledString)
-
 prop_missingLetterIsNotPangram :: Property
 prop_missingLetterIsNotPangram =
   forAll genMissingLetterString checkNotPangram
@@ -88,6 +78,20 @@ cases =
   [ Case "empty sentence" "" False,
     Case "perfect lower case" "abcdefghijklmnopqrstuvwxyz" True
   ]
+
+-- ==========================================
+-- Generators
+-- ==========================================
+
+-- This generator builds strings that are guaranteed to be missing one specific letter and no others.
+-- It includes uppercase, lowercase, numbers, unicodes and punctuation!
+genMissingLetterString :: Gen (Char, String)
+genMissingLetterString = do
+  (banned_lower, toBeUsed) <- genBannedLetterAndRemainingAlphabet
+  let safeCharGen = suchThat arbitrary ((/= banned_lower) . toLower)
+  noise <- listOf safeCharGen
+  shuffledString <- shuffle (noise ++ toBeUsed)
+  pure (banned_lower, shuffledString)
 
 -- Generates a tuple where the first element is a random lowercase letter (the "banned" letter),
 -- and the second element is a list containing all other letters of the alphabet in both

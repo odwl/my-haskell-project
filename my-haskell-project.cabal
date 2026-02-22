@@ -84,4 +84,4 @@ test-suite exercism-test
     Exercism.ReverseStringTest
 
   hs-source-dirs: test
-  build-depends: containers
+  build-depends: containers, QuickCheck

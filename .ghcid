@@ -1,0 +1,4 @@
+--command="cabal repl exercism-test"
+--test="main"
+--reload=src
+--reload=test
