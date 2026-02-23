@@ -3,6 +3,7 @@ module Main where
 import Lambda
 import Lambda.FunctorTest (functorTests)
 import Lambda.MonadTest (monadTests)
+import Lambda.ParserTest (parserTests)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -61,7 +62,8 @@ tests =
       testDoubleApplication,
       safeDivTests,
       functorTests,
-      monadTests
+      monadTests,
+      parserTests
     ]
 
 main :: IO ()
