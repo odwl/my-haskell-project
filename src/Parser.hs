@@ -1,4 +1,4 @@
-module Parser (Parser (..), satisfy, term1, digit) where
+module Parser (Parser (..), satisfy, term1, digit, whiteSpace, endOfStream) where
 
 import Data.Char
 
@@ -19,6 +19,15 @@ term1 c = satisfy (== c)
 
 digit :: Parser Char
 digit = satisfy isDigit
+
+whiteSpace :: Parser Char
+whiteSpace = satisfy isSpace
+
+endOfStream :: Parser ()
+endOfStream = Parser f
+  where
+    f [] = Just ((), "")
+    f _ = Nothing
 
 -- term1 c = Parser f
 --   where

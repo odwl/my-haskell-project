@@ -1,7 +1,7 @@
 module Lambda.ParserTest (parserTests) where
 
-import Data.Char (isDigit)
-import Parser (Parser (..), digit, satisfy, term1)
+import Data.Char (isDigit, isSpace)
+import Parser (Parser (..), digit, endOfStream, satisfy, term1, whiteSpace)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -13,6 +13,7 @@ parserTests =
     [ testCase "satisfy matches character" $ parseA "abc" @?= Just ('a', "bc"),
       testCase "satisfy does not match character" $ parseA "xbc" @?= Nothing,
       testCase "satisfy on empty string" $ parseA "" @?= Nothing,
+      testCase "endOfStream matches empty string" $ runParser endOfStream "" @?= Just ((), ""),
       quickTests
     ]
   where
@@ -31,7 +32,10 @@ quickTests =
       testProperty "term1 matches character" prop_term1,
       testProperty "term1 rejects non-matching character" prop_term1_nothing,
       testProperty "digit matches digits" prop_digit,
-      testProperty "digit rejects non-digits" prop_not_digit
+      testProperty "digit rejects non-digits" prop_not_digit,
+      testProperty "whiteSpace matches whitespace" prop_whiteSpace,
+      testProperty "whiteSpace rejects non-whitespace" prop_not_whiteSpace,
+      testProperty "endOfStream rejects non-empty string" prop_endOfStream_nonEmpty
     ]
 
 prop_satisfiesMatchingChar :: Char -> String -> Property
@@ -61,3 +65,15 @@ prop_digit s = forAll (elements ['0' .. '9']) $ \c ->
 prop_not_digit :: String -> Property
 prop_not_digit s = forAll (arbitrary `suchThat` (not . isDigit)) $ \c ->
   runParser digit (c : s) === Nothing
+
+prop_whiteSpace :: String -> Property
+prop_whiteSpace s = forAll (elements " \t\n\r\f\v") $ \c ->
+  runParser whiteSpace (c : s) === Just (c, s)
+
+prop_not_whiteSpace :: String -> Property
+prop_not_whiteSpace s = forAll (arbitrary `suchThat` (not . isSpace)) $ \c ->
+  runParser whiteSpace (c : s) === Nothing
+
+prop_endOfStream_nonEmpty :: Char -> String -> Property
+prop_endOfStream_nonEmpty c s =
+  runParser endOfStream (c : s) === Nothing
