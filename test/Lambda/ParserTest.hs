@@ -54,12 +54,10 @@ prop_term1_nothing :: Char -> Char -> String -> Property
 prop_term1_nothing c1 c2 s =
   c1 /= c2 ==> runParser (term1 c1) (c2 : s) === Nothing
 
-prop_digit :: Property
-prop_digit = forAll (elements ['0' .. '9']) $ \c ->
-  forAll arbitrary $ \s ->
-    runParser digit (c : s) === Just (c, s)
+prop_digit :: String -> Property
+prop_digit s = forAll (elements ['0' .. '9']) $ \c ->
+  runParser digit (c : s) === Just (c, s)
 
-prop_not_digit :: Property
-prop_not_digit = forAll (arbitrary `suchThat` (not . isDigit)) $ \c ->
-  forAll arbitrary $ \s ->
-    runParser digit (c : s) === Nothing
+prop_not_digit :: String -> Property
+prop_not_digit s = forAll (arbitrary `suchThat` (not . isDigit)) $ \c ->
+  runParser digit (c : s) === Nothing
