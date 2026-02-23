@@ -1,6 +1,7 @@
 module Lambda.ParserTest (parserTests) where
 
-import Parser (Parser (..), satisfy, term1)
+import Data.Char (isDigit)
+import Parser (Parser (..), digit, satisfy, term1)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -28,7 +29,9 @@ quickTests =
       testProperty "satisfy rejects non-matching character" prop_nonMatchingChar,
       testProperty "satisfy rejects empty string" prop_emptyString,
       testProperty "term1 matches character" prop_term1,
-      testProperty "term1 rejects non-matching character" prop_term1_nothing
+      testProperty "term1 rejects non-matching character" prop_term1_nothing,
+      testProperty "digit matches digits" prop_digit,
+      testProperty "digit rejects non-digits" prop_not_digit
     ]
 
 prop_satisfiesMatchingChar :: Char -> String -> Property
@@ -50,3 +53,13 @@ prop_term1 c s =
 prop_term1_nothing :: Char -> Char -> String -> Property
 prop_term1_nothing c1 c2 s =
   c1 /= c2 ==> runParser (term1 c1) (c2 : s) === Nothing
+
+prop_digit :: Property
+prop_digit = forAll (elements ['0' .. '9']) $ \c ->
+  forAll arbitrary $ \s ->
+    runParser digit (c : s) === Just (c, s)
+
+prop_not_digit :: Property
+prop_not_digit = forAll (arbitrary `suchThat` (not . isDigit)) $ \c ->
+  forAll arbitrary $ \s ->
+    runParser digit (c : s) === Nothing
