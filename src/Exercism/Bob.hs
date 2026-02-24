@@ -2,7 +2,7 @@
 
 module Exercism.Bob (responseFor, ResponseType (..), responseTxt) where
 
-import Data.Char (isAlpha, isUpper)
+import Data.Char (isAlpha, isLower, isSpace)
 import qualified Data.Text as T
 
 data ResponseType
@@ -28,8 +28,7 @@ responseFor input
   | isAsking = responseTxt Sure
   | otherwise = responseTxt Whatever
   where
-    trimmed = T.strip input
-    isSilent = T.null trimmed
-    letters = T.filter isAlpha trimmed
-    isYelling = not (T.null letters) && T.all isUpper letters
-    isAsking = T.isSuffixOf "?" trimmed
+    isSilent = T.all isSpace input
+    isAsking = "?" `T.isSuffixOf` T.stripEnd input
+    hasLetters = T.any isAlpha input
+    isYelling = hasLetters && not (T.any isLower input)

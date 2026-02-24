@@ -1,8 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Exercism.BobTest (bobTests, main) where
 
-import Data.Char (isSpace)
+import Data.Char (isDigit, isSpace)
 import qualified Data.Text as T
 import Exercism.Bob (ResponseType (..), responseFor, responseTxt)
 import Test.Tasty (TestTree, defaultMain, testGroup)
@@ -51,7 +52,7 @@ prop_not_silence =
 
 prop_yelling :: Property
 prop_yelling =
-  forAll genYelling ((flip elem (responseTxt <$> [Whoa, CalmDown])) . responseFor)
+  forAll genYelling ((`elem` (responseTxt <$> [Whoa, CalmDown])) . responseFor)
 
 -- Verifies that any input ending with a question mark (followed by optional whitespace)
 -- is treated as a question by Bob.
@@ -61,28 +62,50 @@ prop_question_finished_by = forAll genAQuestion $ \input -> responseFor input `e
 prop_not_a_question :: Property
 prop_not_a_question = forAll genNotAQuestion $ \input -> responseFor input `elem` (responseTxt <$> [Whoa, Whatever])
 
+-- ==========================================
+-- QuickCheck Helpers
+-- ==========================================
+
+-- Examples: ' ', '\t', '\n'
+noiseChars :: [Char]
+noiseChars = filter isSpace ['\0' .. '\127']
+
+-- Examples: 'a', 'Z', '1', '!'
+nonSpaceChars :: [Char]
+nonSpaceChars = filter (\c -> not (isSpace c) && c /= '?') ['\0' .. '\127']
+
+-- Examples: ' ', '\t', '1', '9', '@', '.'
+baseNoiseChars :: [Char]
+baseNoiseChars = filter isBaseNoiseChar ['\0' .. '\127']
+  where
+    isBaseNoiseChar c = isSpace c || isDigit c || c `elem` ("!@#$%^&*,." :: String)
+
+-- ==========================================
+-- QuickCheck Generators
+-- ==========================================
+
 -- Example: "How are you?  "
 genAQuestion :: Gen T.Text
 genAQuestion = do
-  s <- T.pack <$> (arbitrary :: Gen String)
+  s <- T.pack <$> arbitrary
   noise <- genNoise
-  pure (s <> T.pack "?" <> noise)
+  pure (s <> "?" <> noise)
 
 -- Example: "  \t"
 genNoise :: Gen T.Text
-genNoise = T.pack <$> listOf (elements (filter isSpace ['\0' .. '\127']))
+genNoise = T.pack <$> listOf (elements noiseChars)
 
 -- Example: "Hello!"
 genNotAQuestion :: Gen T.Text
 genNotAQuestion = do
-  s <- T.pack <$> (arbitrary :: Gen String)
+  s <- T.pack <$> arbitrary
   nonSpaceChar <- genNonSpaceChar
   noise <- genNoise
-  pure (s <> T.pack [nonSpaceChar] <> noise)
+  pure (s <> nonSpaceChar <> noise)
 
 -- Example: 'A'
-genNonSpaceChar :: Gen Char
-genNonSpaceChar = elements $ filter (\c -> not (isSpace c) && c /= '?') ['\0' .. '\127']
+genNonSpaceChar :: Gen T.Text
+genNonSpaceChar = T.singleton <$> elements nonSpaceChars
 
 -- Example: " a "
 genNotSilence :: Gen T.Text
@@ -90,15 +113,15 @@ genNotSilence = do
   n1 <- genNoise
   c <- genNonSpaceChar
   n2 <- genNoise
-  pure (n1 <> T.pack [c] <> n2)
+  pure (n1 <> c <> n2)
 
 -- Example: "1, 2, 3 GO!  "
 genYelling :: Gen T.Text
 genYelling = do
-  baseNoise <- listOf (elements (filter (\c -> isSpace c || (c >= '0' && c <= '9') || c `elem` ("!@#$%^&*,." :: String)) ['\0' .. '\127']))
+  baseNoise <- T.pack <$> listOf (elements baseNoiseChars)
   upperCaseLetter <- elements ['A' .. 'Z']
-  moreUpperCase <- listOf (elements ['A' .. 'Z'])
-  pure $ T.pack $ baseNoise ++ [upperCaseLetter] ++ moreUpperCase ++ baseNoise
+  moreUpperCase <- T.pack <$> listOf (elements ['A' .. 'Z'])
+  pure $ baseNoise <> T.singleton upperCaseLetter <> moreUpperCase <> baseNoise
 
 -- ==========================================
 -- Example Tests
@@ -116,18 +139,18 @@ data Case = Case {explanation :: String, input :: T.Text, expected :: T.Text}
 
 cases :: [Case]
 cases =
-  [ Case "stating something" (T.pack "Tom-ay-to, tom-aaaah-to.") (responseTxt Whatever),
-    Case "shouting" (T.pack "WATCH OUT!") (responseTxt Whoa),
-    Case "shouting gibberish" (T.pack "FCECDFCAAB") (responseTxt Whoa),
-    Case "asking a question" (T.pack "Does this cryogenic chamber make me look fat?") (responseTxt Sure),
-    Case "asking a numeric question" (T.pack "You are, what, like 15?") (responseTxt Sure),
-    Case "asking a question in yelling" (T.pack "TO THE WEST?") (responseTxt CalmDown),
-    Case "talking forcefully" (T.pack "Let's go make out behind the gym!") (responseTxt Whatever),
-    Case "silence" (T.pack "") (responseTxt Fine),
-    Case "prolonged silence" (T.pack "   ") (responseTxt Fine),
-    Case "only numbers" (T.pack "1, 2, 3") (responseTxt Whatever),
-    Case "shouting numbers" (T.pack "1, 2, 3 GO!") (responseTxt Whoa),
-    Case "question with no letters" (T.pack "4?") (responseTxt Sure)
+  [ Case "stating something" "Tom-ay-to, tom-aaaah-to." (responseTxt Whatever),
+    Case "shouting" "WATCH OUT!" (responseTxt Whoa),
+    Case "shouting gibberish" "FCECDFCAAB" (responseTxt Whoa),
+    Case "asking a question" "Does this cryogenic chamber make me look fat?" (responseTxt Sure),
+    Case "asking a numeric question" "You are, what, like 15?" (responseTxt Sure),
+    Case "asking a question in yelling" "TO THE WEST?" (responseTxt CalmDown),
+    Case "talking forcefully" "Let's go make out behind the gym!" (responseTxt Whatever),
+    Case "silence" "" (responseTxt Fine),
+    Case "prolonged silence" "   " (responseTxt Fine),
+    Case "only numbers" "1, 2, 3" (responseTxt Whatever),
+    Case "shouting numbers" "1, 2, 3 GO!" (responseTxt Whoa),
+    Case "question with no letters" "4?" (responseTxt Sure)
   ]
 
 main :: IO ()
