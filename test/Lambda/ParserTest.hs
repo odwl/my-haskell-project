@@ -5,7 +5,7 @@ module Lambda.ParserTest (parserTests) where
 import Data.Char (isDigit, isSpace)
 import Parser (Parser (..), digit, endOfStream, satisfy, term1, whiteSpace)
 import Test.QuickCheck.Checkers
-import Test.QuickCheck.Classes (functor)
+import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -21,7 +21,12 @@ parserTests =
       testCase "fmap maps Parser Char to Parser String" $ runParser ((: []) <$> satisfy (== 'a')) "abc" @?= Just ("a", "bc"),
       testCase "fmap maps with custom lambda" $ runParser ((:) <*> (: []) <$> satisfy (== 'a')) "abc" @?= Just ("aa", "bc"),
       quickTests,
-      tastyBatch (functor (undefined :: Parser (Int, String, Int)))
+      tastyBatch
+        (functor (undefined :: Parser (Int, String, Int))),
+      tastyBatch
+        (applicative (undefined :: Parser (Int, String, Int))),
+      tastyBatch
+        (monad (undefined :: Parser (Int, String, Int)))
     ]
   where
     parseA = runParser (satisfy (== 'a'))
@@ -101,7 +106,3 @@ prop_not_whiteSpace s = forAll (arbitrary `suchThat` (not . isSpace)) $ \c ->
 prop_endOfStream_nonEmpty :: Char -> String -> Property
 prop_endOfStream_nonEmpty c s =
   runParser endOfStream (c : s) === Nothing
-
--- -- strToInt x = case (readMaybe x) of
--- -- Nothing -> error "Cannot convert to Int"
--- -- Just i -> i

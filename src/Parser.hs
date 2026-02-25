@@ -2,32 +2,29 @@ module Parser (Parser (..), satisfy, term1, digit, whiteSpace, endOfStream) wher
 
 import Data.Bifunctor (first)
 import Data.Char
-import Text.Read
+
+-- import Control.Arrow
+
+-- import Text.Read
 
 newtype Parser a = Parser
   { parse :: String -> Maybe (a, String)
   }
 
 instance Functor Parser where
-  fmap f (Parser p) = Parser $ \s -> first f <$> p s
+  fmap f (Parser p) = Parser (fmap (first f) . p)
 
 instance Applicative Parser where
   pure x = Parser (\s -> Just (x, s))
-  (Parser p1) <*> (Parser p2) = Parser $ \s -> case p1 s of
-    Nothing -> Nothing
-    Just (f, s') -> case p2 s' of
-      Nothing -> Nothing
-      Just (x, s'') -> Just (f x, s'')
+  (Parser pf) <*> (Parser px) = Parser $ \s -> do
+    (f, s') <- pf s
+    (x, s'') <- px s'
+    Just (f x, s'')
 
 instance Monad Parser where
   (>>=) (Parser p) f = Parser $ \s -> case p s of
     Nothing -> Nothing
     Just (x, s') -> parse (f x) s'
-
--- return x = Parser (\s -> Just (x, s))
--- (Parser p) >>= f = Parser $ \s -> case p s of
---   Nothing -> Nothing
--- Just (x, s') -> parse (f x) s'
 
 satisfy :: (Char -> Bool) -> Parser Char
 satisfy p = Parser f
@@ -50,18 +47,18 @@ endOfStream = Parser f
     f [] = Just ((), "")
     f _ = Nothing
 
-strToInt :: String -> Maybe Int
-strToInt x = readMaybe x
+-- strToInt :: String -> Maybe Int
+-- strToInt x = readMaybe x
 
-maybeInt :: Parser (Maybe Int)
-maybeInt = strToInt <$> ((\c -> [c]) <$> digit)
+-- maybeInt :: Parser (Maybe Int)
+-- maybeInt = strToInt <$> ((\c -> [c]) <$> digit)
 
-parseInt :: Parser Int
-parseInt = maybeInt >>= handleMaybe
-  where
-    handleMaybe :: Maybe Int -> Parser Int
-    handleMaybe Nothing = Parser (const Nothing)
-    handleMaybe (Just i) = pure i
+-- parseInt :: Parser Int
+-- parseInt = maybeInt >>= handleMaybe
+--   where
+--     handleMaybe :: Maybe Int -> Parser Int
+--     handleMaybe Nothing = Parser (const Nothing)
+--     handleMaybe (Just i) = pure i
 
 -- parseInt = do
 --   optInt <- maybeInt
