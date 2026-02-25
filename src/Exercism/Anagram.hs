@@ -4,7 +4,7 @@ import Data.Char (toLower)
 import Data.List (sort)
 
 anagramsFor :: String -> [String] -> [String]
-anagramsFor s list = filter (anagramOf s) list
+anagramsFor = filter . anagramOf
 
 anagramOf :: String -> String -> Bool
 anagramOf s1 s2 = lower1 /= lower2 && sort lower1 == sort lower2
