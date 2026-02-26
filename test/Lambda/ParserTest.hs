@@ -3,7 +3,7 @@
 module Lambda.ParserTest (parserTests) where
 
 import Data.Char (isDigit, isSpace)
-import Parser (Parser (..), digit, endOfStream, satisfy, term1, whiteSpace)
+import Parser (Parser (..), digit, endOfStream, parserInt, satisfy, term1, whiteSpace)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -48,7 +48,9 @@ quickTests =
       testProperty "digit rejects non-digits" prop_not_digit,
       testProperty "whiteSpace matches whitespace" prop_whiteSpace,
       testProperty "whiteSpace rejects non-whitespace" prop_not_whiteSpace,
-      testProperty "endOfStream rejects non-empty string" prop_endOfStream_nonEmpty
+      testProperty "endOfStream rejects non-empty string" prop_endOfStream_nonEmpty,
+      testProperty "parserInt parses a single digit correctly" prop_parserInt_digit,
+      testProperty "parserInt rejects non-digit structures" prop_parserInt_not_digit
     ]
 
 instance (Arbitrary a) => Arbitrary (Parser a) where
@@ -106,3 +108,11 @@ prop_not_whiteSpace s = forAll (arbitrary `suchThat` (not . isSpace)) $ \c ->
 prop_endOfStream_nonEmpty :: Char -> String -> Property
 prop_endOfStream_nonEmpty c s =
   runParser endOfStream (c : s) === Nothing
+
+prop_parserInt_digit :: String -> Property
+prop_parserInt_digit s = forAll (elements ['0' .. '9']) $ \c ->
+  runParser parserInt (c : s) === Just (read [c], s)
+
+prop_parserInt_not_digit :: String -> Property
+prop_parserInt_not_digit s = forAll (arbitrary `suchThat` (not . isDigit)) $ \c ->
+  runParser parserInt (c : s) === Nothing

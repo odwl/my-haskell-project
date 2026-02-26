@@ -1,11 +1,7 @@
-module Parser (Parser (..), satisfy, term1, digit, whiteSpace, endOfStream) where
+module Parser (Parser (..), satisfy, term1, digit, whiteSpace, endOfStream, parserInt) where
 
 import Data.Bifunctor (first)
 import Data.Char
-
--- import Control.Arrow
-
--- import Text.Read
 
 newtype Parser a = Parser
   { parse :: String -> Maybe (a, String)
@@ -47,21 +43,5 @@ endOfStream = Parser f
     f [] = Just ((), "")
     f _ = Nothing
 
--- strToInt :: String -> Maybe Int
--- strToInt x = readMaybe x
-
--- maybeInt :: Parser (Maybe Int)
--- maybeInt = strToInt <$> ((\c -> [c]) <$> digit)
-
--- parseInt :: Parser Int
--- parseInt = maybeInt >>= handleMaybe
---   where
---     handleMaybe :: Maybe Int -> Parser Int
---     handleMaybe Nothing = Parser (const Nothing)
---     handleMaybe (Just i) = pure i
-
--- parseInt = do
---   optInt <- maybeInt
---   case optInt of
---     Nothing -> Parser (\_ -> Nothing)
---     Just i -> Parser (\s -> Just (i, s))
+parserInt :: Parser Int
+parserInt = digitToInt <$> digit
