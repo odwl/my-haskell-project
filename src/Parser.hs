@@ -1,4 +1,4 @@
-module Parser (Parser (..), satisfy, term1, digit, whiteSpace, endOfStream, parserInt) where
+module Parser (Parser (..), satisfy, term1, digit, whiteSpace, endOfStream, parserInt, parseTwoChars) where
 
 import Data.Bifunctor (first)
 import Data.Char
@@ -45,3 +45,11 @@ endOfStream = Parser f
 
 parserInt :: Parser Int
 parserInt = digitToInt <$> digit
+
+parseTwoChars :: Parser String
+parseTwoChars = (\a b -> [a, b]) <$> term1 'a' <*> term1 'b'
+
+-- parseTwoChars = do
+--   c1 <- term1 'a'
+--   c2 <- term1 'b'
+--   return [c1, c2]

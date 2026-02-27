@@ -3,7 +3,7 @@
 module Lambda.ParserTest (parserTests) where
 
 import Data.Char (isDigit, isSpace)
-import Parser (Parser (..), digit, endOfStream, parserInt, satisfy, term1, whiteSpace)
+import Parser (Parser (..), digit, endOfStream, parseTwoChars, parserInt, satisfy, term1, whiteSpace)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -50,7 +50,11 @@ quickTests =
       testProperty "whiteSpace rejects non-whitespace" prop_not_whiteSpace,
       testProperty "endOfStream rejects non-empty string" prop_endOfStream_nonEmpty,
       testProperty "parserInt parses a single digit correctly" prop_parserInt_digit,
-      testProperty "parserInt rejects non-digit structures" prop_parserInt_not_digit
+      testProperty "parserInt rejects non-digit structures" prop_parserInt_not_digit,
+      testProperty "parseTwoChars matches both chars" prop_parseTwoChars_match_both,
+      testProperty "parseTwoChars matches first char only" prop_parseTwoChars_match_first_only,
+      testProperty "parseTwoChars matches second char only" prop_parseTwoChars_match_second_only,
+      testProperty "parseTwoChars matches none" prop_parseTwoChars_match_none
     ]
 
 instance (Arbitrary a) => Arbitrary (Parser a) where
@@ -113,6 +117,22 @@ prop_parserInt_digit :: String -> Property
 prop_parserInt_digit s = forAll (elements ['0' .. '9']) $ \c ->
   runParser parserInt (c : s) === Just (read [c], s)
 
-prop_parserInt_not_digit :: String -> Property
-prop_parserInt_not_digit s = forAll (arbitrary `suchThat` (not . isDigit)) $ \c ->
-  runParser parserInt (c : s) === Nothing
+prop_parserInt_not_digit :: Char -> String -> Property
+prop_parserInt_not_digit c s =
+  not (isDigit c) ==> runParser parserInt (c : s) === Nothing
+
+prop_parseTwoChars_match_both :: String -> Property
+prop_parseTwoChars_match_both s =
+  runParser parseTwoChars ("ab" ++ s) === Just ("ab", s)
+
+prop_parseTwoChars_match_first_only :: Char -> String -> Property
+prop_parseTwoChars_match_first_only c s =
+  c /= 'b' ==> runParser parseTwoChars ('a' : c : s) === Nothing
+
+prop_parseTwoChars_match_second_only :: Char -> String -> Property
+prop_parseTwoChars_match_second_only c s =
+  c /= 'a' ==> runParser parseTwoChars (c : 'b' : s) === Nothing
+
+prop_parseTwoChars_match_none :: Char -> Char -> String -> Property
+prop_parseTwoChars_match_none c1 c2 s =
+  c1 /= 'a' && c2 /= 'b' ==> runParser parseTwoChars (c1 : c2 : s) === Nothing
