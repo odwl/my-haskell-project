@@ -2,8 +2,9 @@
 
 module Lambda.ParserTest (parserTests) where
 
+import Control.Applicative (Alternative (..))
 import Data.Char (isDigit, isSpace)
-import Parser (Parser (..), digit, endOfStream, parseTwoChars, parserInt, satisfy, term1, whiteSpace)
+import Parser (Parser (..), digit, endOfStream, parseChar, parseString, parseTwoChars, parserInt, satisfy, whiteSpace)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -42,8 +43,11 @@ quickTests =
     [ testProperty "satisfy strictly matches character" prop_satisfiesMatchingChar,
       testProperty "satisfy rejects non-matching character" prop_nonMatchingChar,
       testProperty "satisfy rejects empty string" prop_emptyString,
-      testProperty "term1 matches character" prop_term1,
-      testProperty "term1 rejects non-matching character" prop_term1_nothing,
+      testProperty "parseChar matches character" prop_parseChar,
+      testProperty "parseChar rejects non-matching character" prop_parseChar_nothing,
+      testProperty "parseString matches specific string" prop_parseString,
+      testProperty "Alternative <|> tries second parser on failure" prop_alternative_choice,
+      testProperty "Alternative empty always fails" prop_alternative_empty,
       testProperty "digit matches digits" prop_digit,
       testProperty "digit rejects non-digits" prop_not_digit,
       testProperty "whiteSpace matches whitespace" prop_whiteSpace,
@@ -85,13 +89,25 @@ prop_emptyString :: Char -> Property
 prop_emptyString c =
   runParser (satisfy (== c)) "" === Nothing
 
-prop_term1 :: Char -> String -> Property
-prop_term1 c s =
-  runParser (term1 c) (c : s) === Just (c, s)
+prop_parseChar :: Char -> String -> Property
+prop_parseChar c s =
+  runParser (parseChar c) (c : s) === Just (c, s)
 
-prop_term1_nothing :: Char -> Char -> String -> Property
-prop_term1_nothing c1 c2 s =
-  c1 /= c2 ==> runParser (term1 c1) (c2 : s) === Nothing
+prop_parseChar_nothing :: Char -> Char -> String -> Property
+prop_parseChar_nothing c1 c2 s =
+  c1 /= c2 ==> runParser (parseChar c1) (c2 : s) === Nothing
+
+prop_parseString :: String -> String -> Property
+prop_parseString target rest =
+  runParser (parseString target) (target ++ rest) === Just (target, rest)
+
+prop_alternative_choice :: String -> Property
+prop_alternative_choice s =
+  runParser (parseChar 'a' <|> parseChar 'b') ("b" ++ s) === Just ('b', s)
+
+prop_alternative_empty :: String -> Property
+prop_alternative_empty s =
+  runParser (empty :: Parser Int) s === Nothing
 
 prop_digit :: String -> Property
 prop_digit s = forAll (elements ['0' .. '9']) $ \c ->

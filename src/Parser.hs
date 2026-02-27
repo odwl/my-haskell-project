@@ -1,5 +1,6 @@
-module Parser (Parser (..), satisfy, term1, digit, whiteSpace, endOfStream, parserInt, parseTwoChars) where
+module Parser (Parser (..), satisfy, parseChar, parseString, digit, whiteSpace, endOfStream, parserInt, parseTwoChars) where
 
+import Control.Applicative (Alternative (..))
 import Data.Bifunctor (first)
 import Data.Char
 
@@ -17,6 +18,10 @@ instance Applicative Parser where
     (x, s'') <- px s'
     Just (f x, s'')
 
+instance Alternative Parser where
+  empty = Parser (const Nothing)
+  (Parser p1) <|> (Parser p2) = Parser $ \s -> p1 s <|> p2 s
+
 instance Monad Parser where
   (>>=) (Parser p) f = Parser $ \s -> case p s of
     Nothing -> Nothing
@@ -28,8 +33,11 @@ satisfy p = Parser f
     f (x : xs) | p x = Just (x, xs)
     f _ = Nothing
 
-term1 :: Char -> Parser Char
-term1 c = satisfy (== c)
+parseChar :: Char -> Parser Char
+parseChar c = satisfy (== c)
+
+parseString :: String -> Parser String
+parseString = traverse parseChar
 
 digit :: Parser Char
 digit = satisfy isDigit
@@ -47,7 +55,7 @@ parserInt :: Parser Int
 parserInt = digitToInt <$> digit
 
 parseTwoChars :: Parser String
-parseTwoChars = (\a b -> [a, b]) <$> term1 'a' <*> term1 'b'
+parseTwoChars = (\a b -> [a, b]) <$> parseChar 'a' <*> parseChar 'b'
 
 -- parseTwoChars = do
 --   c1 <- term1 'a'
