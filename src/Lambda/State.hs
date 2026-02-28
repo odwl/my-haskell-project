@@ -41,6 +41,24 @@ evalState m s = fst (runState m s)
 execState :: State s a -> s -> s
 execState m s = snd (runState m s)
 
+type Random a = State Int a
+
+fresh :: Random Int
+fresh = State $ \i ->
+  let a = 6364136223846793005 :: Integer
+      c = 1442695040888963407 :: Integer
+      m = 2 ^ (64 :: Integer)
+      next = (a * toInteger i + c) `mod` m
+   in (i, fromIntegral next)
+
+runPRNG :: Random a -> Int -> a
+runPRNG m s = evalState m s
+
+-- | Example: Turn any expression into one with random variables.
+-- This uses the Fact that Expr is Traversable!
+randomizeExpr :: Expr a -> Random (Expr Int)
+randomizeExpr = traverse (const fresh)
+
 data Expr a = Var a | Add (Expr a) (Expr a) deriving (Show, Functor, Eq, Foldable, Traversable)
 
 instance Applicative Expr where
