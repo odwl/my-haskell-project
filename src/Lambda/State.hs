@@ -8,7 +8,7 @@ module Lambda.State where
 import Control.Arrow ((&&&))
 import Control.Monad (ap)
 import Data.Bifunctor (first, second)
-import Data.Word (Word8)
+import Data.Word
 
 newtype State s a = State {runState :: s -> (a, s)}
 
@@ -48,7 +48,7 @@ fresh = State $ \i ->
       c = 1442695040888963407 :: Integer
       m = 2 ^ (64 :: Integer)
       next = (a * toInteger i + c) `mod` m
-   in (fromIntegral (toInteger i `mod` 256), fromIntegral (next `mod` toInteger (maxBound :: Int)))
+   in (fromIntegral (toInteger next `mod` 256), fromIntegral next)
 
 runPRNG :: Random a -> Int -> a
 runPRNG m s = evalState m s
