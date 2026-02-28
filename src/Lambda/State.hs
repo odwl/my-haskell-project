@@ -40,7 +40,7 @@ evalState m s = fst (runState m s)
 execState :: State s a -> s -> s
 execState m s = snd (runState m s)
 
-type Random a = State Int a
+type Random a = State Integer a
 
 -- LCG Parameters (Numerical Recipes)
 lcgMultiplier :: Integer
@@ -54,11 +54,11 @@ lcgModulus = 2 ^ (64 :: Integer)
 
 fresh :: Random Word8
 fresh = State $ \i ->
-  let next = (lcgMultiplier * toInteger i + lcgIncrement) `mod` lcgModulus
-   in (fromIntegral next, fromIntegral next)
+  let next = (lcgMultiplier * i + lcgIncrement) `mod` lcgModulus
+   in (fromIntegral next, next)
 
-runPRNG :: Random a -> Int -> a
-runPRNG m s = evalState m s
+runPRNG :: Random a -> Integer -> a
+runPRNG = evalState
 
 -- | Example: Turn any expression into one with random variables.
 -- This uses the Fact that Expr is Traversable!
