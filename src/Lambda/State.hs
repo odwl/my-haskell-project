@@ -8,6 +8,7 @@ module Lambda.State where
 import Control.Arrow ((&&&))
 import Control.Monad (ap)
 import Data.Bifunctor (first, second)
+import Data.Word (Word8)
 
 newtype State s a = State {runState :: s -> (a, s)}
 
@@ -41,21 +42,33 @@ execState m s = snd (runState m s)
 
 type Random a = State Int a
 
-fresh :: Random Int
+fresh :: Random Word8
 fresh = State $ \i ->
   let a = 6364136223846793005 :: Integer
       c = 1442695040888963407 :: Integer
       m = 2 ^ (64 :: Integer)
       next = (a * toInteger i + c) `mod` m
-   in (fromIntegral next, fromIntegral next)
+   in (fromIntegral (toInteger i `mod` 256), fromIntegral (next `mod` toInteger (maxBound :: Int)))
 
 runPRNG :: Random a -> Int -> a
 runPRNG m s = evalState m s
 
 -- | Example: Turn any expression into one with random variables.
 -- This uses the Fact that Expr is Traversable!
-randomizeExpr :: Expr a -> Random (Expr Int)
+randomizeExpr :: Expr a -> Random (Expr Word8)
 randomizeExpr = traverse (const fresh)
+
+{-
+-- This is what 'traverse' is doing for you "under the hood":
+randomizeExprManual :: Expr a -> Random (Expr Int)
+randomizeExprManual (Var _) = do
+  n <- fresh       -- Pull a random number/update state
+  return (Var n)
+randomizeExprManual (Add e1 e2) = do
+  e1' <- randomizeExprManual e1  -- Process left side (passing seed along)
+  e2' <- randomizeExprManual e2  -- Process right side (using new seed)
+  return (Add e1' e2')           -- Rebuild the tree
+-}
 
 data Expr a = Var a | Add (Expr a) (Expr a) deriving (Show, Functor, Eq, Foldable, Traversable)
 
