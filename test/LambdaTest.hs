@@ -1,4 +1,4 @@
-module Main where
+module LambdaTest (lambdaSuite) where
 
 import Lambda
 import Lambda.FunctorTest (functorTests)
@@ -53,8 +53,8 @@ addMaybesTests =
       testCase "Nothing + Nothing" $ addMaybes Nothing Nothing @?= Nothing
     ]
 
-tests :: TestTree
-tests =
+lambdaSuite :: TestTree
+lambdaSuite =
   testGroup
     "Lambda Suite"
     [ addMaybesTests,
@@ -67,8 +67,3 @@ tests =
       parserTests,
       stateTests
     ]
-
-main :: IO ()
-main = do
-  putStrLn "\n--- Running: Lambda Suite ---"
-  defaultMain tests

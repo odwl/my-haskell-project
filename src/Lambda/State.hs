@@ -4,6 +4,7 @@
 module Lambda.State where
 
 import Control.Arrow ((&&&))
+import Control.Monad (ap)
 import Data.Bifunctor (first, second)
 
 newtype State s a = State
@@ -45,10 +46,12 @@ instance Applicative Expr where
   pure = Var
 
   (<*>) :: Expr (a -> b) -> Expr a -> Expr b
-  Var f <*> mx = f <$> mx
-  Add f1 f2 <*> mx = Add (f1 <*> mx) (f2 <*> mx)
+  (<*>) = ap
 
 instance Monad Expr where
   (>>=) :: Expr a -> (a -> Expr b) -> Expr b
   Var x >>= f = f x
   Add e1 e2 >>= f = Add (e1 >>= f) (e2 >>= f)
+
+replace :: (Eq a) => [(a, b)] -> Expr a -> Expr (Maybe b)
+replace l = fmap (`lookup` l)

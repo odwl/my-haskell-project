@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Lambda.StateTest (stateTests) where
 
 import Lambda.State
@@ -6,7 +8,7 @@ import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck (testProperties)
+import Test.Tasty.QuickCheck (testProperties, testProperty)
 
 instance (Arbitrary a) => Arbitrary (Expr a) where
   arbitrary = sized expr'
@@ -36,6 +38,11 @@ stateTests =
         [ testBatch (functor (undefined :: Expr (Int, Int, Int))),
           testBatch (applicative (undefined :: Expr (Int, Int, Int))),
           testBatch (monad (undefined :: Expr (Int, Int, Int)))
+        ],
+      testGroup
+        "replace function"
+        [ testProperty "replace []" prop_replace_empty,
+          testProperty "replace is fmap lookup" prop_replace_fmap_equiv
         ]
     ]
   where
@@ -55,3 +62,9 @@ complexCalc = do
   modify (* 2) -- 10 -> 20
   modify (+ 10) -- 20 -> 30
   addOne -- 30 -> 31
+
+prop_replace_empty :: Expr Int -> Bool
+prop_replace_empty expr = replace [] expr == (fmap (const Nothing) expr :: Expr (Maybe Int))
+
+prop_replace_fmap_equiv :: [(Int, Int)] -> Expr Int -> Bool
+prop_replace_fmap_equiv l expr = replace l expr == fmap (`lookup` l) expr

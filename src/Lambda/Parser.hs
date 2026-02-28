@@ -1,6 +1,7 @@
 module Lambda.Parser (Parser (..), satisfy, parseChar, parseString, digit, whiteSpace, endOfStream, parserInt, parseTwoChars) where
 
 import Control.Applicative (Alternative (..))
+import Control.Monad (ap)
 import Data.Bifunctor (first)
 import Data.Char
 
@@ -13,10 +14,7 @@ instance Functor Parser where
 
 instance Applicative Parser where
   pure x = Parser (\s -> Just (x, s))
-  (Parser pf) <*> (Parser px) = Parser $ \s -> do
-    (f, s') <- pf s
-    (x, s'') <- px s'
-    Just (f x, s'')
+  (<*>) = ap
 
 instance Alternative Parser where
   empty = Parser (const Nothing)

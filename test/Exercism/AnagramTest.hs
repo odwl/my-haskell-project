@@ -1,7 +1,6 @@
 module Exercism.AnagramTest (anagramTests, main) where
 
 import Data.Char
-import Data.List
 import Exercism.Anagram (anagramOf, anagramsFor)
 import Test.QuickCheck
 import Test.Tasty (TestTree, defaultMain, testGroup)
