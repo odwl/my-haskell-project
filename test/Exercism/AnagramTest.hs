@@ -1,10 +1,10 @@
-module Exercism.AnagramTest (anagramTests) where
+module Exercism.AnagramTest (anagramTests, main) where
 
 import Data.Char
 import Data.List
 import Exercism.Anagram (anagramOf, anagramsFor)
 import Test.QuickCheck
-import Test.Tasty (TestTree, testGroup)
+import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck
 
@@ -29,7 +29,8 @@ anagramOfTests =
   testGroup
     "Anagram"
     [ testCase "no matches" $ anagramOf "diaper" "hello" @?= False,
-      testCase "one matche" $ anagramOf "diaper" "perdia" @?= True
+      testCase "one match" $ anagramOf "diaper" "perdia" @?= True,
+      testCase "case-insensitive self-matching" $ anagramOf "mM" "Mm" @?= False
     ]
 
 -- ==========================================
@@ -50,7 +51,10 @@ prop_id s = property $ not $ anagramOf s s
 
 prop_shuffle :: String -> Property
 prop_shuffle s =
-  length (nub s) > 1 ==> forAll (suchThat (shuffle s) (/= s)) $ \t -> anagramOf s t
+  length (nub lowerS) > 1 ==>
+    forAll (suchThat (shuffle s) ((/= lowerS) . map toLower)) (anagramOf s)
+  where
+    lowerS = map toLower s
 
 prop_mostly_anagram :: Property
 prop_mostly_anagram =
@@ -62,3 +66,6 @@ genMostlyAnagram = do
   let lowerS1 = map toLower s1
   char <- suchThat arbitrary $ \c -> notElem (toLower c) lowerS1
   fmap ((,) s1) $ shuffle (char : tail s1)
+
+main :: IO ()
+main = defaultMain anagramTests
