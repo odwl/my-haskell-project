@@ -42,13 +42,20 @@ execState m s = snd (runState m s)
 
 type Random a = State Int a
 
+-- LCG Parameters (Numerical Recipes)
+lcgMultiplier :: Integer
+lcgMultiplier = 6364136223846793005
+
+lcgIncrement :: Integer
+lcgIncrement = 1442695040888963407
+
+lcgModulus :: Integer
+lcgModulus = 2 ^ (64 :: Integer)
+
 fresh :: Random Word8
 fresh = State $ \i ->
-  let a = 6364136223846793005 :: Integer
-      c = 1442695040888963407 :: Integer
-      m = 2 ^ (64 :: Integer)
-      next = (a * toInteger i + c) `mod` m
-   in (fromIntegral (toInteger next `mod` 256), fromIntegral next)
+  let next = (lcgMultiplier * toInteger i + lcgIncrement) `mod` lcgModulus
+   in (fromIntegral next, fromIntegral next)
 
 runPRNG :: Random a -> Int -> a
 runPRNG m s = evalState m s
