@@ -1,4 +1,4 @@
-module Parser (Parser (..), satisfy, parseChar, parseString, digit, whiteSpace, endOfStream, parserInt, parseTwoChars) where
+module Lambda.Parser (Parser (..), satisfy, parseChar, parseString, digit, whiteSpace, endOfStream, parserInt, parseTwoChars) where
 
 import Control.Applicative (Alternative (..))
 import Data.Bifunctor (first)

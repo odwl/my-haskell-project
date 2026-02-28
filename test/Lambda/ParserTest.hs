@@ -4,7 +4,7 @@ module Lambda.ParserTest (parserTests) where
 
 import Control.Applicative (Alternative (..))
 import Data.Char (isDigit, isSpace)
-import Parser (Parser (..), digit, endOfStream, parseChar, parseString, parseTwoChars, parserInt, satisfy, whiteSpace)
+import Lambda.Parser (Parser (..), digit, endOfStream, parseChar, parseString, parseTwoChars, parserInt, satisfy, whiteSpace)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
