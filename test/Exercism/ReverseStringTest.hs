@@ -1,9 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Exercism.ReverseStringTest where
+module Exercism.ReverseStringTest (reverseStringTests, main) where
 
 import Exercism.ReverseString (reverseString)
-import Test.Tasty (TestTree, testGroup)
+import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck
   ( Property,
@@ -74,3 +74,6 @@ cases =
     Case "a palindrome" "racecar" "racecar",
     Case "an even-sized word" "drawer" "reward"
   ]
+
+main :: IO ()
+main = defaultMain reverseStringTests

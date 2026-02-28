@@ -4,6 +4,7 @@ import Lambda
 import Lambda.FunctorTest (functorTests)
 import Lambda.MonadTest (monadTests)
 import Lambda.ParserTest (parserTests)
+import Lambda.StateTest (stateTests)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -63,7 +64,8 @@ tests =
       safeDivTests,
       functorTests,
       monadTests,
-      parserTests
+      parserTests,
+      stateTests
     ]
 
 main :: IO ()

@@ -1,12 +1,12 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Exercism.PangramTest (pangramTests) where
+module Exercism.PangramTest (pangramTests, main) where
 
 import Control.Monad (forM)
 import Data.Char (toLower, toUpper)
 import Data.List (delete)
 import Exercism.Pangram (isPangram)
-import Test.Tasty (TestTree, testGroup)
+import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck
   ( Arbitrary (arbitrary),
@@ -112,3 +112,6 @@ genPangramWithNoise = do
   alphabetRandomCase <- forM alphabet $ \c -> elements [c, toUpper c]
   noise <- listOf arbitrary
   shuffle (alphabetRandomCase ++ noise)
+
+main :: IO ()
+main = defaultMain pangramTests

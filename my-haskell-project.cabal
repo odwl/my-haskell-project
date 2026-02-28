@@ -15,7 +15,7 @@ common share-tests-deps
   default-language: Haskell2010
   build-depends:
     base >=4.14 && <5,
-    my-haskell-project,
+    containers,
     tasty,
     tasty-hunit,
     tasty-quickcheck,
@@ -33,8 +33,10 @@ library
     Lambda
     Lambda.Functor
     Lambda.Parser
+    Lambda.State
 
   hs-source-dirs: src
+  ghc-options: -fbyte-code
   default-language: Haskell2010
   build-depends:
     base >=4.14 && <5,
@@ -60,34 +62,60 @@ test-suite my-test
   import: share-tests-deps
   type: exitcode-stdio-1.0
   main-is: HelloWorldTest.hs
-  hs-source-dirs: test
+  hs-source-dirs:
+    test
+    src
+
+  ghc-options: -fbyte-code
+  other-modules: HelloWorld
   build-depends: HUnit
 
 test-suite lambda-test
   import: share-tests-deps
   type: exitcode-stdio-1.0
   main-is: LambdaTest.hs
-  hs-source-dirs: test
+  hs-source-dirs:
+    test
+    src
+
   other-modules:
+    Lambda
+    Lambda.Functor
     Lambda.FunctorTest
     Lambda.MonadTest
+    Lambda.Parser
     Lambda.ParserTest
+    Lambda.State
+    Lambda.StateTest
 
   build-depends:
+    QuickCheck,
     checkers,
     mtl,
+
+  ghc-options: -fbyte-code
 
 test-suite exercism-test
   import: share-tests-deps
   type: exitcode-stdio-1.0
   main-is: ExercismTest.hs
   other-modules:
+    Exercism.Anagram
     Exercism.AnagramTest
+    Exercism.Bob
     Exercism.BobTest
+    Exercism.Pangram
     Exercism.PangramTest
+    Exercism.ReverseString
     Exercism.ReverseStringTest
+    HelloWorld
 
-  hs-source-dirs: test
+  hs-source-dirs:
+    test
+    src
+
   build-depends:
     QuickCheck,
     containers,
+
+  ghc-options: -fbyte-code

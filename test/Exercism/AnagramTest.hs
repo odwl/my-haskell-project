@@ -49,12 +49,13 @@ quickCheckAnagramTests =
 prop_id :: String -> Property
 prop_id s = property $ not $ anagramOf s s
 
-prop_shuffle :: String -> Property
-prop_shuffle s =
-  length (nub lowerS) > 1 ==>
-    forAll (suchThat (shuffle s) ((/= lowerS) . map toLower)) (anagramOf s)
+prop_shuffle :: Char -> String -> Property
+prop_shuffle c s =
+  (toLower c `notElem` map toLower s) ==>
+    forAll (suchThat (shuffle word) ((/= lowerWord) . map toLower)) (anagramOf word)
   where
-    lowerS = map toLower s
+    word = c : s
+    lowerWord = map toLower word
 
 prop_mostly_anagram :: Property
 prop_mostly_anagram =

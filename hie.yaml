@@ -1,0 +1,14 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:my-haskell-project"
+    - path: "test/Exercism"
+      component: "test:exercism-test"
+    - path: "test/Lambda"
+      component: "test:lambda-test"
+    - path: "test/HelloWorldTest.hs"
+      component: "test:my-test"
+    - path: "test/ExercismTest.hs"
+      component: "test:exercism-test"
+    - path: "test/LambdaTest.hs"
+      component: "test:lambda-test"
