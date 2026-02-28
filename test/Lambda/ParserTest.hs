@@ -48,6 +48,9 @@ quickTests =
       testProperty "parseString matches specific string" prop_parseString,
       testProperty "Alternative <|> tries second parser on failure" prop_alternative_choice,
       testProperty "Alternative empty always fails" prop_alternative_empty,
+      testProperty "Alternative Law: Left Identity" prop_alternative_left_identity,
+      testProperty "Alternative Law: Right Identity" prop_alternative_right_identity,
+      testProperty "Alternative is left-biased" prop_alternative_left_bias,
       testProperty "digit matches digits" prop_digit,
       testProperty "digit rejects non-digits" prop_not_digit,
       testProperty "whiteSpace matches whitespace" prop_whiteSpace,
@@ -108,6 +111,18 @@ prop_alternative_choice s =
 prop_alternative_empty :: String -> Property
 prop_alternative_empty s =
   runParser (empty :: Parser Int) s === Nothing
+
+prop_alternative_left_identity :: Parser Int -> String -> Property
+prop_alternative_left_identity p s =
+  runParser (empty <|> p) s === runParser p s
+
+prop_alternative_right_identity :: Parser Int -> String -> Property
+prop_alternative_right_identity p s =
+  runParser (p <|> empty) s === runParser p s
+
+prop_alternative_left_bias :: String -> Property
+prop_alternative_left_bias s =
+  runParser (parseString "a" <|> parseString "ab") ("ab" ++ s) === Just ("a", "b" ++ s)
 
 prop_digit :: String -> Property
 prop_digit s = forAll (elements ['0' .. '9']) $ \c ->

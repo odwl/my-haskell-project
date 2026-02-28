@@ -55,8 +55,9 @@ parserInt :: Parser Int
 parserInt = digitToInt <$> digit
 
 parseTwoChars :: Parser String
-parseTwoChars = (\a b -> [a, b]) <$> parseChar 'a' <*> parseChar 'b'
+parseTwoChars = parseString "ab"
 
+-- parseTwoChars = (\a b -> [a, b]) <$> parseChar 'a' <*> parseChar 'b'
 -- parseTwoChars = do
 --   c1 <- term1 'a'
 --   c2 <- term1 'b'
