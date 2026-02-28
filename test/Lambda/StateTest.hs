@@ -2,6 +2,7 @@
 
 module Lambda.StateTest (stateTests) where
 
+import Data.Foldable (toList)
 import Lambda.State
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
@@ -41,8 +42,8 @@ stateTests =
         ],
       testGroup
         "replace function"
-        [ testProperty "replace []" prop_replace_empty,
-          testProperty "replace is fmap lookup" prop_replace_fmap_equiv
+        [ testProperty "no matches (0% overlap)" prop_replace_no_matches,
+          testProperty "all matches (100% overlap)" prop_replace_all_matches
         ]
     ]
   where
@@ -63,8 +64,21 @@ complexCalc = do
   modify (+ 10) -- 20 -> 30
   addOne -- 30 -> 31
 
-prop_replace_empty :: Expr Int -> Bool
-prop_replace_empty expr = replace [] expr == (fmap (const Nothing) expr :: Expr (Maybe Int))
+prop_replace_no_matches :: Expr Int -> [Int] -> Property
+prop_replace_no_matches expr vals =
+  forAll (genDisjointDict expr vals) $ \dict ->
+    replace dict expr === (Nothing <$ expr)
 
-prop_replace_fmap_equiv :: [(Int, Int)] -> Expr Int -> Bool
-prop_replace_fmap_equiv l expr = replace l expr == fmap (`lookup` l) expr
+prop_replace_all_matches :: [(Int, Int)] -> Expr Int -> Property
+prop_replace_all_matches dict rawExpr =
+  not (null dict) ==>
+    let keys = map fst dict
+        expr = (\x -> keys !! (abs x `mod` length keys)) <$> rawExpr
+     in replace dict expr === fmap (`lookup` dict) expr
+
+-- | Generates a dictionary by zipping a list of values with keys guaranteed to be absent from the expression.
+genDisjointDict :: (Arbitrary a, Eq a) => Expr a -> [b] -> Gen [(a, b)]
+genDisjointDict expr vals = do
+  let forbidden = toList expr
+  keys <- vectorOf (length vals) (arbitrary `suchThat` (`notElem` forbidden))
+  return (zip keys vals)

@@ -1,4 +1,6 @@
+{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE InstanceSigs #-}
 
 module Lambda.State where
@@ -39,7 +41,7 @@ evalState m s = fst (runState m s)
 execState :: State s a -> s -> s
 execState m s = snd (runState m s)
 
-data Expr a = Var a | Add (Expr a) (Expr a) deriving (Show, Functor, Eq)
+data Expr a = Var a | Add (Expr a) (Expr a) deriving (Show, Functor, Eq, Foldable, Traversable)
 
 instance Applicative Expr where
   pure :: a -> Expr a
