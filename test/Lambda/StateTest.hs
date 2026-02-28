@@ -3,6 +3,7 @@
 module Lambda.StateTest (stateTests) where
 
 import Data.Foldable (toList)
+import Data.Maybe (fromJust, isNothing)
 import Lambda.State
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
@@ -44,6 +45,10 @@ stateTests =
         "replace function"
         [ testProperty "no matches (0% overlap)" prop_replace_no_matches,
           testProperty "all matches (100% overlap)" prop_replace_all_matches
+        ],
+      testGroup
+        "convert function"
+        [ testProperty "correct traversal logic" prop_convert_logic
         ]
     ]
   where
@@ -82,3 +87,10 @@ genDisjointDict expr vals = do
   let forbidden = toList expr
   keys <- vectorOf (length vals) (arbitrary `suchThat` (`notElem` forbidden))
   return (zip keys vals)
+
+prop_convert_logic :: Expr (Maybe Int) -> Property
+prop_convert_logic expr =
+  let res = convert expr
+   in if any isNothing expr
+        then res === Nothing
+        else res === Just (fromJust <$> expr)

@@ -57,3 +57,6 @@ instance Monad Expr where
 
 replace :: (Eq a) => [(a, b)] -> Expr a -> Expr (Maybe b)
 replace l = fmap (`lookup` l)
+
+convert :: Expr (Maybe a) -> Maybe (Expr a)
+convert = traverse id
