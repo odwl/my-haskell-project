@@ -9,9 +9,7 @@ import Control.Arrow ((&&&))
 import Control.Monad (ap)
 import Data.Bifunctor (first, second)
 
-newtype State s a = State
-  { runState :: s -> (a, s)
-  }
+newtype State s a = State {runState :: s -> (a, s)}
 
 instance Functor (State s) where
   fmap :: (a -> b) -> State s a -> State s b
@@ -49,7 +47,7 @@ fresh = State $ \i ->
       c = 1442695040888963407 :: Integer
       m = 2 ^ (64 :: Integer)
       next = (a * toInteger i + c) `mod` m
-   in (i, fromIntegral next)
+   in (fromIntegral next, fromIntegral next)
 
 runPRNG :: Random a -> Int -> a
 runPRNG m s = evalState m s
