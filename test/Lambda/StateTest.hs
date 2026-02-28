@@ -92,5 +92,5 @@ prop_convert_logic :: Expr (Maybe Int) -> Property
 prop_convert_logic expr =
   let res = convert expr
    in if any isNothing expr
-        then res === Nothing
-        else res === Just (fromJust <$> expr)
+        then classify True "result is Nothing" $ res === Nothing
+        else classify True "result is Just" $ res === Just (fromJust <$> expr)
