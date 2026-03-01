@@ -5,7 +5,7 @@ module Lambda.ParserTest (parserTests) where
 import Prelude hiding (exp)
 import Control.Applicative (Alternative (..))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
-import Lambda.Parser (AExp (..), Exp (..), ReadP, Stmt (..), aexp, digit, identifier, num, stmt, whiteSpace)
+import Lambda.Parser (AExp (..), Exp (..), ReadP, Stmt (..), Stmts (..),aexp, digit, identifier, num, stmt, stmts, whiteSpace)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -65,18 +65,20 @@ quickTests = [
       testProperty "identifier rejects names with invalid start" prop_identifier_reject_invalid_start,
       testProperty "aexp parses numbers" prop_aexp_num,
       testProperty "aexp rejects invalid sequence" prop_aexp_invalid,
-      testProperty "stmt parses x:=2" prop_stmt_x_2,
+      
       testProperty "stmt matches valid assignment" prop_stmt_valid
-    ]
-  --   ,
-  -- testGroup
-  --   "Full Grammar Integration"
-  --   [ testCase "parses complex program" $
+    ],
+  testGroup
+    "Test Examples"
+    [ 
+      testProperty "stmts parses x:=2" prop_stmt_x_2,
+      testProperty "stmt parses x:=2;y=1" prop_stmt_semi
+      -- testCase "parses complex program" $
   --       let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
   --           -- TODO: Replace `undefined` with your top-level parser (e.g., `parseStmts` or `stmts`)
   --           parser = undefined :: ReadP [Stmt]
   --        in runReadP parser input @?= Just ([], "") -- TODO: Replace `[]` with the full AST
-  --   ]
+     ]
   ]
 
 instance (Arbitrary a) => Arbitrary (ReadP a) where
@@ -235,5 +237,7 @@ genValidStmt = do
 -- ==========================================
 
 prop_stmt_x_2 :: Property
-prop_stmt_x_2 =
-  property $ runReadP stmt "x :=21 Noise" === Just (Assign "x" (E_AExp (Num 21)), "Noise")
+prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just (Single (Assign "x" (E_AExp (Num 21))), "Noise")
+
+prop_stmt_semi :: Property
+prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just (Seq (Assign "x" (E_AExp (Num 21))) (Single (Assign "y" (E_AExp (Num 2)))), "")
