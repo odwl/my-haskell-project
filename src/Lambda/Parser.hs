@@ -1,6 +1,5 @@
 module Lambda.Parser (ReadP, digit, whiteSpace, num, identifier, aexp, exp, stmt, stmts, Stmt (..), Stmts (..), Exp (..), AExp (..)) where
 
-import Control.Applicative ((<|>))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
 import Text.ParserCombinators.ReadP (ReadP, munch, munch1, satisfy, skipSpaces, string, (<++))
 import Prelude hiding (exp)
@@ -18,9 +17,9 @@ identifier = lexeme $ do
   return (c : cs)
 
 stmts :: ReadP Stmts
-stmts = do 
+stmts = do
   s <- stmt
-  let sequenceSemicolon = fmap (Seq s) (lexeme (string ";") *> stmts) 
+  let sequenceSemicolon = fmap (Seq s) (lexeme (string ";") *> stmts)
   sequenceSemicolon <++ return (Single s)
 
 stmt :: ReadP Stmt
@@ -57,7 +56,7 @@ lexeme p = p <* skipSpaces
 
 -- -- | Token parser
 -- token :: ReadP a -> ReadP a
--- token p = p <* spaces 
+-- token p = p <* spaces
 
 -- -- | Symbol parser
 -- symbol :: String -> ReadP String
@@ -66,8 +65,8 @@ lexeme p = p <* skipSpaces
 -- | Types
 type Id = String
 
-data Stmts 
-  = Seq Stmt Stmts 
+data Stmts
+  = Seq Stmt Stmts
   | Single Stmt
   deriving (Show, Eq)
 
