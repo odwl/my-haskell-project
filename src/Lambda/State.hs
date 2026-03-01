@@ -3,46 +3,14 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE InstanceSigs #-}
 
-module Lambda.State where
+module Lambda.State (module Lambda.State, module Control.Monad.State) where
 
-import Control.Arrow ((&&&))
 import Control.Monad (ap)
-import Data.Bifunctor (first, second)
+import Control.Monad.State (State, state)
 import Data.Word
-
-newtype State s a = State {runState :: s -> (a, s)}
-
-instance Functor (State s) where
-  fmap :: (a -> b) -> State s a -> State s b
-  fmap f (State g) = State (first f . g)
-
-instance Applicative (State s) where
-  pure :: a -> State s a
-  pure x = State ((,) x)
-  (<*>) :: State s (a -> b) -> State s a -> State s b
-  (State pg) <*> (State px) = State (uncurry first . second px . pg)
-
-instance Monad (State s) where
-  (State g) >>= f = State (uncurry runState . first f . g)
-
-get :: State s s
-get = State (id &&& id)
-
-put :: s -> State s ()
-put = State . const . (,) ()
-
-modify :: (s -> s) -> State s ()
-modify f = State ((,) () . f)
-
-evalState :: State s a -> s -> a
-evalState m s = fst (runState m s)
-
-execState :: State s a -> s -> s
-execState m s = snd (runState m s)
 
 type Random a = State Integer a
 
--- LCG Parameters (Numerical Recipes)
 lcgMultiplier :: Integer
 lcgMultiplier = 6364136223846793005
 
@@ -53,29 +21,12 @@ lcgModulus :: Integer
 lcgModulus = 2 ^ (64 :: Integer)
 
 fresh :: Random Word8
-fresh = State $ \i ->
+fresh = state $ \i ->
   let next = (lcgMultiplier * i + lcgIncrement) `mod` lcgModulus
    in (fromIntegral next, next)
 
-runPRNG :: Random a -> Integer -> a
-runPRNG = evalState
-
--- | Example: Turn any expression into one with random variables.
--- This uses the Fact that Expr is Traversable!
 randomizeExpr :: Expr a -> Random (Expr Word8)
 randomizeExpr = traverse (const fresh)
-
-{-
--- This is what 'traverse' is doing for you "under the hood":
-randomizeExprManual :: Expr a -> Random (Expr Int)
-randomizeExprManual (Var _) = do
-  n <- fresh       -- Pull a random number/update state
-  return (Var n)
-randomizeExprManual (Add e1 e2) = do
-  e1' <- randomizeExprManual e1  -- Process left side (passing seed along)
-  e2' <- randomizeExprManual e2  -- Process right side (using new seed)
-  return (Add e1' e2')           -- Rebuild the tree
--}
 
 data Expr a = Var a | Add (Expr a) (Expr a) deriving (Show, Functor, Eq, Foldable, Traversable)
 
