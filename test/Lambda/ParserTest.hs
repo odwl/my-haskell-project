@@ -2,17 +2,17 @@
 
 module Lambda.ParserTest (parserTests) where
 
-import Prelude hiding (exp)
 import Control.Applicative (Alternative (..))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
-import Data.List (intercalate, unzip3)
-import Lambda.Parser (AExp (..), Exp (..), ReadP, Stmt (..), Stmts (..),aexp, digit, identifier, num, stmt, stmts, whiteSpace)
+import Data.List (intercalate)
+import Lambda.Parser (AExp (..), Exp (..), ReadP, Stmt (..), Stmts (..), aexp, digit, identifier, num, stmt, stmts, whiteSpace)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.ParserCombinators.ReadP (char, pfail, readP_to_S, satisfy, string)
+import Prelude hiding (exp)
 
 -- | Run parser and return the first result
 runReadP :: ReadP a -> String -> Maybe (a, String)
@@ -24,63 +24,63 @@ parserTests :: TestTree
 parserTests =
   testGroup
     "Parser Suite"
-    ([ testCase "satisfy matches character" $ parseA "abc" @?= Just ('a', "bc"),
-      testCase "satisfy does not match character" $ parseA "xbc" @?= Nothing,
-      testCase "satisfy on empty string" $ parseA "" @?= Nothing,
-      testCase "fmap maps ReadP Char to ReadP String" $ runReadP ((: []) <$> satisfy (== 'a')) "abc" @?= Just ("a", "bc"),
-      testCase "fmap maps with custom lambda" $ runReadP ((:) <*> (: []) <$> satisfy (== 'a')) "abc" @?= Just ("aa", "bc")
-    ] ++ quickTests ++ [
-      tastyBatch
-        (functor (undefined :: ReadP (Int, String, Int))),
-      tastyBatch
-        (applicative (undefined :: ReadP (Int, String, Int))),
-      tastyBatch
-        (monad (undefined :: ReadP (Int, String, Int)))
-    ])
+    ( [ testCase "satisfy matches character" $ parseA "abc" @?= Just ('a', "bc"),
+        testCase "satisfy does not match character" $ parseA "xbc" @?= Nothing,
+        testCase "satisfy on empty string" $ parseA "" @?= Nothing,
+        testCase "fmap maps ReadP Char to ReadP String" $ runReadP ((: []) <$> satisfy (== 'a')) "abc" @?= Just ("a", "bc"),
+        testCase "fmap maps with custom lambda" $ runReadP ((:) <*> (: []) <$> satisfy (== 'a')) "abc" @?= Just ("aa", "bc")
+      ]
+        ++ quickTests
+        ++ [ tastyBatch
+               (functor (undefined :: ReadP (Int, String, Int))),
+             tastyBatch
+               (applicative (undefined :: ReadP (Int, String, Int))),
+             tastyBatch
+               (monad (undefined :: ReadP (Int, String, Int)))
+           ]
+    )
   where
     parseA = runReadP (satisfy (== 'a'))
     tastyBatch (name, tests) = testProperties name tests
 
 quickTests :: [TestTree]
-quickTests = [
-  testGroup
-    "QuickCheck"
-    [ testProperty "satisfy strictly matches character" prop_satisfiesMatchingChar,
-      testProperty "satisfy rejects non-matching character" prop_nonMatchingChar,
-      testProperty "satisfy rejects empty string" prop_emptyString,
-      testProperty "Alternative <|> tries second parser on failure" prop_alternative_choice,
-      testProperty "Alternative empty always fails" prop_alternative_empty,
-      testProperty "Alternative Law: Left Identity" prop_alternative_left_identity,
-      testProperty "Alternative Law: Right Identity" prop_alternative_right_identity,
-      testProperty "Alternative is left-biased" prop_alternative_left_bias,
-      testProperty "digit matches digits" prop_digit,
-      testProperty "digit rejects non-digits" prop_not_digit,
-      testProperty "whiteSpace matches whitespace" prop_whiteSpace,
-      testProperty "whiteSpace rejects non-whitespace" prop_not_whiteSpace
-    ],
-  testGroup
-    "AST Parsing Properties"
-    [ testProperty "num parses sequence of digits" prop_num,
-      testProperty "num rejects invalid sequence" prop_num_invalid,
-      testProperty "identifier parses valid names" prop_identifier_valid,
-      testProperty "identifier rejects names with invalid start" prop_identifier_reject_invalid_start,
-      testProperty "aexp parses numbers" prop_aexp_num,
-      testProperty "aexp rejects invalid sequence" prop_aexp_invalid,
-      
-      testProperty "stmt matches valid assignment" prop_stmt_valid,
-      testProperty "stmts matches valid sequence of assignments" prop_stmts_valid
-    ],
-  testGroup
-    "Test Examples"
-    [ 
-      testProperty "stmts parses x:=2" prop_stmt_x_2,
-      testProperty "stmt parses x:=2;y=1" prop_stmt_semi
-      -- testCase "parses complex program" $
-  --       let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
-  --           -- TODO: Replace `undefined` with your top-level parser (e.g., `parseStmts` or `stmts`)
-  --           parser = undefined :: ReadP [Stmt]
-  --        in runReadP parser input @?= Just ([], "") -- TODO: Replace `[]` with the full AST
-     ]
+quickTests =
+  [ testGroup
+      "QuickCheck"
+      [ testProperty "satisfy strictly matches character" prop_satisfiesMatchingChar,
+        testProperty "satisfy rejects non-matching character" prop_nonMatchingChar,
+        testProperty "satisfy rejects empty string" prop_emptyString,
+        testProperty "Alternative <|> tries second parser on failure" prop_alternative_choice,
+        testProperty "Alternative empty always fails" prop_alternative_empty,
+        testProperty "Alternative Law: Left Identity" prop_alternative_left_identity,
+        testProperty "Alternative Law: Right Identity" prop_alternative_right_identity,
+        testProperty "Alternative is left-biased" prop_alternative_left_bias,
+        testProperty "digit matches digits" prop_digit,
+        testProperty "digit rejects non-digits" prop_not_digit,
+        testProperty "whiteSpace matches whitespace" prop_whiteSpace,
+        testProperty "whiteSpace rejects non-whitespace" prop_not_whiteSpace
+      ],
+    testGroup
+      "AST Parsing Properties"
+      [ testProperty "num parses sequence of digits" prop_num,
+        testProperty "num rejects invalid sequence" prop_num_invalid,
+        testProperty "identifier parses valid names" prop_identifier_valid,
+        testProperty "identifier rejects names with invalid start" prop_identifier_reject_invalid_start,
+        testProperty "aexp parses numbers" prop_aexp_num,
+        testProperty "aexp rejects invalid sequence" prop_aexp_invalid,
+        testProperty "stmt matches valid assignment" prop_stmt_valid,
+        testProperty "stmts matches valid sequence of assignments" prop_stmts_valid
+      ],
+    testGroup
+      "Test Examples"
+      [ testProperty "stmts parses x:=2" prop_stmt_x_2,
+        testProperty "stmt parses x:=2;y=1" prop_stmt_semi
+        -- testCase "parses complex program" $
+        --       let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
+        --           -- TODO: Replace `undefined` with your top-level parser (e.g., `parseStmts` or `stmts`)
+        --           parser = undefined :: ReadP [Stmt]
+        --        in runReadP parser input @?= Just ([], "") -- TODO: Replace `[]` with the full AST
+      ]
   ]
 
 instance (Arbitrary a) => Arbitrary (ReadP a) where
@@ -156,18 +156,18 @@ prop_num = forAll genNum $ \(n, spaces, s) ->
   runReadP num (show n ++ spaces ++ s) === Just (n, s)
 
 prop_num_invalid :: Property
-prop_num_invalid = 
+prop_num_invalid =
   forAll genNotNum $ \s ->
-  runReadP num s === Nothing
+    runReadP num s === Nothing
 
 prop_aexp_num :: Property
 prop_aexp_num = forAll genNum $ \(n, spaces, s) ->
   runReadP aexp (show n ++ spaces ++ s) === Just (Num n, s)
 
 prop_aexp_invalid :: Property
-prop_aexp_invalid = 
+prop_aexp_invalid =
   forAll genNotNum $ \s ->
-  runReadP aexp s === Nothing
+    runReadP aexp s === Nothing
 
 genSpaces :: Gen String
 genSpaces = elements $ "" : map pure " \t\n\r\f\v"
@@ -226,14 +226,13 @@ prop_stmt_valid =
   forAll genValidStmt $ \(stmtStr, stmtAst, rest) ->
     runReadP stmt (stmtStr ++ rest) === Just (stmtAst, rest)
 
-
 -- | Generates a valid statement.
 -- Returns a tuple containing:
 -- 1. The literal string representation of the statement (e.g. "x := \t 21  ")
 -- 2. The expected AST (e.g. Assign "x" (E_AExp (Num 21)))
 -- 3. A random trailing "rest" string that should be left unparsed
 genValidStmt :: Gen (String, Stmt, String)
-genValidStmt = do 
+genValidStmt = do
   (idStr, idSpaces, _) <- genInputStartingWithId
   (n, numSpaces, _) <- genNum
   opSpaces <- genSpaces
@@ -251,13 +250,13 @@ genValidStmts :: Gen (String, Stmts, String)
 genValidStmts = do
   stmtsList <- listOf1 genValidStmt
   let (strList, stmtList, restList) = unzip3 stmtsList
-  let input = intercalate ";" strList
+  spacer <- genSpaces
+  let input = intercalate (";" ++ spacer) strList
   let buildStmts [] = error "Unreachable"
       buildStmts [s] = Single s
-      buildStmts (s:ss) = Seq s (buildStmts ss)
-  let result = buildStmts stmtList  
+      buildStmts (s : ss) = Seq s (buildStmts ss)
+  let result = buildStmts stmtList
   let finalRest = last restList
-
   return (input, result, finalRest)
 
 prop_stmts_valid :: Property
