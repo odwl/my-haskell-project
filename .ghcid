@@ -1,4 +1,4 @@
 --command="cabal repl all-tests"
---test="main"
+--test="System.Environment.withArgs [\"-p\", \"Parser\"] main"
 --reload=src
 --reload=test
