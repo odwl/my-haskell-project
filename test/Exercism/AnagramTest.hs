@@ -50,7 +50,7 @@ prop_id s = property $ not $ anagramOf s s
 
 prop_shuffle :: Char -> String -> Property
 prop_shuffle c s =
-  (toLower c `notElem` map toLower s) ==>
+  (not (null s) && toLower c `notElem` map toLower s) ==>
     forAll (suchThat (shuffle word) ((/= lowerWord) . map toLower)) (anagramOf word)
   where
     word = c : s
