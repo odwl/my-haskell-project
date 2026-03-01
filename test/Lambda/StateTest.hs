@@ -2,6 +2,7 @@
 
 module Lambda.StateTest (stateTests) where
 
+import Control.Monad.State (evalState, execState, get, modify, put, runState)
 import Data.Foldable (toList)
 import Data.Maybe (fromJust, isNothing)
 import Lambda.State
