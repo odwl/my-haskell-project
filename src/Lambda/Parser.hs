@@ -11,7 +11,7 @@ whiteSpace :: ReadP Char
 whiteSpace = satisfy isSpace
 
 identifier :: ReadP String
-identifier = do
+identifier = lexeme $ do
   c <- satisfy (liftA2 (&&) isAscii isAlpha)
   cs <- munch (liftA2 (&&) isAscii isAlphaNum)
   return (c : cs)
@@ -19,7 +19,7 @@ identifier = do
 stmt :: ReadP Stmt
 stmt = do
   v <- identifier
-  _ <- string ":="
+  _ <- lexeme (string ":=")
   e <- exp
   return (Assign v e)
 

@@ -185,8 +185,8 @@ genNotNum = do
 
 prop_identifier_valid :: Property
 prop_identifier_valid =
-  forAll genInputStartingWithId $ \(idStr, rest) ->
-    runReadP identifier (idStr ++ rest) === Just (idStr, rest)
+  forAll genInputStartingWithId $ \(idStr, spaces, rest) ->
+    runReadP identifier (idStr ++ spaces ++ rest) === Just (idStr, rest)
 
 prop_identifier_reject_invalid_start :: String -> Property
 prop_identifier_reject_invalid_start s =
@@ -194,13 +194,14 @@ prop_identifier_reject_invalid_start s =
     classify (isDigit c) "first char is digit" $
       runReadP identifier (c : s) === Nothing
 
-genInputStartingWithId :: Gen (String, String)
+genInputStartingWithId :: Gen (String, String, String)
 genInputStartingWithId = do
   idFirst <- arbitrary `suchThat` (liftA2 (&&) isAscii isAlpha)
   idRest <- listOf $ arbitrary `suchThat` (liftA2 (&&) isAscii isAlphaNum)
-  separator <- arbitrary `suchThat` (\c -> not (isAscii c && isAlphaNum c))
+  spaces <- elements $ "" : map pure " \t\n\r\f\v"
+  separator <- arbitrary `suchThat` (\c -> not (isAscii c && isAlphaNum c) && not (isSpace c))
   rest <- arbitrary
-  return (idFirst : idRest, separator : rest)
+  return (idFirst : idRest, spaces, separator : rest)
 
 genInvalidStartChar :: Gen Char
 genInvalidStartChar =
@@ -221,10 +222,11 @@ prop_stmt_valid =
 
 genValidStmt :: Gen (String, Stmt, String)
 genValidStmt = do 
-  (idStr, _) <- genInputStartingWithId
-  (n, spaces, _) <- genNum
+  (idStr, idSpaces, _) <- genInputStartingWithId
+  (n, numSpaces, _) <- genNum
+  opSpaces <- elements $ "" : map pure " \t\n\r\f\v"
   rest <- arbitrary `suchThat` (\x -> not (null x) && not (isDigit (head x)) && not (isSpace (head x)))
-  let stmtStr = idStr ++ ":=" ++ show n ++ spaces
+  let stmtStr = idStr ++ idSpaces ++ ":=" ++ opSpaces ++ show n ++ numSpaces
   let stmtAst = Assign idStr (E_AExp (Num n))
   return (stmtStr, stmtAst, rest)
 
@@ -234,4 +236,4 @@ genValidStmt = do
 
 prop_stmt_x_2 :: Property
 prop_stmt_x_2 =
-  property $ runReadP stmt "x:=21 Noise" === Just (Assign "x" (E_AExp (Num 21)), "Noise")
+  property $ runReadP stmt "x :=21 Noise" === Just (Assign "x" (E_AExp (Num 21)), "Noise")
