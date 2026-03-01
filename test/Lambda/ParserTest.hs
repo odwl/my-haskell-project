@@ -5,6 +5,7 @@ module Lambda.ParserTest (parserTests) where
 import Prelude hiding (exp)
 import Control.Applicative (Alternative (..))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
+import Data.List (intercalate, unzip3)
 import Lambda.Parser (AExp (..), Exp (..), ReadP, Stmt (..), Stmts (..),aexp, digit, identifier, num, stmt, stmts, whiteSpace)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
@@ -66,7 +67,8 @@ quickTests = [
       testProperty "aexp parses numbers" prop_aexp_num,
       testProperty "aexp rejects invalid sequence" prop_aexp_invalid,
       
-      testProperty "stmt matches valid assignment" prop_stmt_valid
+      testProperty "stmt matches valid assignment" prop_stmt_valid,
+      testProperty "stmts matches valid sequence of assignments" prop_stmts_valid
     ],
   testGroup
     "Test Examples"
@@ -167,10 +169,13 @@ prop_aexp_invalid =
   forAll genNotNum $ \s ->
   runReadP aexp s === Nothing
 
+genSpaces :: Gen String
+genSpaces = elements $ "" : map pure " \t\n\r\f\v"
+
 genNum :: Gen (Int, String, String)
 genNum = do
   n <- arbitrary `suchThat` (>= 0)
-  spaces <- elements $ "" : map pure " \t\n\r\f\v"
+  spaces <- genSpaces
   c <- arbitrary `suchThat` (\x -> not (isDigit x) && not (isSpace x))
   s <- arbitrary
   return (n, spaces, c : s)
@@ -200,7 +205,7 @@ genInputStartingWithId :: Gen (String, String, String)
 genInputStartingWithId = do
   idFirst <- arbitrary `suchThat` (liftA2 (&&) isAscii isAlpha)
   idRest <- listOf $ arbitrary `suchThat` (liftA2 (&&) isAscii isAlphaNum)
-  spaces <- elements $ "" : map pure " \t\n\r\f\v"
+  spaces <- genSpaces
   separator <- arbitrary `suchThat` (\c -> not (isAscii c && isAlphaNum c) && not (isSpace c))
   rest <- arbitrary
   return (idFirst : idRest, spaces, separator : rest)
@@ -222,17 +227,45 @@ prop_stmt_valid =
     runReadP stmt (stmtStr ++ rest) === Just (stmtAst, rest)
 
 
+-- | Generates a valid statement.
+-- Returns a tuple containing:
+-- 1. The literal string representation of the statement (e.g. "x := \t 21  ")
+-- 2. The expected AST (e.g. Assign "x" (E_AExp (Num 21)))
+-- 3. A random trailing "rest" string that should be left unparsed
 genValidStmt :: Gen (String, Stmt, String)
 genValidStmt = do 
   (idStr, idSpaces, _) <- genInputStartingWithId
   (n, numSpaces, _) <- genNum
-  opSpaces <- elements $ "" : map pure " \t\n\r\f\v"
+  opSpaces <- genSpaces
   rest <- arbitrary `suchThat` (\x -> not (null x) && not (isDigit (head x)) && not (isSpace (head x)))
   let stmtStr = idStr ++ idSpaces ++ ":=" ++ opSpaces ++ show n ++ numSpaces
   let stmtAst = Assign idStr (E_AExp (Num n))
   return (stmtStr, stmtAst, rest)
 
-  -- ==========================================
+-- | Generates a valid sequence of statements separated by semicolons.
+-- Returns a tuple containing:
+-- 1. The literal string representation of the statements (e.g. "x := \t 1;y := 2")
+-- 2. The expected Stmts AST (e.g. Seq (Assign "x" (E_AExp (Num 1))) (Single (Assign "y" (E_AExp (Num 2)))))
+-- 3. A random trailing "rest" string that should be left unparsed
+genValidStmts :: Gen (String, Stmts, String)
+genValidStmts = do
+  stmtsList <- listOf1 genValidStmt
+  let (strList, stmtList, restList) = unzip3 stmtsList
+  let input = intercalate ";" strList
+  let buildStmts [] = error "Unreachable"
+      buildStmts [s] = Single s
+      buildStmts (s:ss) = Seq s (buildStmts ss)
+  let result = buildStmts stmtList  
+  let finalRest = last restList
+
+  return (input, result, finalRest)
+
+prop_stmts_valid :: Property
+prop_stmts_valid =
+  forAll genValidStmts $ \(input, result, rest) ->
+    runReadP stmts (input ++ rest) === Just (result, rest)
+
+-- ==========================================
 -- Test examples
 -- ==========================================
 
