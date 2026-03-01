@@ -1,7 +1,8 @@
-module Lambda.Parser (ReadP, digit, whiteSpace, endOfStream, parseTwoChars, parseDigits, identifier) where
+module Lambda.Parser (ReadP, digit, whiteSpace, num, identifier, aexp, exp, stmt, Stmt (..), Exp (..), AExp (..)) where
 
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
-import Text.ParserCombinators.ReadP (ReadP, eof, munch, munch1, satisfy, string)
+import Text.ParserCombinators.ReadP (ReadP, munch, munch1, satisfy, skipSpaces, string)
+import Prelude hiding (exp)
 
 digit :: ReadP Char
 digit = satisfy isDigit
@@ -9,36 +10,39 @@ digit = satisfy isDigit
 whiteSpace :: ReadP Char
 whiteSpace = satisfy isSpace
 
-endOfStream :: ReadP ()
-endOfStream = eof
-
--- Specific parsers from the original file
-
-parseTwoChars :: ReadP String
-parseTwoChars = string "ab"
-
-parseDigits :: ReadP Int
-parseDigits = read <$> munch1 isDigit
-
-(.&&.) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
-f .&&. g = \x -> f x && g x
-
-infixr 3 .&&.
-
--- (.||.) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
--- f .||. g = \x -> f x || g x
-
--- infixr 2 .||.
-
 identifier :: ReadP String
 identifier = do
-  c <- satisfy (isAscii .&&. isAlpha)
-  cs <- munch (isAscii .&&. isAlphaNum)
+  c <- satisfy (liftA2 (&&) isAscii isAlpha)
+  cs <- munch (liftA2 (&&) isAscii isAlphaNum)
   return (c : cs)
+
+stmt :: ReadP Stmt
+stmt = do
+  v <- identifier
+  _ <- string ":="
+  e <- exp
+  return (Assign v e)
+
+num :: ReadP Int
+num = lexeme $ read <$> munch1 isDigit
+
+aexp :: ReadP AExp
+aexp = do
+  n <- num
+  return (Num n)
+
+exp :: ReadP Exp
+exp = do
+  e <- aexp
+  return (E_AExp e)
 
 -- -- ==========================================
 -- -- AST and ReadP Definitions
 -- -- ==========================================
+
+-- | `lexeme` runs a given parser, then consumes any trailing whitespace.
+lexeme :: ReadP a -> ReadP a
+lexeme p = p <* skipSpaces
 
 -- -- | Spaces parser
 -- spaces :: ReadP ()
@@ -46,32 +50,39 @@ identifier = do
 
 -- -- | Token parser
 -- token :: ReadP a -> ReadP a
--- token p = p <* spaces
+-- token p = p <* spaces 
 
 -- -- | Symbol parser
 -- symbol :: String -> ReadP String
 -- symbol s = token (parseString s)
 
--- -- | Types
--- type Id = String
+-- | Types
+type Id = String
 
--- data Stmt
---   = While Exp [Stmt]
---   | Assign Id Exp
---   deriving (Show, Eq)
+data Stmt
+  = --   While Exp [Stmt]
 
--- data Exp
---   = If Exp Exp Exp
---   | Cmp AExp CmpOp AExp
---   | Not Exp
---   | E_AExp AExp
---   deriving (Show, Eq)
+    Assign Id Exp
+  deriving (Show, Eq)
 
--- data AExp
---   = Num Int
---   | Var Id
---   | Op AExp BinOp AExp
---   deriving (Show, Eq)
+data Exp
+  = -- If Exp Exp Exp
+
+    -- | Cmp AExp CmpOp AExp
+    -- | Not Exp
+    -- |
+    E_AExp AExp
+  deriving (Show, Eq)
+
+data AExp
+  = Num Int
+  deriving
+    ( -- | Var Id
+      Show,
+      Eq
+    )
+
+-- \| Op AExp BinOp AExp
 
 -- data CmpOp = Le | Gt | Eq | Neq deriving (Show, Eq)
 

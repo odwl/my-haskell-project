@@ -2,46 +2,46 @@
 
 module Lambda.ParserTest (parserTests) where
 
+import Prelude hiding (exp)
 import Control.Applicative (Alternative (..))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
-import Lambda.Parser (ReadP, digit, endOfStream, identifier, parseDigits, parseTwoChars, whiteSpace)
-import Text.ParserCombinators.ReadP (char, pfail, readP_to_S, satisfy, string)
+import Lambda.Parser (AExp (..), Exp (..), ReadP, Stmt (..), aexp, digit, identifier, num, stmt, whiteSpace)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
+import Text.ParserCombinators.ReadP (char, pfail, readP_to_S, satisfy, string)
 
 -- | Run parser and return the first result
 runReadP :: ReadP a -> String -> Maybe (a, String)
 runReadP p s = case readP_to_S p s of
   [] -> Nothing
-  ((x, s') : _) -> Just (x, s') 
+  ((x, s') : _) -> Just (x, s')
 
 parserTests :: TestTree
 parserTests =
   testGroup
     "Parser Suite"
-    [ testCase "satisfy matches character" $ parseA "abc" @?= Just ('a', "bc"),
+    ([ testCase "satisfy matches character" $ parseA "abc" @?= Just ('a', "bc"),
       testCase "satisfy does not match character" $ parseA "xbc" @?= Nothing,
       testCase "satisfy on empty string" $ parseA "" @?= Nothing,
-      testCase "endOfStream matches empty string" $ runReadP endOfStream "" @?= Just ((), ""),
       testCase "fmap maps ReadP Char to ReadP String" $ runReadP ((: []) <$> satisfy (== 'a')) "abc" @?= Just ("a", "bc"),
-      testCase "fmap maps with custom lambda" $ runReadP ((:) <*> (: []) <$> satisfy (== 'a')) "abc" @?= Just ("aa", "bc"),
-      quickTests,
+      testCase "fmap maps with custom lambda" $ runReadP ((:) <*> (: []) <$> satisfy (== 'a')) "abc" @?= Just ("aa", "bc")
+    ] ++ quickTests ++ [
       tastyBatch
         (functor (undefined :: ReadP (Int, String, Int))),
       tastyBatch
         (applicative (undefined :: ReadP (Int, String, Int))),
       tastyBatch
         (monad (undefined :: ReadP (Int, String, Int)))
-    ]
+    ])
   where
     parseA = runReadP (satisfy (== 'a'))
     tastyBatch (name, tests) = testProperties name tests
 
-quickTests :: TestTree
-quickTests =
+quickTests :: [TestTree]
+quickTests = [
   testGroup
     "QuickCheck"
     [ testProperty "satisfy strictly matches character" prop_satisfiesMatchingChar,
@@ -55,16 +55,29 @@ quickTests =
       testProperty "digit matches digits" prop_digit,
       testProperty "digit rejects non-digits" prop_not_digit,
       testProperty "whiteSpace matches whitespace" prop_whiteSpace,
-      testProperty "whiteSpace rejects non-whitespace" prop_not_whiteSpace,
-      testProperty "endOfStream rejects non-empty string" prop_endOfStream_nonEmpty,
-      testProperty "parseTwoChars matches both chars" prop_parseTwoChars_match_both,
-      testProperty "parseTwoChars matches first char only" prop_parseTwoChars_match_first_only,
-      testProperty "parseTwoChars matches second char only" prop_parseTwoChars_match_second_only,
-      testProperty "parseTwoChars matches none" prop_parseTwoChars_match_none,
-      testProperty "parseDigits parses sequence of digits" prop_parseDigits,
+      testProperty "whiteSpace rejects non-whitespace" prop_not_whiteSpace
+    ],
+  testGroup
+    "AST Parsing Properties"
+    [ testProperty "num parses sequence of digits" prop_num,
+      testProperty "num rejects invalid sequence" prop_num_invalid,
       testProperty "identifier parses valid names" prop_identifier_valid,
-      testProperty "identifier rejects names with invalid start" prop_identifier_reject_invalid_start
+      testProperty "identifier rejects names with invalid start" prop_identifier_reject_invalid_start,
+      testProperty "aexp parses numbers" prop_aexp_num,
+      testProperty "aexp rejects invalid sequence" prop_aexp_invalid,
+      testProperty "stmt parses x:=2" prop_stmt_x_2,
+      testProperty "stmt matches valid assignment" prop_stmt_valid
     ]
+  --   ,
+  -- testGroup
+  --   "Full Grammar Integration"
+  --   [ testCase "parses complex program" $
+  --       let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
+  --           -- TODO: Replace `undefined` with your top-level parser (e.g., `parseStmts` or `stmts`)
+  --           parser = undefined :: ReadP [Stmt]
+  --        in runReadP parser input @?= Just ([], "") -- TODO: Replace `[]` with the full AST
+  --   ]
+  ]
 
 instance (Arbitrary a) => Arbitrary (ReadP a) where
   arbitrary = do
@@ -130,57 +143,95 @@ prop_not_whiteSpace :: String -> Property
 prop_not_whiteSpace s = forAll (arbitrary `suchThat` (not . isSpace)) $ \c ->
   runReadP whiteSpace (c : s) === Nothing
 
-prop_endOfStream_nonEmpty :: Char -> String -> Property
-prop_endOfStream_nonEmpty c s =
-  runReadP endOfStream (c : s) === Nothing
+-- ==========================================
+-- Test num and aexp
+-- ==========================================
 
+prop_num :: Property
+prop_num = forAll genNum $ \(n, spaces, s) ->
+  runReadP num (show n ++ spaces ++ s) === Just (n, s)
 
+prop_num_invalid :: Property
+prop_num_invalid = 
+  forAll genNotNum $ \s ->
+  runReadP num s === Nothing
 
-prop_parseTwoChars_match_both :: String -> Property
-prop_parseTwoChars_match_both s =
-  runReadP parseTwoChars ("ab" ++ s) === Just ("ab", s)
+prop_aexp_num :: Property
+prop_aexp_num = forAll genNum $ \(n, spaces, s) ->
+  runReadP aexp (show n ++ spaces ++ s) === Just (Num n, s)
 
-prop_parseTwoChars_match_first_only :: Char -> String -> Property
-prop_parseTwoChars_match_first_only c s =
-  c /= 'b' ==> runReadP parseTwoChars ('a' : c : s) === Nothing
+prop_aexp_invalid :: Property
+prop_aexp_invalid = 
+  forAll genNotNum $ \s ->
+  runReadP aexp s === Nothing
 
-prop_parseTwoChars_match_second_only :: Char -> String -> Property
-prop_parseTwoChars_match_second_only c s =
-  c /= 'a' ==> runReadP parseTwoChars (c : 'b' : s) === Nothing
+genNum :: Gen (Int, String, String)
+genNum = do
+  n <- arbitrary `suchThat` (>= 0)
+  spaces <- elements $ "" : map pure " \t\n\r\f\v"
+  c <- arbitrary `suchThat` (\x -> not (isDigit x) && not (isSpace x))
+  s <- arbitrary
+  return (n, spaces, c : s)
 
-prop_parseTwoChars_match_none :: Char -> Char -> String -> Property
-prop_parseTwoChars_match_none c1 c2 s =
-  c1 /= 'a' && c2 /= 'b' ==> runReadP parseTwoChars (c1 : c2 : s) === Nothing
+genNotNum :: Gen String
+genNotNum = do
+  c <- arbitrary `suchThat` (not . isDigit)
+  s <- arbitrary
+  return (c : s)
 
-prop_parseDigits :: NonNegative Int -> Char -> String -> Property
-prop_parseDigits (NonNegative n) c s = not (isDigit c) ==> 
-  runReadP parseDigits (show n ++ (c:s)) === Just (n, c:s)
+-- ==========================================
+-- Test identifier
+-- ==========================================
 
-(&&&) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
-f &&& g = \x -> f x && g x
-infixr 3 &&&
+prop_identifier_valid :: Property
+prop_identifier_valid =
+  forAll genInputStartingWithId $ \(idStr, rest) ->
+    runReadP identifier (idStr ++ rest) === Just (idStr, rest)
+
+prop_identifier_reject_invalid_start :: String -> Property
+prop_identifier_reject_invalid_start s =
+  forAll genInvalidStartChar $ \c ->
+    classify (isDigit c) "first char is digit" $
+      runReadP identifier (c : s) === Nothing
 
 genInputStartingWithId :: Gen (String, String)
 genInputStartingWithId = do
-  idFirst <- arbitrary `suchThat` (isAscii &&& isAlpha)
-  idRest <- listOf $ arbitrary `suchThat` (isAscii &&& isAlphaNum)
+  idFirst <- arbitrary `suchThat` (liftA2 (&&) isAscii isAlpha)
+  idRest <- listOf $ arbitrary `suchThat` (liftA2 (&&) isAscii isAlphaNum)
   separator <- arbitrary `suchThat` (\c -> not (isAscii c && isAlphaNum c))
   rest <- arbitrary
   return (idFirst : idRest, separator : rest)
 
-prop_identifier_valid :: Property
-prop_identifier_valid = 
-  forAll genInputStartingWithId $ \(idStr, rest) ->
-    runReadP identifier (idStr ++ rest) === Just (idStr, rest)
-
 genInvalidStartChar :: Gen Char
-genInvalidStartChar = frequency
-  [ (1, elements ['0'..'9'])
-  , (3, arbitrary `suchThat` (\c -> not (isAscii c && isAlpha c)))
-  ]
+genInvalidStartChar =
+  frequency
+    [ (1, elements ['0' .. '9']),
+      (3, arbitrary `suchThat` (\c -> not (isAscii c && isAlpha c)))
+    ]
 
-prop_identifier_reject_invalid_start :: String -> Property
-prop_identifier_reject_invalid_start s = 
-  forAll genInvalidStartChar $ \c ->
-    classify (isDigit c) "first char is digit" $
-      runReadP identifier (c : s) === Nothing
+-- ==========================================
+-- Test stmt
+-- ==========================================
+
+prop_stmt_valid :: Property
+prop_stmt_valid =
+  forAll genValidStmt $ \(stmtStr, stmtAst, rest) ->
+    runReadP stmt (stmtStr ++ rest) === Just (stmtAst, rest)
+
+
+genValidStmt :: Gen (String, Stmt, String)
+genValidStmt = do 
+  (idStr, _) <- genInputStartingWithId
+  (n, spaces, _) <- genNum
+  rest <- arbitrary `suchThat` (\x -> not (null x) && not (isDigit (head x)) && not (isSpace (head x)))
+  let stmtStr = idStr ++ ":=" ++ show n ++ spaces
+  let stmtAst = Assign idStr (E_AExp (Num n))
+  return (stmtStr, stmtAst, rest)
+
+  -- ==========================================
+-- Test examples
+-- ==========================================
+
+prop_stmt_x_2 :: Property
+prop_stmt_x_2 =
+  property $ runReadP stmt "x:=21 Noise" === Just (Assign "x" (E_AExp (Num 21)), "Noise")
