@@ -128,30 +128,21 @@ test-suite all-tests
   main-is: Main.hs
   hs-source-dirs:
     test
-    src
 
   other-modules:
-    Exercism.Anagram
     Exercism.AnagramTest
-    Exercism.Bob
     Exercism.BobTest
-    Exercism.Pangram
     Exercism.PangramTest
-    Exercism.ReverseString
     Exercism.ReverseStringTest
     ExercismTest
-    HelloWorld
-    Lambda
-    Lambda.Functor
     Lambda.FunctorTest
     Lambda.MonadTest
-    Lambda.Parser
     Lambda.ParserTest
-    Lambda.State
     Lambda.StateTest
     LambdaTest
 
   build-depends:
+    my-haskell-project,
     QuickCheck,
     checkers,
     containers,
