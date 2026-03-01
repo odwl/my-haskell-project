@@ -5,7 +5,8 @@ module Lambda.ParserTest (parserTests) where
 import Control.Applicative (Alternative (..))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
 import Data.List (intercalate)
-import Lambda.Parser (AExp (..), Exp (..), ReadP, Stmt (..), Stmts (..), aexp, digit, identifier, num, stmt, stmts, whiteSpace)
+import Lambda.Parser (AExp (..), Exp (..), Id, mkIdChar, unId, ReadP, Stmt (..), Stmts (..), aexp, digit, identifier, num, stmt, stmts, whiteSpace)
+import Data.Maybe (fromJust)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -191,9 +192,11 @@ genNotNum = do
 -- ==========================================
 
 prop_identifier_valid :: Property
-prop_identifier_valid =
-  forAll genInputStartingWithId $ \(idStr, spaces, rest) ->
-    runReadP identifier (idStr ++ spaces ++ rest) === Just (idStr, rest)
+prop_identifier_valid = property $ do
+  (ident, rest) <- genValidIdentifier
+  spaces <- genSpaces
+  let input = unId ident ++ spaces ++ rest
+  return $ runReadP identifier input === Just (ident, rest)
 
 prop_identifier_reject_invalid_start :: String -> Property
 prop_identifier_reject_invalid_start s =
@@ -201,14 +204,18 @@ prop_identifier_reject_invalid_start s =
     classify (isDigit c) "first char is digit" $
       runReadP identifier (c : s) === Nothing
 
-genInputStartingWithId :: Gen (String, String, String)
-genInputStartingWithId = do
+-- | Generates a valid identifier string followed by trailing noise.
+-- Returns a tuple containing:
+-- 1. The literal string representation of the generated identifier (e.g. "myVar", "a1")
+-- 2. A random trailing string guaranteed to start with a non-alphanumeric separator character
+genValidIdentifier :: Gen (Id, String)
+genValidIdentifier = do
   idFirst <- arbitrary `suchThat` (liftA2 (&&) isAscii isAlpha)
   idRest <- listOf $ arbitrary `suchThat` (liftA2 (&&) isAscii isAlphaNum)
-  spaces <- genSpaces
-  separator <- arbitrary `suchThat` (\c -> not (isAscii c && isAlphaNum c) && not (isSpace c))
+  -- generate a separator that isn't part of an identifier to avoid accidentally extending it into the rest
+  separator <- arbitrary `suchThat` (\c -> not (isAscii c && isAlphaNum c && not (isSpace c)))
   rest <- arbitrary
-  return (idFirst : idRest, spaces, separator : rest)
+  return (fromJust $ mkIdChar idFirst idRest, separator : rest)
 
 genInvalidStartChar :: Gen Char
 genInvalidStartChar =
@@ -233,12 +240,14 @@ prop_stmt_valid =
 -- 3. A random trailing "rest" string that should be left unparsed
 genValidStmt :: Gen (String, Stmt, String)
 genValidStmt = do
-  (idStr, idSpaces, _) <- genInputStartingWithId
-  (n, numSpaces, _) <- genNum
+  (ident, _) <- genValidIdentifier
+  idSpaces <- genSpaces
+  (n, numSpaces, rest) <- genNum
+
   opSpaces <- genSpaces
-  rest <- arbitrary `suchThat` (\x -> not (null x) && not (isDigit (head x)) && not (isSpace (head x)))
-  let stmtStr = idStr ++ idSpaces ++ ":=" ++ opSpaces ++ show n ++ numSpaces
-  let stmtAst = Assign idStr (E_AExp (Num n))
+  -- rest <- arbitrary `suchThat` (\x -> not (null x) && not (isDigit (head x)) && not (isSpace (head x)))
+  let stmtStr = unId ident ++ idSpaces ++ ":=" ++ opSpaces ++ show n ++ numSpaces
+  let stmtAst = Assign ident (E_AExp (Num n))
   return (stmtStr, stmtAst, rest)
 
 -- | Generates a valid sequence of statements separated by semicolons.
@@ -261,15 +270,15 @@ genValidStmts = do
 
 prop_stmts_valid :: Property
 prop_stmts_valid =
-  forAll genValidStmts $ \(input, result, rest) ->
-    runReadP stmts (input ++ rest) === Just (result, rest)
+  forAll genValidStmts $ \(validInput, result, rest) ->
+    runReadP stmts (validInput ++ rest) === Just (result, rest)
 
 -- ==========================================
 -- Test examples
 -- ==========================================
 
 prop_stmt_x_2 :: Property
-prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just (Single (Assign "x" (E_AExp (Num 21))), "Noise")
+prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just (Single (Assign (fromJust $ mkIdChar 'x' "") (E_AExp (Num 21))), "Noise")
 
 prop_stmt_semi :: Property
-prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just (Seq (Assign "x" (E_AExp (Num 21))) (Single (Assign "y" (E_AExp (Num 2)))), "")
+prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just (Seq (Assign (fromJust $ mkIdChar 'x' "") (E_AExp (Num 21))) (Single (Assign (fromJust $ mkIdChar 'y' "") (E_AExp (Num 2)))), "")

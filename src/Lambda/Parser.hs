@@ -1,4 +1,4 @@
-module Lambda.Parser (ReadP, digit, whiteSpace, num, identifier, aexp, exp, stmt, stmts, Stmt (..), Stmts (..), Exp (..), AExp (..)) where
+module Lambda.Parser (ReadP, Id, mkIdChar, unId, digit, whiteSpace, num, identifier, aexp, exp, stmt, stmts, Stmt (..), Stmts (..), Exp (..), AExp (..)) where
 
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
 import Text.ParserCombinators.ReadP (ReadP, munch, munch1, satisfy, skipSpaces, string, (<++))
@@ -10,11 +10,11 @@ digit = satisfy isDigit
 whiteSpace :: ReadP Char
 whiteSpace = satisfy isSpace
 
-identifier :: ReadP String
+identifier :: ReadP Id
 identifier = lexeme $ do
   c <- satisfy (liftA2 (&&) isAscii isAlpha)
   cs <- munch (liftA2 (&&) isAscii isAlphaNum)
-  return (c : cs)
+  return (Id c cs)
 
 stmts :: ReadP Stmts
 stmts = do
@@ -63,7 +63,19 @@ lexeme p = p <* skipSpaces
 -- symbol s = token (parseString s)
 
 -- | Types
-type Id = String
+data Id = Id Char String
+  deriving (Show, Eq)
+
+unId :: Id -> String
+unId (Id c cs) = c : cs
+
+
+
+-- | Smart constructor that explicitly takes the starting Char and the rest of the String.
+mkIdChar :: Char -> String -> Maybe Id
+mkIdChar c cs
+  | isAscii c && isAlpha c && all (\x -> isAscii x && isAlphaNum x) cs = Just (Id c cs)
+  | otherwise = Nothing
 
 data Stmts
   = Seq Stmt Stmts
