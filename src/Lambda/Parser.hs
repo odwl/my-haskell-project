@@ -9,27 +9,27 @@ identifier = lexeme $ do
   c <- satisfy (liftA2 (&&) isAscii isAlpha)
   cs <- munch (liftA2 (&&) isAscii isAlphaNum)
   let name = c : cs
-  if name == "not" then pfail else return (Id c cs)
+  if name `elem` ["not", "if", "then", "else", "fi", "while", "do", "done"] then pfail else return (Id c cs)
 
 num :: ReadP Int
 num = lexeme $ read <$> munch1 isDigit
 
 binop :: ReadP BinOp
 binop = lexeme $ 
-  (char '+' *> pure Add) <|> 
-  (char '-' *> pure Sub) <|> 
-  (char '*' *> pure Mul) <|> 
+  (char '+' *> pure Add) <++ 
+  (char '-' *> pure Sub) <++ 
+  (char '*' *> pure Mul) <++ 
   (char '/' *> pure Div)
 
 cmpop :: ReadP CmpOp
 cmpop = lexeme $
-  (string "<=" *> pure Le) <|>
-  (char '>' *> pure Gt) <|>
-  (string "==" *> pure Eq) <|>
+  (string "<=" *> pure Le) <++
+  (char '>' *> pure Gt) <++
+  (string "==" *> pure Eq) <++
   (string "!=" *> pure Neq)
 
 aexp :: ReadP AExp
-aexp = (Num <$> num) <|> (Var <$> identifier) <|> opP
+aexp = (Num <$> num) <++ (Var <$> identifier) <++ opP
   where
     opP = do
       _ <- lexeme (char '(')
@@ -40,32 +40,51 @@ aexp = (Num <$> num) <|> (Var <$> identifier) <|> opP
       return (Op left op right)
 
 expr :: ReadP Exp
-expr = cmpP <++ notP <++ (E_AExp <$> aexp)
+expr = notP <++ ifP <++ aexpP
   where
-    notP = do
-      _ <- lexeme $ do
-        kw <- munch1 (\c -> isAscii c && isAlphaNum c)
-        if kw == "not" then return () else pfail
-      e <- expr
-      return (Not e)
-    cmpP = do
+    notP = Not <$> (keyword "not" *> expr)
+    aexpP = do
       left <- aexp
+      cmpP left <++ pure (E_AExp left)
+    cmpP left = do
       op <- cmpop
       right <- aexp
       return (Cmp left op right)
+    ifP = do
+      _ <- keyword "if"
+      e1 <- expr
+      _ <- keyword "then"
+      e2 <- expr
+      _ <- keyword "else"
+      e3 <- expr
+      _ <- keyword "fi"
+      return (If e1 e2 e3)
+
+stmt :: ReadP Stmt
+stmt = assignP <++ whileP
+  where
+    assignP = do
+      v <- identifier
+      _ <- lexeme (string ":=")
+      e <- expr
+      return (Assign v e)
+    whileP = do
+      _ <- keyword "while"
+      e <- expr
+      _ <- keyword "do"
+      ss <- stmts
+      _ <- keyword "done"
+      return (While e (stmtsToList ss))
+
+stmtsToList :: Stmts -> [Stmt]
+stmtsToList (Single s) = [s]
+stmtsToList (Seq s ss) = s : stmtsToList ss
 
 stmts :: ReadP Stmts
 stmts = do
   s <- stmt
   let sequenceSemicolon = fmap (Seq s) (lexeme (string ";") *> stmts)
   sequenceSemicolon <++ return (Single s)
-
-stmt :: ReadP Stmt
-stmt = do
-  v <- identifier
-  _ <- lexeme (string ":=")
-  e <- expr
-  return (Assign v e)
 
 -- -- ==========================================
 -- -- AST and ReadP Definitions
@@ -74,6 +93,12 @@ stmt = do
 -- | `lexeme` runs a given parser, then consumes any trailing whitespace.
 lexeme :: ReadP a -> ReadP a
 lexeme p = p <* skipSpaces
+
+-- | Extracts a reserved keyword.
+keyword :: String -> ReadP ()
+keyword k = lexeme $ do
+  kw <- munch1 (liftA2 (&&) isAscii isAlphaNum)
+  if kw == k then return () else pfail
 
 -- -- | Spaces parser
 -- spaces :: ReadP ()
@@ -106,13 +131,13 @@ data Stmts
   deriving (Show, Eq)
 
 data Stmt
-  = --   While Exp [Stmt]
-    Assign Id Exp
+  = While Exp [Stmt]
+  | Assign Id Exp
   deriving (Show, Eq)
 
 data Exp
-  -- If Exp Exp Exp
-  = Cmp AExp CmpOp AExp
+  =If Exp Exp Exp
+  | Cmp AExp CmpOp AExp
   | Not Exp
   | E_AExp AExp
   deriving (Show, Eq)

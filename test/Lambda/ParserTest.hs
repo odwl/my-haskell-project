@@ -65,24 +65,22 @@ quickTests =
         testProperty "identifier rejects names with invalid start" prop_identifier_reject_invalid_start,
         testProperty "aexp parses numbers and identifiers" prop_aexp_valid,
         testProperty "aexp rejects invalid sequence" prop_aexp_invalid,
-        testProperty "expr parses valid aexp" prop_expr_valid,
+        testProperty "expr parses valid exp" prop_expr_valid,
         testProperty "expr rejects invalid sequence" prop_expr_invalid,
         testProperty "binop parses valid operators" prop_binop_valid,
         testProperty "binop rejects invalid operators" prop_binop_invalid,
         testProperty "cmpop parses valid operators" prop_cmpop_valid,
         testProperty "cmpop rejects invalid operators" prop_cmpop_invalid,
         testProperty "stmt matches valid assignment" prop_stmt_valid,
-        testProperty "stmts matches valid sequence of assignments" prop_stmts_valid
+        testProperty "stmt rejects invalid assignment" prop_stmt_invalid,
+        testProperty "stmts parses valid sequence" prop_stmts_valid,
+        testProperty "stmts rejects invalid sequence" prop_stmts_invalid
       ],
     testGroup
       "Test Examples"
-      [ testProperty "stmts parses x:=2" prop_stmt_x_2,
-        testProperty "stmt parses x:=2;y=1" prop_stmt_semi
-        -- testCase "parses complex program" $
-        --       let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
-        --           -- TODO: Replace `undefined` with your top-level parser (e.g., `parseStmts` or `stmts`)
-        --           parser = undefined :: ReadP [Stmt]
-        --        in runReadP parser input @?= Just ([], "") -- TODO: Replace `[]` with the full AST
+      [ testProperty "stmts parses one assign" prop_stmt_x_2,
+        testProperty "stmt parses two assigns" prop_stmt_semi,
+        testProperty "stmts parses complex program" prop_stmt_complex
       ]
   ]
 
@@ -141,8 +139,6 @@ prop_alternative_left_bias s =
 genSpaces :: Gen String
 genSpaces = elements $ "" : map pure " \t\n\r\f\v"
 
--- | Generates leading whitespace and trailing noise separated by a valid separator
--- Returns a tuple containing: (spaces, separator : rest)
 genPadding :: Gen (String, String)
 genPadding = do
   spaces <- genSpaces
@@ -156,11 +152,6 @@ withPadding gen = do
   (spaces, rest) <- genPadding
   return (str ++ spaces, ast, rest)
 
--- | Generates a valid numeric value followed by trailing whitespace and noise.
--- Returns a tuple containing:
--- 1. The full unparsed literal string including the number and trailing spaces
--- 2. The expected generated Int value
--- 3. A random trailing string guaranteed to start with a non-digit, non-space character
 genValidNum :: Gen (String, Int)
 genValidNum = (\n -> (show n, n)) <$> arbitrary `suchThat` (>= 0)
 
@@ -187,7 +178,7 @@ genValidId = do
   f <- arbitrary `suchThat` isAsciiAlpha
   r <- listOf (arbitrary `suchThat` isAsciiAlphaNum)
   let str = f : r
-  if str == "not"
+  if str `elem` ["not", "if", "then", "else", "fi", "while", "do", "done"]
     then genValidId
     else return (str, fromJust $ mkId f r)
 
@@ -218,7 +209,7 @@ genValidExpr = sized genExpSized
 
 genExpSized :: Int -> Gen (String, Exp)
 genExpSized 0 = second E_AExp <$> genValidAExp
-genExpSized n = oneof [genNot, genCmp, second E_AExp <$> genAExpSized n]
+genExpSized n = oneof [genNot, genCmp, genIf, second E_AExp <$> genAExpSized n]
   where
     genNot = do
       notStr <- (++) "not " <$> genSpaces
@@ -231,6 +222,13 @@ genExpSized n = oneof [genNot, genCmp, second E_AExp <$> genAExpSized n]
       (rightS, rightA) <- genAExpSized (n `div` 2)
       let str = intercalate spaces [leftS, opS, rightS]
       return (str, Cmp leftA opA rightA)
+    genIf = do
+      spaces <- genSpaces
+      (cS, cA) <- genExpSized (n `div` 3)
+      (tS, tA) <- genExpSized (n `div` 3)
+      (eS, eA) <- genExpSized (n `div` 3)
+      let str = intercalate spaces ["if ", cS, " then ", tS, " else ", eS, " fi"]
+      return (str, If cA tA eA)
 
 genValidBinOp :: Gen (String, BinOp)
 genValidBinOp = genValidOp [ ("+", Add), ("-", Sub), ("*", Mul), ("/", Div) ]
@@ -251,10 +249,29 @@ genValidAssign = do
   isEq <- (++ ":=") <$> genSpaces
   return (identStr ++ isEq ++ expStr, Assign identAst expAst)
 
--- | Generates a valid statement.
--- Returns a tuple containing:
+genValidWhile :: Int -> Gen (String, Stmt)
+genValidWhile n = do
+  whiteStr <- (++) "while " <$> genSpaces
+  (eStr, eAst) <- genExpSized (n `div` 2)
+  doStr <- (++) " do " <$> genSpaces
+  (sStr, sAst, _) <- scale (`div` 2) genValidStmts
+  doneStr <- (++) " done" <$> genSpaces
+  let stmtsToListTest (Single s) = [s]
+      stmtsToListTest (Seq s ss) = s : stmtsToListTest ss
+  return (whiteStr ++ eStr ++ doStr ++ sStr ++ doneStr, While eAst (stmtsToListTest sAst))
+
 genValidStmt :: Gen (String, Stmt, String)
-genValidStmt = withPadding genValidAssign
+genValidStmt = withPadding $ sized genStmtSized
+
+genStmtSized :: Int -> Gen (String, Stmt)
+genStmtSized 0 = genValidAssign
+genStmtSized n = oneof [genValidAssign, genValidWhile n]
+
+genInvalidStmt :: Gen String
+genInvalidStmt = genInvalidId
+
+genInvalidStmts :: Gen String
+genInvalidStmts = genInvalidStmt
 
 genValidStmts :: Gen (String, Stmts, String)
 genValidStmts = do
@@ -295,7 +312,7 @@ prop_aexp_invalid :: Property
 prop_aexp_invalid = prop_parse_invalid aexp genInvalidAExp
 
 prop_expr_valid :: Property
-prop_expr_valid = prop_parse_valid expr (withPadding genValidExpr)
+prop_expr_valid = prop_parse_valid expr (scale (`div` 2) (withPadding genValidExpr))
 
 prop_expr_invalid :: Property
 prop_expr_invalid = prop_parse_invalid expr genInvalidExpr
@@ -321,8 +338,14 @@ prop_identifier_reject_invalid_start = prop_parse_invalid identifier genInvalidI
 prop_stmt_valid :: Property
 prop_stmt_valid = prop_parse_valid stmt genValidStmt
 
+prop_stmt_invalid :: Property
+prop_stmt_invalid = prop_parse_invalid stmt genInvalidStmt
+
 prop_stmts_valid :: Property
 prop_stmts_valid = prop_parse_valid stmts genValidStmts
+
+prop_stmts_invalid :: Property
+prop_stmts_invalid = prop_parse_invalid stmts genInvalidStmts
 
 -- ==========================================
 -- Test examples
@@ -334,5 +357,19 @@ prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just (Single (Assig
 prop_stmt_semi :: Property
 prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just (Seq (Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21))) (Single (Assign (fromJust $ mkId 'y' "") (E_AExp (Num 2)))), "")
 
-
--- Just (Seq (Assign (Id 'T' "") (Cmp (Op (Op (Num 2) Mul (Var (Id 'n' "tk6"))) Sub (Op (Var (Id 'D' "VCXPzLZ")) Div (Num 0))) Neq (Op (Op (Num 5) Mul (Num 5)) Div (Op (Var (Id 'd' "h")) Div (Var (Id 'B' "kC4G")))))) (Seq (Assign (Id 'J' "") (Not (Cmp (Var (Id 'n' "ot4")) Neq (Var (Id 'g' "yjf"))))) (Seq (Assign (Id 'V' "g18Hn") (Not (Not (Cmp (Num 2) Gt (Var (Id 'w' "TSGw")))))) (Seq (Assign (Id 'K' "y4zr") (Not (Cmp (Op (Num 6) Sub (Num 2)) Eq (Op (Var (Id 'h' "mz")) Add (Var (Id 'O' "u")))))) (Seq (Assign (Id 'p' "") (Cmp (Op (Op (Var (Id 'b' "1f5Q")) Add (Var (Id 'H' ""))) Add (Op (Var (Id 'p' "sgzloj")) Add (Num 7))) Eq (Op (Op (Var (Id 'I' "x4Z")) Add (Var (Id 'P' "OQ136"))) Mul (Op (Var (Id 'j' "Uw0ElT")) Add (Num 5))))) (Seq (Assign (Id 'm' "FNouaQg") (Not (Cmp (Op (Num 4) Sub (Var (Id 'p' "rvk203"))) Eq (Op (Var (Id 'Y' "pD6PoCm")) Add (Num 2))))) (Seq (Assign (Id 'B' "JVw") (Not (Cmp (Op (Var (Id 'V' "cvGfk9")) Div (Var (Id 'G' "ZJG2Kr"))) Le (Op (Var (Id 'y' "j")) Div (Var (Id 'P' "H0")))))) (Seq (Assign (Id 'x' "U") (E_AExp (Op (Op (Op (Num 7) Div (Num 0)) Div (Op (Var (Id 'K' "f2")) Sub (Num 7))) Div (Op (Op (Num 5) Mul (Num 7)) Add (Op (Var (Id 'v' "fKHeL")) Mul (Var (Id 'X' "ew"))))))) (Seq (Assign (Id 's' "W3G") (Cmp (Op (Op (Var (Id 'a' "3")) Mul (Num 3)) Mul (Op (Var (Id 'u' "kPJ4gN")) Sub (Num 6))) Eq (Op (Op (Num 2) Add (Num 2)) Add (Op (Num 2) Sub (Num 2))))) (Seq (Assign (Id 'S' "") (Cmp (Op (Op (Var (Id 'p' "s3xoe")) Mul (Num 7)) Mul (Op (Var (Id 'p' "")) Sub (Var (Id 'P' "B8nO")))) Eq (Op (Op (Num 6) Mul (Num 5)) Div (Op (Num 4) Sub (Num 6))))) (Single (Assign (Id 'h' "") (Not (Cmp (Op (Var (Id 'S' "vz")) Mul (Var (Id 'd' "RthgNrO"))) Le (Op (Num 4) Sub (Var (Id 'e' "LinR")))))))))))))))),"$^P\1014711\&1\1060260? ?\n`\36729") /= Just (Seq (Assign (Id 'T' "") (Cmp (Op (Op (Num 2) Mul (Var (Id 'n' "tk6"))) Sub (Op (Var (Id 'D' "VCXPzLZ")) Div (Num 0))) Neq (Op (Op (Num 5) Mul (Num 5)) Div (Op (Var (Id 'd' "h")) Div (Var (Id 'B' "kC4G")))))) (Seq (Assign (Id 'J' "") (Not (Not (Cmp (Num 4) Neq (Var (Id 'g' "yjf")))))) (Seq (Assign (Id 'V' "g18Hn") (Not (Not (Cmp (Num 2) Gt (Var (Id 'w' "TSGw")))))) (Seq (Assign (Id 'K' "y4zr") (Not (Cmp (Op (Num 6) Sub (Num 2)) Eq (Op (Var (Id 'h' "mz")) Add (Var (Id 'O' "u")))))) (Seq (Assign (Id 'p' "") (Cmp (Op (Op (Var (Id 'b' "1f5Q")) Add (Var (Id 'H' ""))) Add (Op (Var (Id 'p' "sgzloj")) Add (Num 7))) Eq (Op (Op (Var (Id 'I' "x4Z")) Add (Var (Id 'P' "OQ136"))) Mul (Op (Var (Id 'j' "Uw0ElT")) Add (Num 5))))) (Seq (Assign (Id 'm' "FNouaQg") (Not (Cmp (Op (Num 4) Sub (Var (Id 'p' "rvk203"))) Eq (Op (Var (Id 'Y' "pD6PoCm")) Add (Num 2))))) (Seq (Assign (Id 'B' "JVw") (Not (Cmp (Op (Var (Id 'V' "cvGfk9")) Div (Var (Id 'G' "ZJG2Kr"))) Le (Op (Var (Id 'y' "j")) Div (Var (Id 'P' "H0")))))) (Seq (Assign (Id 'x' "U") (E_AExp (Op (Op (Op (Num 7) Div (Num 0)) Div (Op (Var (Id 'K' "f2")) Sub (Num 7))) Div (Op (Op (Num 5) Mul (Num 7)) Add (Op (Var (Id 'v' "fKHeL")) Mul (Var (Id 'X' "ew"))))))) (Seq (Assign (Id 's' "W3G") (Cmp (Op (Op (Var (Id 'a' "3")) Mul (Num 3)) Mul (Op (Var (Id 'u' "kPJ4gN")) Sub (Num 6))) Eq (Op (Op (Num 2) Add (Num 2)) Add (Op (Num 2) Sub (Num 2))))) (Seq (Assign (Id 'S' "") (Cmp (Op (Op (Var (Id 'p' "s3xoe")) Mul (Num 7)) Mul (Op (Var (Id 'p' "")) Sub (Var (Id 'P' "B8nO")))) Eq (Op (Op (Num 6) Mul (Num 5)) Div (Op (Num 4) Sub (Num 6))))) (Single (Assign (Id 'h' "") (Not (Cmp (Op (Var (Id 'S' "vz")) Mul (Var (Id 'd' "RthgNrO"))) Le (Op (Num 4) Sub (Var (Id 'e' "LinR")))))))))))))))),"$^P\1014711\&1\1060260? ?\n`\36729")
+prop_stmt_complex :: Property
+prop_stmt_complex = property $
+  let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
+      a = fromJust $ mkId 'a' ""
+      b = fromJust $ mkId 'b' ""
+      res = fromJust $ mkId 'r' "es"
+      curr = fromJust $ mkId 'c' "urr"
+      ast = Seq (Assign a (E_AExp (Num 10))) 
+              (Seq (Assign b (E_AExp (Num 2))) 
+                (Seq (Assign res (E_AExp (Num 0))) 
+                  (Single (While (Not (Cmp (Var a) Le (Num 0))) 
+                    [ Assign curr (If (Cmp (Var a) Gt (Num 5)) (E_AExp (Op (Var a) Add (Var b))) (E_AExp (Op (Var a) Div (Var b))))
+                    , Assign res (E_AExp (Op (Var res) Mul (Var curr)))
+                    , Assign a (If (Cmp (Var b) Neq (Num 0)) (E_AExp (Op (Var a) Sub (Num 1))) (E_AExp (Var a)))
+                    ]))))
+  in runReadP stmts input === Just (ast, "")  
