@@ -5,7 +5,7 @@ module Lambda.ParserTest (parserTests) where
 import Control.Applicative (Alternative (..))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace, isPunctuation, isSymbol)
 import Data.List (intercalate, isPrefixOf)
-import Lambda.Parser (AExp (..), Exp (..), Id, mkId, ReadP, Stmt (..), Stmts (..), aexp, expr, identifier, num, stmt, stmts, binop, BinOp (..), cmpop, CmpOp (..))
+import Lambda.Parser (AExp (..), Exp (..), Id, mkId, ReadP, Stmt (..), aexp, expr, identifier, num, stmt, stmts, binop, BinOp (..), cmpop, CmpOp (..))
 import Data.Maybe (fromJust)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
@@ -256,9 +256,7 @@ genValidWhile n = do
   doStr <- (++) " do " <$> genSpaces
   (sStr, sAst, _) <- scale (`div` 2) genValidStmts
   doneStr <- (++) " done" <$> genSpaces
-  let stmtsToListTest (Single s) = [s]
-      stmtsToListTest (Seq s ss) = s : stmtsToListTest ss
-  return (whiteStr ++ eStr ++ doStr ++ sStr ++ doneStr, While eAst (stmtsToListTest sAst))
+  return (whiteStr ++ eStr ++ doStr ++ sStr ++ doneStr, While eAst sAst)
 
 genValidStmt :: Gen (String, Stmt, String)
 genValidStmt = withPadding $ sized genStmtSized
@@ -273,15 +271,12 @@ genInvalidStmt = genInvalidId
 genInvalidStmts :: Gen String
 genInvalidStmts = genInvalidStmt
 
-genValidStmts :: Gen (String, Stmts, String)
+genValidStmts :: Gen (String, [Stmt], String)
 genValidStmts = do
   (strList, stmtList, _) <- unzip3 <$> scale (`div` 3) (listOf1 (scale (`div` 2) genValidStmt))
   (semicolon, rest) <- first (';' :) <$> genPadding
   let input = intercalate semicolon strList
-  let buildStmts [] = error "Unreachable"
-      buildStmts [s] = Single s
-      buildStmts (s : ss) = Seq s (buildStmts ss)
-  let result = buildStmts stmtList
+  let result = stmtList
   return (input, result, rest)
 
 -- ==========================================
@@ -352,10 +347,10 @@ prop_stmts_invalid = prop_parse_invalid stmts genInvalidStmts
 -- ==========================================
 
 prop_stmt_x_2 :: Property
-prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just (Single (Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21))), "Noise")
+prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just ([Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21))], "Noise")
 
 prop_stmt_semi :: Property
-prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just (Seq (Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21))) (Single (Assign (fromJust $ mkId 'y' "") (E_AExp (Num 2)))), "")
+prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21)), Assign (fromJust $ mkId 'y' "") (E_AExp (Num 2))], "")
 
 prop_stmt_complex :: Property
 prop_stmt_complex = property $
@@ -364,12 +359,13 @@ prop_stmt_complex = property $
       b = fromJust $ mkId 'b' ""
       res = fromJust $ mkId 'r' "es"
       curr = fromJust $ mkId 'c' "urr"
-      ast = Seq (Assign a (E_AExp (Num 10))) 
-              (Seq (Assign b (E_AExp (Num 2))) 
-                (Seq (Assign res (E_AExp (Num 0))) 
-                  (Single (While (Not (Cmp (Var a) Le (Num 0))) 
+      ast = [ Assign a (E_AExp (Num 10))
+            , Assign b (E_AExp (Num 2))
+            , Assign res (E_AExp (Num 0))
+            , While (Not (Cmp (Var a) Le (Num 0))) 
                     [ Assign curr (If (Cmp (Var a) Gt (Num 5)) (E_AExp (Op (Var a) Add (Var b))) (E_AExp (Op (Var a) Div (Var b))))
                     , Assign res (E_AExp (Op (Var res) Mul (Var curr)))
                     , Assign a (If (Cmp (Var b) Neq (Num 0)) (E_AExp (Op (Var a) Sub (Num 1))) (E_AExp (Var a)))
-                    ]))))
+                    ]
+            ]
   in runReadP stmts input === Just (ast, "")  

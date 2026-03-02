@@ -1,7 +1,6 @@
-module Lambda.Parser (ReadP, Id, mkId, unId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Stmts (..), Exp (..), AExp (..), BinOp(..), CmpOp(..)) where
+module Lambda.Parser (ReadP, Id, mkId, unId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Exp (..), AExp (..), BinOp (..), CmpOp (..)) where
 
-import Control.Applicative (Alternative(..))
-import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
+import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit)
 import Text.ParserCombinators.ReadP (ReadP, char, munch, munch1, pfail, satisfy, skipSpaces, string, (<++))
 
 identifier :: ReadP Id
@@ -16,28 +15,25 @@ num = lexeme $ read <$> munch1 isDigit
 
 binop :: ReadP BinOp
 binop = lexeme $ 
-  (char '+' *> pure Add) <++ 
-  (char '-' *> pure Sub) <++ 
-  (char '*' *> pure Mul) <++ 
-  (char '/' *> pure Div)
+  (Add <$ char '+') <++ 
+  (Sub <$ char '-') <++ 
+  (Mul <$ char '*') <++ 
+  (Div <$ char '/')
 
 cmpop :: ReadP CmpOp
 cmpop = lexeme $
-  (string "<=" *> pure Le) <++
-  (char '>' *> pure Gt) <++
-  (string "==" *> pure Eq) <++
-  (string "!=" *> pure Neq)
+  (Le <$ string "<=") <++
+  (Gt <$ char '>') <++
+  (Eq <$ string "==") <++
+  (Neq <$ string "!=")
 
 aexp :: ReadP AExp
 aexp = (Num <$> num) <++ (Var <$> identifier) <++ opP
   where
-    opP = do
-      _ <- lexeme (char '(')
-      left <- aexp
-      op <- binop
-      right <- aexp
-      _ <- lexeme (char ')')
-      return (Op left op right)
+    opP = Op <$ lexeme (char '(')
+        <*> aexp
+        <*> binop
+        <*> aexp <* lexeme (char ')')
 
 expr :: ReadP Exp
 expr = notP <++ ifP <++ aexpP
@@ -50,15 +46,10 @@ expr = notP <++ ifP <++ aexpP
       op <- cmpop
       right <- aexp
       return (Cmp left op right)
-    ifP = do
-      _ <- keyword "if"
-      e1 <- expr
-      _ <- keyword "then"
-      e2 <- expr
-      _ <- keyword "else"
-      e3 <- expr
-      _ <- keyword "fi"
-      return (If e1 e2 e3)
+    ifP = If <$ keyword "if" 
+      <*> expr <* keyword "then" 
+      <*> expr <* keyword "else" 
+      <*> expr <* keyword "fi"
 
 stmt :: ReadP Stmt
 stmt = assignP <++ whileP
@@ -68,23 +59,18 @@ stmt = assignP <++ whileP
       _ <- lexeme (string ":=")
       e <- expr
       return (Assign v e)
-    whileP = do
-      _ <- keyword "while"
-      e <- expr
-      _ <- keyword "do"
-      ss <- stmts
-      _ <- keyword "done"
-      return (While e (stmtsToList ss))
+    whileP =
+      While
+        <$ keyword "while"
+        <*> expr
+        <* keyword "do"
+        <*> stmts
+        <* keyword "done"
 
-stmtsToList :: Stmts -> [Stmt]
-stmtsToList (Single s) = [s]
-stmtsToList (Seq s ss) = s : stmtsToList ss
-
-stmts :: ReadP Stmts
+stmts :: ReadP [Stmt]
 stmts = do
   s <- stmt
-  let sequenceSemicolon = fmap (Seq s) (lexeme (string ";") *> stmts)
-  sequenceSemicolon <++ return (Single s)
+  (lexeme (string ";") *> fmap (s :) stmts) <++ return [s]
 
 -- -- ==========================================
 -- -- AST and ReadP Definitions
@@ -125,30 +111,28 @@ mkId c cs
   | isAscii c && isAlpha c && all (\x -> isAscii x && isAlphaNum x) cs = Just (Id c cs)
   | otherwise = Nothing
 
-data Stmts
-  = Seq Stmt Stmts
-  | Single Stmt
-  deriving (Show, Eq)
-
 data Stmt
   = While Exp [Stmt]
   | Assign Id Exp
   deriving (Show, Eq)
 
 data Exp
-  =If Exp Exp Exp
+  = If Exp Exp Exp
   | Cmp AExp CmpOp AExp
   | Not Exp
   | E_AExp AExp
   deriving (Show, Eq)
 
 data AExp
-  = Num Int | Var Id | Op AExp BinOp AExp
-  deriving( Show, Eq)
+  = Num Int
+  | Var Id
+  | Op AExp BinOp AExp
+  deriving (Show, Eq)
 
 -- \| Op AExp BinOp AExp
 
 data CmpOp = Le | Gt | Eq | Neq deriving (Show, Eq)
+
 data BinOp = Add | Sub | Mul | Div deriving (Show, Eq)
 
 -- -- | ReadPs
