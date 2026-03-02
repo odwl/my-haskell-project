@@ -7,7 +7,7 @@ import Data.Bifunctor (first, second)
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
 import Data.Maybe (fromJust)
-import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, ReadP, Stmt (..), aexp, binop, cmpop, expr, identifier, mkId, num, stmt, stmts)
+import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, ReadP, Stmt (..), aexp, binop, cmpop, expr, identifier, isReservedWord, mkId, num, stmt, stmts)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -179,7 +179,7 @@ genValidId = do
   f <- arbitrary `suchThat` isAsciiAlpha
   r <- listOf (arbitrary `suchThat` isAsciiAlphaNum)
   let str = f : r
-  if str `elem` ["not", "if", "then", "else", "fi", "while", "do", "done"]
+  if isReservedWord str
     then genValidId
     else return (str, fromJust $ mkId f r)
 
@@ -209,8 +209,8 @@ genValidExpr :: Gen (String, Exp)
 genValidExpr = sized genExpSized
 
 genExpSized :: Int -> Gen (String, Exp)
-genExpSized 0 = second E_AExp <$> genValidAExp
-genExpSized n = oneof [genNot, genCmp, genIf, second E_AExp <$> genAExpSized n]
+genExpSized 0 = second EAExp <$> genValidAExp
+genExpSized n = oneof [genNot, genCmp, genIf, second EAExp <$> genAExpSized n]
   where
     genNot = do
       notStr <- (++) "not " <$> genSpaces
@@ -348,10 +348,10 @@ prop_stmts_invalid = prop_parse_invalid stmts genInvalidStmts
 -- ==========================================
 
 prop_stmt_x_2 :: Property
-prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just ([Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21))], "Noise")
+prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Num 21))], "Noise")
 
 prop_stmt_semi :: Property
-prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21)), Assign (fromJust $ mkId 'y' "") (E_AExp (Num 2))], "")
+prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Num 21)), Assign (fromJust $ mkId 'y' "") (EAExp (Num 2))], "")
 
 prop_stmt_complex :: Property
 prop_stmt_complex =
@@ -362,14 +362,14 @@ prop_stmt_complex =
         res = fromJust $ mkId 'r' "es"
         curr = fromJust $ mkId 'c' "urr"
         ast =
-          [ Assign a (E_AExp (Num 10)),
-            Assign b (E_AExp (Num 2)),
-            Assign res (E_AExp (Num 0)),
+          [ Assign a (EAExp (Num 10)),
+            Assign b (EAExp (Num 2)),
+            Assign res (EAExp (Num 0)),
             While
               (Not (Cmp (Var a) Le (Num 0)))
-              [ Assign curr (If (Cmp (Var a) Gt (Num 5)) (E_AExp (Op (Var a) Add (Var b))) (E_AExp (Op (Var a) Div (Var b)))),
-                Assign res (E_AExp (Op (Var res) Mul (Var curr))),
-                Assign a (If (Cmp (Var b) Neq (Num 0)) (E_AExp (Op (Var a) Sub (Num 1))) (E_AExp (Var a)))
+              [ Assign curr (If (Cmp (Var a) Gt (Num 5)) (EAExp (Op (Var a) Add (Var b))) (EAExp (Op (Var a) Div (Var b)))),
+                Assign res (EAExp (Op (Var res) Mul (Var curr))),
+                Assign a (If (Cmp (Var b) Neq (Num 0)) (EAExp (Op (Var a) Sub (Num 1))) (EAExp (Var a)))
               ]
           ]
      in runReadP stmts input === Just (ast, "")

@@ -1,12 +1,18 @@
-module Lambda.Parser (ReadP, Id, mkId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Exp (..), AExp (..), BinOp (..), CmpOp (..)) where
+module Lambda.Parser (ReadP, Id, mkId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Exp (..), AExp (..), BinOp (..), CmpOp (..), reservedWords, isReservedWord) where
 
-import Control.Monad (guard, unless)
+import Control.Monad (guard)
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit)
-import Text.ParserCombinators.ReadP (ReadP, char, choice, munch, munch1, pfail, satisfy, sepBy1, skipSpaces, string, (<++))
+import Text.ParserCombinators.ReadP (ReadP, char, choice, munch, munch1, satisfy, skipSpaces, string, (<++))
 
 -- ==========================================
 -- Types Definitions
 -- ==========================================
+
+reservedWords :: [String]
+reservedWords = ["not", "if", "then", "else", "fi", "while", "do", "done"]
+
+isReservedWord :: String -> Bool
+isReservedWord = (`elem` reservedWords)
 
 data Id = Id Char String
   deriving (Show, Eq)
@@ -31,7 +37,7 @@ data Exp
   = If Exp Exp Exp
   | Cmp AExp CmpOp AExp
   | Not Exp
-  | E_AExp AExp
+  | EAExp AExp
   deriving (Show, Eq)
 
 data Stmt
@@ -48,7 +54,7 @@ identifier = lexeme $ do
   c <- satisfy (liftA2 (&&) isAscii isAlpha)
   cs <- munch (liftA2 (&&) isAscii isAlphaNum)
   let name = c : cs
-  guard (name `notElem` ["not", "if", "then", "else", "fi", "while", "do", "done"])
+  guard (not (isReservedWord name))
   return (Id c cs)
 
 binop :: ReadP BinOp
@@ -91,7 +97,7 @@ expr = notP <++ ifP <++ aexpP
     notP = Not <$> (keyword "not" *> expr)
     aexpP = do
       left <- aexp
-      (Cmp left <$> cmpop <*> aexp) <++ pure (E_AExp left)
+      (Cmp left <$> cmpop <*> aexp) <++ pure (EAExp left)
     ifP =
       If
         <$ keyword "if"
@@ -119,7 +125,7 @@ stmt = assignP <++ whileP
         <* keyword "done"
 
 stmts :: ReadP [Stmt]
-stmts = sepBy1 stmt (lexeme (string ";"))
+stmts = (:) <$> stmt <*> ((lexeme (char ';') *> stmts) <++ pure [])
 
 -- -- ==========================================
 -- -- AST and ReadP Definitions
@@ -133,4 +139,4 @@ lexeme p = p <* skipSpaces
 keyword :: String -> ReadP ()
 keyword k = lexeme $ do
   kw <- munch1 (liftA2 (&&) isAscii isAlphaNum)
-  unless (kw == k) pfail
+  guard (kw == k)
