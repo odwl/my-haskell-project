@@ -1,20 +1,37 @@
-module Lambda.Parser (ReadP, Id, mkId, unId, digit, whiteSpace, num, identifier, aexp, exp, stmt, stmts, Stmt (..), Stmts (..), Exp (..), AExp (..)) where
+module Lambda.Parser (ReadP, Id, mkId, unId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Stmts (..), Exp (..), AExp (..), BinOp(..), CmpOp(..)) where
 
+import Control.Applicative (Alternative(..))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
-import Text.ParserCombinators.ReadP (ReadP, munch, munch1, satisfy, skipSpaces, string, (<++))
-import Prelude hiding (exp)
-
-digit :: ReadP Char
-digit = satisfy isDigit 
-
-whiteSpace :: ReadP Char
-whiteSpace = satisfy isSpace
+import Text.ParserCombinators.ReadP (ReadP, char, munch, munch1, satisfy, skipSpaces, string, (<++))
 
 identifier :: ReadP Id
 identifier = lexeme $ do
   c <- satisfy (liftA2 (&&) isAscii isAlpha)
   cs <- munch (liftA2 (&&) isAscii isAlphaNum)
   return (Id c cs)
+
+num :: ReadP Int
+num = lexeme $ read <$> munch1 isDigit
+
+binop :: ReadP BinOp
+binop = lexeme $ 
+  (char '+' *> pure Add) <|> 
+  (char '-' *> pure Sub) <|> 
+  (char '*' *> pure Mul) <|> 
+  (char '/' *> pure Div)
+
+cmpop :: ReadP CmpOp
+cmpop = lexeme $
+  (string "<=" *> pure Le) <|>
+  (char '>' *> pure Gt) <|>
+  (string "==" *> pure Eq) <|>
+  (string "!=" *> pure Neq)
+
+aexp :: ReadP AExp
+aexp = (Num <$> num) <|> (Var <$> identifier)
+
+expr :: ReadP Exp
+expr = E_AExp <$> aexp
 
 stmts :: ReadP Stmts
 stmts = do
@@ -26,21 +43,8 @@ stmt :: ReadP Stmt
 stmt = do
   v <- identifier
   _ <- lexeme (string ":=")
-  e <- exp
+  e <- expr
   return (Assign v e)
-
-num :: ReadP Int
-num = lexeme $ read <$> munch1 isDigit
-
-aexp :: ReadP AExp
-aexp = do
-  n <- num
-  return (Num n)
-
-exp :: ReadP Exp
-exp = do
-  e <- aexp
-  return (E_AExp e)
 
 -- -- ==========================================
 -- -- AST and ReadP Definitions
@@ -95,18 +99,13 @@ data Exp
   deriving (Show, Eq)
 
 data AExp
-  = Num Int
-  deriving
-    ( -- | Var Id
-      Show,
-      Eq
-    )
+  = Num Int | Var Id
+  deriving( Show, Eq)
 
 -- \| Op AExp BinOp AExp
 
--- data CmpOp = Le | Gt | Eq | Neq deriving (Show, Eq)
-
--- data BinOp = Add | Sub | Mul | Div deriving (Show, Eq)
+data CmpOp = Le | Gt | Eq | Neq deriving (Show, Eq)
+data BinOp = Add | Sub | Mul | Div deriving (Show, Eq)
 
 -- -- | ReadPs
 
