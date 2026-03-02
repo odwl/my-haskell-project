@@ -186,7 +186,10 @@ genValidId :: Gen (String, Id)
 genValidId = do
   f <- arbitrary `suchThat` isAsciiAlpha
   r <- listOf (arbitrary `suchThat` isAsciiAlphaNum)
-  return (f : r, fromJust $ mkId f r)
+  let str = f : r
+  if str == "not"
+    then genValidId
+    else return (str, fromJust $ mkId f r)
 
 genInvalidId :: Gen String
 genInvalidId = pure <$> arbitrary `suchThat` (not . isAsciiAlpha)
@@ -211,7 +214,14 @@ genInvalidExpr :: Gen String
 genInvalidExpr = genInvalidAExp
 
 genValidExpr :: Gen (String, Exp)
-genValidExpr = second E_AExp <$> genValidAExp
+genValidExpr = sized genExpSized
+
+genExpSized :: Int -> Gen (String, Exp)
+genExpSized 0 = second E_AExp <$> genValidAExp
+genExpSized n = do
+      spaces <- genSpaces
+      (eStr, eAst) <- genExpSized (n `div` 2)
+      return ("not " ++ spaces ++ eStr, Not eAst)
 
 genValidBinOp :: Gen (String, BinOp)
 genValidBinOp = genValidOp [ ("+", Add), ("-", Sub), ("*", Mul), ("/", Div) ]

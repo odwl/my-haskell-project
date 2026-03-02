@@ -2,13 +2,14 @@ module Lambda.Parser (ReadP, Id, mkId, unId, num, binop, cmpop, identifier, aexp
 
 import Control.Applicative (Alternative(..))
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace)
-import Text.ParserCombinators.ReadP (ReadP, char, munch, munch1, satisfy, skipSpaces, string, (<++))
+import Text.ParserCombinators.ReadP (ReadP, char, munch, munch1, pfail, satisfy, skipSpaces, string, (<++))
 
 identifier :: ReadP Id
 identifier = lexeme $ do
   c <- satisfy (liftA2 (&&) isAscii isAlpha)
   cs <- munch (liftA2 (&&) isAscii isAlphaNum)
-  return (Id c cs)
+  let name = c : cs
+  if name == "not" then pfail else return (Id c cs)
 
 num :: ReadP Int
 num = lexeme $ read <$> munch1 isDigit
@@ -39,7 +40,12 @@ aexp = (Num <$> num) <|> (Var <$> identifier) <|> opP
       return (Op left op right)
 
 expr :: ReadP Exp
-expr = E_AExp <$> aexp
+expr = (E_AExp <$> aexp) <|> notP
+  where
+    notP = do
+      _ <- lexeme (string "not")
+      e <- expr
+      return (Not e)
 
 stmts :: ReadP Stmts
 stmts = do
@@ -99,11 +105,9 @@ data Stmt
 
 data Exp
   = -- If Exp Exp Exp
-
     -- | Cmp AExp CmpOp AExp
-    -- | Not Exp
-    -- |
-    E_AExp AExp
+    Not Exp
+  | E_AExp AExp
   deriving (Show, Eq)
 
 data AExp
