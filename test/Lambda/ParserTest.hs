@@ -4,10 +4,10 @@ module Lambda.ParserTest (parserTests) where
 
 import Control.Applicative (Alternative (..))
 import Data.Bifunctor (first, second)
-import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isPunctuation, isSpace, isSymbol)
+import Data.Char (isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
 import Data.Maybe (fromJust)
-import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, ReadP, Stmt (..), aexp, binop, cmpop, expr, identifier, isReservedWord, mkId, num, stmt, stmts)
+import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, ReadP, Stmt (..), aexp, binop, cmpop, expr, identifier, isAsciiAlpha, isAsciiAlphaNum, isReservedWord, mkId, num, stmt, stmts)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -167,12 +167,6 @@ genInvalidOp invalidPrefixes = do
     arbitrary `suchThat` \str ->
       not (null str) && not (isSpace (head str)) && not (any (`isPrefixOf` str) invalidPrefixes)
   return s
-
-isAsciiAlpha :: Char -> Bool
-isAsciiAlpha c = isAscii c && isAlpha c
-
-isAsciiAlphaNum :: Char -> Bool
-isAsciiAlphaNum c = isAscii c && isAlphaNum c
 
 genValidId :: Gen (String, Id)
 genValidId = do

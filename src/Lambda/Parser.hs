@@ -1,4 +1,4 @@
-module Lambda.Parser (ReadP, Id, mkId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Exp (..), AExp (..), BinOp (..), CmpOp (..), reservedWords, isReservedWord) where
+module Lambda.Parser (ReadP, Id, mkId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Exp (..), AExp (..), BinOp (..), CmpOp (..), reservedWords, isReservedWord, isAsciiAlpha, isAsciiAlphaNum) where
 
 import Control.Monad (guard)
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit)
@@ -17,10 +17,17 @@ isReservedWord = (`elem` reservedWords)
 data Id = Id Char String
   deriving (Show, Eq)
 
+-- | Predicates for identifier characters.
+isAsciiAlpha :: Char -> Bool
+isAsciiAlpha c = isAscii c && isAlpha c
+
+isAsciiAlphaNum :: Char -> Bool
+isAsciiAlphaNum c = isAscii c && isAlphaNum c
+
 -- | Smart constructor that explicitly takes the starting Char and the rest of the String.
 mkId :: Char -> String -> Maybe Id
 mkId c cs
-  | isAscii c && isAlpha c && all (\x -> isAscii x && isAlphaNum x) cs = Just (Id c cs)
+  | isAsciiAlpha c && all isAsciiAlphaNum cs = Just (Id c cs)
   | otherwise = Nothing
 
 data CmpOp = Le | Gt | Eq | Neq deriving (Show, Eq)
@@ -51,8 +58,8 @@ data Stmt
 
 identifier :: ReadP Id
 identifier = lexeme $ do
-  c <- satisfy (liftA2 (&&) isAscii isAlpha)
-  cs <- munch (liftA2 (&&) isAscii isAlphaNum)
+  c <- satisfy isAsciiAlpha
+  cs <- munch isAsciiAlphaNum
   let name = c : cs
   guard (not (isReservedWord name))
   return (Id c cs)
