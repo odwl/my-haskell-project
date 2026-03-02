@@ -3,20 +3,20 @@
 module Lambda.ParserTest (parserTests) where
 
 import Control.Applicative (Alternative (..))
-import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isSpace, isPunctuation, isSymbol)
+import Data.Bifunctor (first, second)
+import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
-import Lambda.Parser (AExp (..), Exp (..), Id, mkId, ReadP, Stmt (..), aexp, expr, identifier, num, stmt, stmts, binop, BinOp (..), cmpop, CmpOp (..))
 import Data.Maybe (fromJust)
+import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, ReadP, Stmt (..), aexp, binop, cmpop, expr, identifier, mkId, num, stmt, stmts)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Data.Bifunctor (first, second)
 import Text.ParserCombinators.ReadP (char, pfail, readP_to_S, satisfy, string)
 
 -- | Run parser and return the first result
-runReadP :: ReadP a -> String -> Maybe (a, String) 
+runReadP :: ReadP a -> String -> Maybe (a, String)
 runReadP p s = case readP_to_S p s of
   [] -> Nothing
   ((x, s') : _) -> Just (x, s')
@@ -102,7 +102,7 @@ instance (Eq a, Show a) => EqProp (ReadP a) where
 
 prop_satisfiesMatchingChar :: Char -> String -> Property
 prop_satisfiesMatchingChar c s =
-  runReadP (satisfy (== c)) (c : s) === Just (c, s) 
+  runReadP (satisfy (== c)) (c : s) === Just (c, s)
 
 prop_nonMatchingChar :: Char -> Char -> String -> Property
 prop_nonMatchingChar c1 c2 s =
@@ -163,8 +163,9 @@ genValidOp ops = elements ops
 
 genInvalidOp :: [String] -> Gen String
 genInvalidOp invalidPrefixes = do
-  s <- arbitrary `suchThat` \str -> 
-    not (null str) && not (isSpace (head str)) && not (any (`isPrefixOf` str) invalidPrefixes)
+  s <-
+    arbitrary `suchThat` \str ->
+      not (null str) && not (isSpace (head str)) && not (any (`isPrefixOf` str) invalidPrefixes)
   return s
 
 isAsciiAlpha :: Char -> Bool
@@ -192,14 +193,14 @@ genValidAExp :: Gen (String, AExp)
 genValidAExp = sized genAExpSized
 
 genAExpSized :: Int -> Gen (String, AExp)
-genAExpSized 0 = oneof [ second Num <$> genValidNum, second Var <$> genValidId ]
+genAExpSized 0 = oneof [second Num <$> genValidNum, second Var <$> genValidId]
 genAExpSized n = do
-      spaces <- genSpaces
-      (leftS, leftA) <- genAExpSized (n `div` 2)
-      (opS, opA) <- genValidBinOp
-      (rightS, rightA) <- genAExpSized (n `div` 2)
-      let str = intercalate spaces ["(", leftS, opS, rightS, ")"] ++ spaces
-      return (str, Op leftA opA rightA)
+  spaces <- genSpaces
+  (leftS, leftA) <- genAExpSized (n `div` 2)
+  (opS, opA) <- genValidBinOp
+  (rightS, rightA) <- genAExpSized (n `div` 2)
+  let str = intercalate spaces ["(", leftS, opS, rightS, ")"] ++ spaces
+  return (str, Op leftA opA rightA)
 
 genInvalidExpr :: Gen String
 genInvalidExpr = genInvalidAExp
@@ -231,13 +232,13 @@ genExpSized n = oneof [genNot, genCmp, genIf, second E_AExp <$> genAExpSized n]
       return (str, If cA tA eA)
 
 genValidBinOp :: Gen (String, BinOp)
-genValidBinOp = genValidOp [ ("+", Add), ("-", Sub), ("*", Mul), ("/", Div) ]
+genValidBinOp = genValidOp [("+", Add), ("-", Sub), ("*", Mul), ("/", Div)]
 
 genInvalidBinOp :: Gen String
 genInvalidBinOp = genInvalidOp ["+", "-", "*", "/"]
 
 genValidCmpOp :: Gen (String, CmpOp)
-genValidCmpOp = genValidOp [ ("<=", Le), (">", Gt), ("==", Eq), ("!=", Neq) ]
+genValidCmpOp = genValidOp [("<=", Le), (">", Gt), ("==", Eq), ("!=", Neq)]
 
 genInvalidCmpOp :: Gen String
 genInvalidCmpOp = genInvalidOp ["<=", ">", "==", "!="]
@@ -353,19 +354,22 @@ prop_stmt_semi :: Property
 prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21)), Assign (fromJust $ mkId 'y' "") (E_AExp (Num 2))], "")
 
 prop_stmt_complex :: Property
-prop_stmt_complex = property $
-  let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
-      a = fromJust $ mkId 'a' ""
-      b = fromJust $ mkId 'b' ""
-      res = fromJust $ mkId 'r' "es"
-      curr = fromJust $ mkId 'c' "urr"
-      ast = [ Assign a (E_AExp (Num 10))
-            , Assign b (E_AExp (Num 2))
-            , Assign res (E_AExp (Num 0))
-            , While (Not (Cmp (Var a) Le (Num 0))) 
-                    [ Assign curr (If (Cmp (Var a) Gt (Num 5)) (E_AExp (Op (Var a) Add (Var b))) (E_AExp (Op (Var a) Div (Var b))))
-                    , Assign res (E_AExp (Op (Var res) Mul (Var curr)))
-                    , Assign a (If (Cmp (Var b) Neq (Num 0)) (E_AExp (Op (Var a) Sub (Num 1))) (E_AExp (Var a)))
-                    ]
-            ]
-  in runReadP stmts input === Just (ast, "")  
+prop_stmt_complex =
+  property $
+    let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
+        a = fromJust $ mkId 'a' ""
+        b = fromJust $ mkId 'b' ""
+        res = fromJust $ mkId 'r' "es"
+        curr = fromJust $ mkId 'c' "urr"
+        ast =
+          [ Assign a (E_AExp (Num 10)),
+            Assign b (E_AExp (Num 2)),
+            Assign res (E_AExp (Num 0)),
+            While
+              (Not (Cmp (Var a) Le (Num 0)))
+              [ Assign curr (If (Cmp (Var a) Gt (Num 5)) (E_AExp (Op (Var a) Add (Var b))) (E_AExp (Op (Var a) Div (Var b)))),
+                Assign res (E_AExp (Op (Var res) Mul (Var curr))),
+                Assign a (If (Cmp (Var b) Neq (Num 0)) (E_AExp (Op (Var a) Sub (Num 1))) (E_AExp (Var a)))
+              ]
+          ]
+     in runReadP stmts input === Just (ast, "")
