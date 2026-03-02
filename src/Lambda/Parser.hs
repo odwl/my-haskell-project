@@ -40,12 +40,19 @@ aexp = (Num <$> num) <|> (Var <$> identifier) <|> opP
       return (Op left op right)
 
 expr :: ReadP Exp
-expr = (E_AExp <$> aexp) <|> notP
+expr = cmpP <++ notP <++ (E_AExp <$> aexp)
   where
     notP = do
-      _ <- lexeme (string "not")
+      _ <- lexeme $ do
+        kw <- munch1 (\c -> isAscii c && isAlphaNum c)
+        if kw == "not" then return () else pfail
       e <- expr
       return (Not e)
+    cmpP = do
+      left <- aexp
+      op <- cmpop
+      right <- aexp
+      return (Cmp left op right)
 
 stmts :: ReadP Stmts
 stmts = do
@@ -104,9 +111,9 @@ data Stmt
   deriving (Show, Eq)
 
 data Exp
-  = -- If Exp Exp Exp
-    -- | Cmp AExp CmpOp AExp
-    Not Exp
+  -- If Exp Exp Exp
+  = Cmp AExp CmpOp AExp
+  | Not Exp
   | E_AExp AExp
   deriving (Show, Eq)
 

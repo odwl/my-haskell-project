@@ -218,10 +218,19 @@ genValidExpr = sized genExpSized
 
 genExpSized :: Int -> Gen (String, Exp)
 genExpSized 0 = second E_AExp <$> genValidAExp
-genExpSized n = do
-      spaces <- genSpaces
+genExpSized n = oneof [genNot, genCmp, second E_AExp <$> genAExpSized n]
+  where
+    genNot = do
+      notStr <- (++) "not " <$> genSpaces
       (eStr, eAst) <- genExpSized (n `div` 2)
-      return ("not " ++ spaces ++ eStr, Not eAst)
+      return (notStr ++ eStr, Not eAst)
+    genCmp = do
+      spaces <- genSpaces
+      (leftS, leftA) <- genAExpSized (n `div` 2)
+      (opS, opA) <- genValidCmpOp
+      (rightS, rightA) <- genAExpSized (n `div` 2)
+      let str = intercalate spaces [leftS, opS, rightS]
+      return (str, Cmp leftA opA rightA)
 
 genValidBinOp :: Gen (String, BinOp)
 genValidBinOp = genValidOp [ ("+", Add), ("-", Sub), ("*", Mul), ("/", Div) ]
@@ -324,3 +333,6 @@ prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just (Single (Assig
 
 prop_stmt_semi :: Property
 prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just (Seq (Assign (fromJust $ mkId 'x' "") (E_AExp (Num 21))) (Single (Assign (fromJust $ mkId 'y' "") (E_AExp (Num 2)))), "")
+
+
+-- Just (Seq (Assign (Id 'T' "") (Cmp (Op (Op (Num 2) Mul (Var (Id 'n' "tk6"))) Sub (Op (Var (Id 'D' "VCXPzLZ")) Div (Num 0))) Neq (Op (Op (Num 5) Mul (Num 5)) Div (Op (Var (Id 'd' "h")) Div (Var (Id 'B' "kC4G")))))) (Seq (Assign (Id 'J' "") (Not (Cmp (Var (Id 'n' "ot4")) Neq (Var (Id 'g' "yjf"))))) (Seq (Assign (Id 'V' "g18Hn") (Not (Not (Cmp (Num 2) Gt (Var (Id 'w' "TSGw")))))) (Seq (Assign (Id 'K' "y4zr") (Not (Cmp (Op (Num 6) Sub (Num 2)) Eq (Op (Var (Id 'h' "mz")) Add (Var (Id 'O' "u")))))) (Seq (Assign (Id 'p' "") (Cmp (Op (Op (Var (Id 'b' "1f5Q")) Add (Var (Id 'H' ""))) Add (Op (Var (Id 'p' "sgzloj")) Add (Num 7))) Eq (Op (Op (Var (Id 'I' "x4Z")) Add (Var (Id 'P' "OQ136"))) Mul (Op (Var (Id 'j' "Uw0ElT")) Add (Num 5))))) (Seq (Assign (Id 'm' "FNouaQg") (Not (Cmp (Op (Num 4) Sub (Var (Id 'p' "rvk203"))) Eq (Op (Var (Id 'Y' "pD6PoCm")) Add (Num 2))))) (Seq (Assign (Id 'B' "JVw") (Not (Cmp (Op (Var (Id 'V' "cvGfk9")) Div (Var (Id 'G' "ZJG2Kr"))) Le (Op (Var (Id 'y' "j")) Div (Var (Id 'P' "H0")))))) (Seq (Assign (Id 'x' "U") (E_AExp (Op (Op (Op (Num 7) Div (Num 0)) Div (Op (Var (Id 'K' "f2")) Sub (Num 7))) Div (Op (Op (Num 5) Mul (Num 7)) Add (Op (Var (Id 'v' "fKHeL")) Mul (Var (Id 'X' "ew"))))))) (Seq (Assign (Id 's' "W3G") (Cmp (Op (Op (Var (Id 'a' "3")) Mul (Num 3)) Mul (Op (Var (Id 'u' "kPJ4gN")) Sub (Num 6))) Eq (Op (Op (Num 2) Add (Num 2)) Add (Op (Num 2) Sub (Num 2))))) (Seq (Assign (Id 'S' "") (Cmp (Op (Op (Var (Id 'p' "s3xoe")) Mul (Num 7)) Mul (Op (Var (Id 'p' "")) Sub (Var (Id 'P' "B8nO")))) Eq (Op (Op (Num 6) Mul (Num 5)) Div (Op (Num 4) Sub (Num 6))))) (Single (Assign (Id 'h' "") (Not (Cmp (Op (Var (Id 'S' "vz")) Mul (Var (Id 'd' "RthgNrO"))) Le (Op (Num 4) Sub (Var (Id 'e' "LinR")))))))))))))))),"$^P\1014711\&1\1060260? ?\n`\36729") /= Just (Seq (Assign (Id 'T' "") (Cmp (Op (Op (Num 2) Mul (Var (Id 'n' "tk6"))) Sub (Op (Var (Id 'D' "VCXPzLZ")) Div (Num 0))) Neq (Op (Op (Num 5) Mul (Num 5)) Div (Op (Var (Id 'd' "h")) Div (Var (Id 'B' "kC4G")))))) (Seq (Assign (Id 'J' "") (Not (Not (Cmp (Num 4) Neq (Var (Id 'g' "yjf")))))) (Seq (Assign (Id 'V' "g18Hn") (Not (Not (Cmp (Num 2) Gt (Var (Id 'w' "TSGw")))))) (Seq (Assign (Id 'K' "y4zr") (Not (Cmp (Op (Num 6) Sub (Num 2)) Eq (Op (Var (Id 'h' "mz")) Add (Var (Id 'O' "u")))))) (Seq (Assign (Id 'p' "") (Cmp (Op (Op (Var (Id 'b' "1f5Q")) Add (Var (Id 'H' ""))) Add (Op (Var (Id 'p' "sgzloj")) Add (Num 7))) Eq (Op (Op (Var (Id 'I' "x4Z")) Add (Var (Id 'P' "OQ136"))) Mul (Op (Var (Id 'j' "Uw0ElT")) Add (Num 5))))) (Seq (Assign (Id 'm' "FNouaQg") (Not (Cmp (Op (Num 4) Sub (Var (Id 'p' "rvk203"))) Eq (Op (Var (Id 'Y' "pD6PoCm")) Add (Num 2))))) (Seq (Assign (Id 'B' "JVw") (Not (Cmp (Op (Var (Id 'V' "cvGfk9")) Div (Var (Id 'G' "ZJG2Kr"))) Le (Op (Var (Id 'y' "j")) Div (Var (Id 'P' "H0")))))) (Seq (Assign (Id 'x' "U") (E_AExp (Op (Op (Op (Num 7) Div (Num 0)) Div (Op (Var (Id 'K' "f2")) Sub (Num 7))) Div (Op (Op (Num 5) Mul (Num 7)) Add (Op (Var (Id 'v' "fKHeL")) Mul (Var (Id 'X' "ew"))))))) (Seq (Assign (Id 's' "W3G") (Cmp (Op (Op (Var (Id 'a' "3")) Mul (Num 3)) Mul (Op (Var (Id 'u' "kPJ4gN")) Sub (Num 6))) Eq (Op (Op (Num 2) Add (Num 2)) Add (Op (Num 2) Sub (Num 2))))) (Seq (Assign (Id 'S' "") (Cmp (Op (Op (Var (Id 'p' "s3xoe")) Mul (Num 7)) Mul (Op (Var (Id 'p' "")) Sub (Var (Id 'P' "B8nO")))) Eq (Op (Op (Num 6) Mul (Num 5)) Div (Op (Num 4) Sub (Num 6))))) (Single (Assign (Id 'h' "") (Not (Cmp (Op (Var (Id 'S' "vz")) Mul (Var (Id 'd' "RthgNrO"))) Le (Op (Num 4) Sub (Var (Id 'e' "LinR")))))))))))))))),"$^P\1014711\&1\1060260? ?\n`\36729")
