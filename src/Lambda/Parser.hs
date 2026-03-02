@@ -28,7 +28,15 @@ cmpop = lexeme $
   (string "!=" *> pure Neq)
 
 aexp :: ReadP AExp
-aexp = (Num <$> num) <|> (Var <$> identifier)
+aexp = (Num <$> num) <|> (Var <$> identifier) <|> opP
+  where
+    opP = do
+      _ <- lexeme (char '(')
+      left <- aexp
+      op <- binop
+      right <- aexp
+      _ <- lexeme (char ')')
+      return (Op left op right)
 
 expr :: ReadP Exp
 expr = E_AExp <$> aexp
@@ -99,7 +107,7 @@ data Exp
   deriving (Show, Eq)
 
 data AExp
-  = Num Int | Var Id
+  = Num Int | Var Id | Op AExp BinOp AExp
   deriving( Show, Eq)
 
 -- \| Op AExp BinOp AExp

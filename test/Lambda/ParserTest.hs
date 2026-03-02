@@ -12,7 +12,7 @@ import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Data.Bifunctor (first)
+import Data.Bifunctor (first, second)
 import Text.ParserCombinators.ReadP (char, pfail, readP_to_S, satisfy, string)
 
 -- | Run parser and return the first result
@@ -146,32 +146,29 @@ genSpaces = elements $ "" : map pure " \t\n\r\f\v"
 genPadding :: Gen (String, String)
 genPadding = do
   spaces <- genSpaces
-  sep <- arbitrary `suchThat` (\c -> isPunctuation c || isSymbol c)
+  sep <- arbitrary `suchThat` (\c -> (isPunctuation c || isSymbol c) && c `notElem` "+-*/=<>!:;")
   rest <- arbitrary
   return (spaces, sep : rest)
+
+withPadding :: Gen (String, a) -> Gen (String, a, String)
+withPadding gen = do
+  (str, ast) <- gen
+  (spaces, rest) <- genPadding
+  return (str ++ spaces, ast, rest)
 
 -- | Generates a valid numeric value followed by trailing whitespace and noise.
 -- Returns a tuple containing:
 -- 1. The full unparsed literal string including the number and trailing spaces
 -- 2. The expected generated Int value
 -- 3. A random trailing string guaranteed to start with a non-digit, non-space character
-genValidNum :: Gen (String, Int, String)
-genValidNum = do
-  (nStr, n) <- (\x -> (show x, x)) <$> arbitrary `suchThat` (>= 0)
-  (spaces, rest) <- genPadding
-  return (nStr ++ spaces, n, rest)
+genValidNum :: Gen (String, Int)
+genValidNum = (\n -> (show n, n)) <$> arbitrary `suchThat` (>= 0)
 
 genInvalidNum :: Gen String
-genInvalidNum = do
-  c <- arbitrary `suchThat` (not . isDigit)
-  s <- arbitrary
-  return (c : s)
+genInvalidNum = pure <$> arbitrary `suchThat` (not . isDigit)
 
-genOp :: [(String, a)] -> Gen (String, a, String)
-genOp ops = do
-  (opStr, opAst) <- elements ops
-  (spaces, rest) <- genPadding
-  return (opStr ++ spaces, opAst, rest)
+genValidOp :: [(String, a)] -> Gen (String, a)
+genValidOp ops = elements ops
 
 genInvalidOp :: [String] -> Gen String
 genInvalidOp invalidPrefixes = do
@@ -179,60 +176,61 @@ genInvalidOp invalidPrefixes = do
     not (null str) && not (isSpace (head str)) && not (any (`isPrefixOf` str) invalidPrefixes)
   return s
 
--- | Generates a valid identifier string followed by trailing noise.
--- Returns a tuple containing:
--- 1. The full unparsed literal string including the identifier and trailing spaces
--- 2. The expected generated Id AST node
--- 3. A random trailing string guaranteed to start with a non-alphanumeric separator character
-genValidId :: Gen (String, Id, String)
-genValidId = do
-  idFirst <- arbitrary `suchThat` (liftA2 (&&) isAscii isAlpha)
-  idRest <- listOf $ arbitrary `suchThat` (liftA2 (&&) isAscii isAlphaNum)
-  (spaces, rest) <- genPadding
-  return (idFirst : idRest ++ spaces, fromJust $ mkId idFirst idRest, rest)
+isAsciiAlpha :: Char -> Bool
+isAsciiAlpha c = isAscii c && isAlpha c
 
-genInvalidStartChar :: Gen Char
-genInvalidStartChar =
-  frequency
-    [ (1, elements ['0' .. '9']),
-      (3, arbitrary `suchThat` (\c -> not (isAscii c && isAlpha c)))
-    ]
+isAsciiAlphaNum :: Char -> Bool
+isAsciiAlphaNum c = isAscii c && isAlphaNum c
+
+genValidId :: Gen (String, Id)
+genValidId = do
+  f <- arbitrary `suchThat` isAsciiAlpha
+  r <- listOf (arbitrary `suchThat` isAsciiAlphaNum)
+  return (f : r, fromJust $ mkId f r)
 
 genInvalidId :: Gen String
-genInvalidId = do
-  c <- genInvalidStartChar
-  rest <- arbitrary
-  return (c : rest)
+genInvalidId = pure <$> arbitrary `suchThat` (not . isAsciiAlpha)
 
 genInvalidAExp :: Gen String
-genInvalidAExp = do
-  c <- arbitrary `suchThat` (\x -> not (isDigit x) && not (isAscii x && isAlpha x))
-  s <- arbitrary
-  return (c : s)
+genInvalidAExp = pure <$> arbitrary `suchThat` (\x -> not (isDigit x) && not (isAsciiAlpha x) && x /= '(')
 
-genValidAExp :: Gen (String, AExp, String)
-genValidAExp = oneof
-  [ first Num <$> genValidNum
-  , first Var <$> genValidId
-  ]
+genValidAExp :: Gen (String, AExp)
+genValidAExp = sized genAExpSized
+
+genAExpSized :: Int -> Gen (String, AExp)
+genAExpSized 0 = oneof [ second Num <$> genValidNum, second Var <$> genValidId ]
+genAExpSized n = do
+      spaces <- genSpaces
+      (leftS, leftA) <- genAExpSized (n `div` 2)
+      (opS, opA) <- genValidBinOp
+      (rightS, rightA) <- genAExpSized (n `div` 2)
+      let str = intercalate spaces ["(", leftS, opS, rightS, ")"] ++ spaces
+      return (str, Op leftA opA rightA)
 
 genInvalidExpr :: Gen String
 genInvalidExpr = genInvalidAExp
 
-genValidExpr :: Gen (String, Exp, String)
-genValidExpr = first E_AExp <$> genValidAExp
+genValidExpr :: Gen (String, Exp)
+genValidExpr = second E_AExp <$> genValidAExp
 
-genValidBinOp :: Gen (String, BinOp, String)
-genValidBinOp = genOp [ ("+", Add), ("-", Sub), ("*", Mul), ("/", Div) ]
+genValidBinOp :: Gen (String, BinOp)
+genValidBinOp = genValidOp [ ("+", Add), ("-", Sub), ("*", Mul), ("/", Div) ]
 
 genInvalidBinOp :: Gen String
 genInvalidBinOp = genInvalidOp ["+", "-", "*", "/"]
 
-genValidCmpOp :: Gen (String, CmpOp, String)
-genValidCmpOp = genOp [ ("<=", Le), (">", Gt), ("==", Eq), ("!=", Neq) ]
+genValidCmpOp :: Gen (String, CmpOp)
+genValidCmpOp = genValidOp [ ("<=", Le), (">", Gt), ("==", Eq), ("!=", Neq) ]
 
 genInvalidCmpOp :: Gen String
 genInvalidCmpOp = genInvalidOp ["<=", ">", "==", "!="]
+
+genValidAssign :: Gen (String, Stmt)
+genValidAssign = do
+  (identStr, identAst) <- genValidId
+  (expStr, expAst) <- genValidExpr
+  isEq <- (++ ":=") <$> genSpaces
+  return (identStr ++ isEq ++ expStr, Assign identAst expAst)
 
 -- | Generates a valid statement.
 -- Returns a tuple containing:
@@ -240,13 +238,7 @@ genInvalidCmpOp = genInvalidOp ["<=", ">", "==", "!="]
 -- 2. The expected AST (e.g. Assign "x" (E_AExp (Num 21)))
 -- 3. A random trailing "rest" string that should be left unparsed
 genValidStmt :: Gen (String, Stmt, String)
-genValidStmt = do
-  (identStr, identAst, _) <- genValidId
-  (expStr, expAst, _) <- genValidExpr
-  (spaces, rest) <- genPadding
-  let stmtStr = identStr ++ ":=" ++ spaces ++ expStr
-  let stmtAst = Assign identAst expAst
-  return (stmtStr, stmtAst, rest)
+genValidStmt = withPadding genValidAssign
 
 -- | Generates a valid sequence of statements separated by semicolons.
 -- Returns a tuple containing:
@@ -276,40 +268,41 @@ prop_parse_valid parser generator = property $ do
 prop_parse_invalid :: (Eq a, Show a) => ReadP a -> Gen String -> Property
 prop_parse_invalid parser generator = property $ do
   invalidStart <- generator
-  return $ runReadP parser invalidStart === Nothing
+  rest <- arbitrary
+  return $ runReadP parser (invalidStart ++ rest) === Nothing
 
 prop_num_valid :: Property
-prop_num_valid = prop_parse_valid num genValidNum
+prop_num_valid = prop_parse_valid num (withPadding genValidNum)
 
 prop_num_invalid :: Property
 prop_num_invalid = prop_parse_invalid num genInvalidNum
 
 prop_aexp_valid :: Property
-prop_aexp_valid = prop_parse_valid aexp genValidAExp
+prop_aexp_valid = prop_parse_valid aexp (withPadding genValidAExp)
 
 prop_aexp_invalid :: Property
 prop_aexp_invalid = prop_parse_invalid aexp genInvalidAExp
 
 prop_expr_valid :: Property
-prop_expr_valid = prop_parse_valid expr genValidExpr
+prop_expr_valid = prop_parse_valid expr (withPadding genValidExpr)
 
 prop_expr_invalid :: Property
 prop_expr_invalid = prop_parse_invalid expr genInvalidExpr
 
 prop_binop_valid :: Property
-prop_binop_valid = prop_parse_valid binop genValidBinOp
+prop_binop_valid = prop_parse_valid binop (withPadding genValidBinOp)
 
 prop_binop_invalid :: Property
 prop_binop_invalid = prop_parse_invalid binop genInvalidBinOp
 
 prop_cmpop_valid :: Property
-prop_cmpop_valid = prop_parse_valid cmpop genValidCmpOp
+prop_cmpop_valid = prop_parse_valid cmpop (withPadding genValidCmpOp)
 
 prop_cmpop_invalid :: Property
 prop_cmpop_invalid = prop_parse_invalid cmpop genInvalidCmpOp
 
 prop_identifier_valid :: Property
-prop_identifier_valid = prop_parse_valid identifier genValidId
+prop_identifier_valid = prop_parse_valid identifier (withPadding genValidId)
 
 prop_identifier_reject_invalid_start :: Property
 prop_identifier_reject_invalid_start = prop_parse_invalid identifier genInvalidId
