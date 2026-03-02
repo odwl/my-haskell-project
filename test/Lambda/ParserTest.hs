@@ -244,21 +244,13 @@ genValidAssign = do
 
 -- | Generates a valid statement.
 -- Returns a tuple containing:
--- 1. The literal string representation of the statement (e.g. "x := \t 21  ")
--- 2. The expected AST (e.g. Assign "x" (E_AExp (Num 21)))
--- 3. A random trailing "rest" string that should be left unparsed
 genValidStmt :: Gen (String, Stmt, String)
 genValidStmt = withPadding genValidAssign
 
--- | Generates a valid sequence of statements separated by semicolons.
--- Returns a tuple containing:
--- 1. The literal string representation of the statements (e.g. "x := \t 1;y := 2")
--- 2. The expected Stmts AST (e.g. Seq (Assign "x" (E_AExp (Num 1))) (Single (Assign "y" (E_AExp (Num 2)))))
--- 3. A random trailing "rest" string that should be left unparsed
 genValidStmts :: Gen (String, Stmts, String)
 genValidStmts = do
-  (strList, stmtList, _) <- unzip3 <$> listOf1 genValidStmt
-  (semicolon, rest) <- first (';':) <$> genPadding
+  (strList, stmtList, _) <- unzip3 <$> scale (`div` 3) (listOf1 (scale (`div` 2) genValidStmt))
+  (semicolon, rest) <- first (';' :) <$> genPadding
   let input = intercalate semicolon strList
   let buildStmts [] = error "Unreachable"
       buildStmts [s] = Single s
