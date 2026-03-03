@@ -26,7 +26,7 @@ runMyReader :: MyReader a b -> a -> b
 runMyReader = unwrap
 
 -- ==========================================
--- Hoover exercises. https://lmf.di.uminho.pt/quantum-logic-2021/LQ-Monads.pdf
+-- Inspired by: https://lmf.di.uminho.pt/quantum-logic-2021/LQ-Monads.pdf
 -- ==========================================
 
 data MaybeList a = MaybeList {getMaybeList :: [Maybe a]} deriving (Show, Eq)

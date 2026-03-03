@@ -1,5 +1,7 @@
 module Lambda.MiniWhile where
 
+-- Inspired by: https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2019/ex/ex6.pdf
+
 import Control.Monad.State
 import Data.Char (isAlpha, isAlphaNum)
 import Data.Foldable (traverse_)

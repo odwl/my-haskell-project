@@ -1,5 +1,7 @@
 module Lambda.Parser (ReadP, Id, mkId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Exp (..), AExp (..), BinOp (..), CmpOp (..), reservedWords, isReservedWord, isAsciiAlpha, isAsciiAlphaNum) where
 
+-- Inspired by: https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2019/ex/ex5.pdf
+
 import Control.Monad (guard)
 import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit)
 import Text.ParserCombinators.ReadP (ReadP, char, choice, munch, munch1, satisfy, skipSpaces, string, (<++))

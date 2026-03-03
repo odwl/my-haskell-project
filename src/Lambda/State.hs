@@ -5,6 +5,8 @@
 
 module Lambda.State (module Lambda.State, module Control.Monad.State) where
 
+-- Inspired by: https://shaagerup.github.io/dm552/files/MonadsLab.pdf
+
 import Control.Monad (ap)
 import Control.Monad.State (State, state)
 import Data.Word
