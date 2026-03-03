@@ -20,6 +20,7 @@ common share-tests-deps
     tasty-hunit,
     tasty-quickcheck,
     text,
+    megaparsec,
 
 -- The main library for the project
 library
@@ -31,6 +32,7 @@ library
     Exercism.ReverseString
     Lambda
     Lambda.Functor
+    Lambda.MiniWhile
     Lambda.Parser
     Lambda.State
 
@@ -42,6 +44,7 @@ library
     containers,
     mtl,
     text,
+    megaparsec,
 
 
 test-suite lambda-test
@@ -56,12 +59,15 @@ test-suite lambda-test
     Lambda
     Lambda.Functor
     Lambda.FunctorTest
+    Lambda.MiniWhile
+    Lambda.MiniWhileTest
     Lambda.MonadTest
     Lambda.Parser
     Lambda.ParserTest
     Lambda.State
     Lambda.StateTest
     LambdaTest
+    Lambda.MiniWhileRepro
 
   build-depends:
     QuickCheck,
@@ -109,6 +115,7 @@ test-suite all-tests
     Exercism.ReverseStringTest
     ExercismTest
     Lambda.FunctorTest
+    Lambda.MiniWhileTest
     Lambda.MonadTest
     Lambda.ParserTest
     Lambda.StateTest

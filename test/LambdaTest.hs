@@ -2,6 +2,7 @@ module LambdaTest (lambdaSuite) where
 
 import Lambda
 import Lambda.FunctorTest (functorTests)
+import Lambda.MiniWhileTest (miniWhileTests)
 import Lambda.MonadTest (monadTests)
 import Lambda.ParserTest (parserTests)
 import Lambda.StateTest (stateTests)
@@ -65,5 +66,6 @@ lambdaSuite =
       functorTests,
       monadTests,
       parserTests,
-      stateTests
+      stateTests,
+      miniWhileTests
     ]
