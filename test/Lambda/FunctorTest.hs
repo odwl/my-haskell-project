@@ -1,12 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lambda.FunctorTest where
 
 import Control.Monad.Reader
-import Lambda.Functor (MyMaybe (..), MyReader (..), runMyReader)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), runMyReader)
 import Test.QuickCheck.Checkers
-import Test.QuickCheck.Classes (functor)
+import Test.QuickCheck.Classes (applicative, functor)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -130,6 +131,29 @@ functorMyReaderTests =
     ]
 
 -- ==========================================
+-- 5. MaybeList Tests
+-- ==========================================
+
+instance (Arbitrary a) => Arbitrary (MaybeList a) where
+  arbitrary = fmap MaybeList (scale (`div` 3) arbitrary)
+
+instance (Eq a) => EqProp (MaybeList a) where
+  (=-=) :: (Eq a) => MaybeList a -> MaybeList a -> Property
+  (=-=) = eq
+
+functorMaybeListTests :: TestTree
+functorMaybeListTests =
+  testGroup
+    "Functor MaybeList"
+    [tastyBatch $ functor (undefined :: MaybeList (Int, String, Int))]
+
+applicativeMaybeListTests :: TestTree
+applicativeMaybeListTests =
+  testGroup
+    "Applicative MaybeList"
+    [tastyBatch $ applicative (undefined :: MaybeList (Int, String, Int))]
+
+-- ==========================================
 -- Master Test Tree
 -- ==========================================
 functorTests :: TestTree
@@ -139,5 +163,7 @@ functorTests =
     [ functorMaybeTests,
       functorMyMaybeTests,
       functorReaderTests,
-      functorMyReaderTests
+      functorMyReaderTests,
+      functorMaybeListTests,
+      applicativeMaybeListTests
     ]

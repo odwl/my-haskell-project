@@ -1,0 +1,64 @@
+Build profile: -w ghc-9.6.7 -O1
+In order, the following will be built (use -v for more details):
+ - my-haskell-project-0.1.0.0 (test:lambda-test) (ephemeral targets)
+Preprocessing test suite 'lambda-test' for my-haskell-project-0.1.0.0...
+Building test suite 'lambda-test' for my-haskell-project-0.1.0.0...
+Running 1 test suites...
+Test suite lambda-test: RUNNING...
+Lambda Suite
+  AddMaybe
+    Just + Just:                                      OK
+    Nothing + Just:                                   OK
+    Just + Nothing:                                   OK
+    Nothing + Nothing:                                OK
+  SafeHead
+    empty list:                                       OK
+    multiple elements:                                OK
+    single element:                                   OK
+  YFact
+    fact 0:                                           OK
+    fact 1:                                           OK
+    fact 2:                                           OK
+    fact 3:                                           OK
+  Double Apply Tests
+    Apply (+1) twice:                                 OK
+  SafeDiv Tests
+    Divides evenly:                                   OK
+    Division by zero yields Nothing:                  OK
+    Integer division truncates:                       OK
+    Zero divided by number is zero:                   OK
+  Functor Suite
+    Functor Maybe
+      Hardcoded Just 10:                              OK
+      Hardcoded Nothing:                              OK
+      functor
+        identity:                                     OK
+          +++ OK, passed 100 tests.
+        compose:                                      OK
+          +++ OK, passed 100 tests.
+    functor
+      identity:                                       OK
+        +++ OK, passed 100 tests.
+      compose:                                        OK
+        +++ OK, passed 100 tests.
+    Functor Reader
+      Reader Identity Law:                            OK
+        +++ OK, passed 100 tests.
+      Composition Law:                                OK (0.01s)
+        +++ OK, passed 100 tests.
+    Functor MyReader
+      Identity Law:                                   OK
+        +++ OK, passed 100 tests.
+      Composition Law:                                OK (0.01s)
+        +++ OK, passed 100 tests.
+    Functor MaybeList
+      functor
+        identity:                                     OK
+          +++ OK, passed 100 tests.
+        compose:                                      OK (0.02s)
+          +++ OK, passed 100 tests.
+    Applicative MaybeList
+      applicative
+        identity:                                     OK
+          +++ OK, passed 100 tests.
+        composition:                                  
