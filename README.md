@@ -31,7 +31,7 @@ This project is a comprehensive collection of Haskell exercises focused on core 
 The `MaybeList` type (`[Maybe a]`) has been carefully implemented to strictly adhere to all Functor, Applicative, and Monad laws. We achieved consistency between Applicative and Monad by defining `(<*>) = ap`.
 
 - **Performance**: The law-based test suite for `MaybeList` executes in under **0.3 seconds** by optimizing QuickCheck generation sizes.
-- **Idiomatic Code**: Uses standard abstractions like `concatMap`, `maybe`, and `ap`.
+- **Idiomatic Code**: Uses standard abstractions like `(>>=)`, `maybe`, `pure`, and `ap`.
 
 ## 🛠 How to Run
 

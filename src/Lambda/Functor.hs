@@ -1,3 +1,5 @@
+{-# LANGUAGE InstanceSigs #-}
+
 module Lambda.Functor
   ( MyMaybe (..),
     MyReader (..),
@@ -6,6 +8,7 @@ module Lambda.Functor
   )
 where
 
+import Control.Monad (ap)
 import Prelude
 
 data MyMaybe a = MyNothing | MyJust a deriving (Show, Eq)
@@ -26,7 +29,13 @@ runMyReader = unwrap
 -- Hoover exercises. https://lmf.di.uminho.pt/quantum-logic-2021/LQ-Monads.pdf
 -- ==========================================
 
-data MaybeList a = MaybeList [Maybe a] deriving (Show, Eq) -- TODO: use Compose
+data MaybeList a = MaybeList {getMaybeList :: [Maybe a]} deriving (Show, Eq)
+
+-- TODO: use Compose
+-- TODO: investigate the relationship with  MaybeT []
+-- import Control.Monad.Trans.Maybe
+-- newtype MaybeList a = MaybeList (MaybeT [] a)
+--   deriving (Functor, Applicative, Monad)
 
 instance Functor MaybeList where
   -- Use functor composition to map over the list and then the maybe
@@ -35,9 +44,12 @@ instance Functor MaybeList where
 instance Applicative MaybeList where
   pure x = MaybeList [Just x]
 
-  -- Use liftA2 to compose the List and Maybe applicative logic
-  MaybeList lmf <*> MaybeList lma = MaybeList $ liftA2 (<*>) lmf lma
+  -- Use ap to ensure consistency with the Monad instance
+  (<*>) = ap
 
--- instance Monad MaybeList where
--- x >>= k = ...
--- return x = ...
+bindMaybe :: (a -> [Maybe b]) -> Maybe a -> [Maybe b]
+bindMaybe = maybe (pure Nothing)
+
+instance Monad MaybeList where
+  (>>=) :: MaybeList a -> (a -> MaybeList b) -> MaybeList b
+  (MaybeList lma) >>= f = MaybeList $ lma >>= bindMaybe (getMaybeList . f)

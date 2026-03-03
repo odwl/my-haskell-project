@@ -7,7 +7,7 @@ module Lambda.FunctorTest where
 import Control.Monad.Reader
 import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), runMyReader)
 import Test.QuickCheck.Checkers
-import Test.QuickCheck.Classes (applicative, functor)
+import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -153,6 +153,12 @@ applicativeMaybeListTests =
     "Applicative MaybeList"
     [tastyBatch $ applicative (undefined :: MaybeList (Int, String, Int))]
 
+monadMaybeListTests :: TestTree
+monadMaybeListTests =
+  testGroup
+    "Monad MaybeList"
+    [tastyBatch $ monad (undefined :: MaybeList (Int, String, Int))]
+
 -- ==========================================
 -- Master Test Tree
 -- ==========================================
@@ -165,5 +171,6 @@ functorTests =
       functorReaderTests,
       functorMyReaderTests,
       functorMaybeListTests,
-      applicativeMaybeListTests
+      applicativeMaybeListTests,
+      monadMaybeListTests
     ]
