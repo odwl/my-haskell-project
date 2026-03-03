@@ -28,10 +28,11 @@ This project is a comprehensive collection of Haskell exercises focused on core 
 
 ## 🚀 Key Feature: `MaybeList`
 
-The `MaybeList` type (`[Maybe a]`) has been carefully implemented to strictly adhere to all Functor, Applicative, and Monad laws. We achieved consistency between Applicative and Monad by defining `(<*>) = ap`.
+The `MaybeList` type (`[Maybe a]`) has been carefully implemented to strictly adhere to all Functor, Applicative, and Monad laws. We achieved this by leveraging the **`MaybeT`** monad transformer and the **`DerivingVia`** extension.
 
+- **Architecture**: `MaybeList` is a newtype over `[Maybe a]`, deriving its logic directly from `MaybeT []`.
 - **Performance**: The law-based test suite for `MaybeList` executes in under **0.3 seconds** by optimizing QuickCheck generation sizes.
-- **Idiomatic Code**: Uses standard abstractions like `(>>=)`, `maybe`, `pure`, and `ap`.
+- **Idiomatic Code**: Uses modern Haskell features like `DerivingVia` and standard abstractions from the `transformers` library.
 
 ## 🛠 How to Run
 
