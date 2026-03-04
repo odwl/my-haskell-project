@@ -4,8 +4,10 @@
 
 module Lambda.FunctorTest where
 
+import Control.Monad (foldM)
 import Control.Monad.Reader
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), runMyReader)
+import Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), carEnters, carLeaves, damCapacity, damOpens, runMyReader)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -160,6 +162,53 @@ monadMaybeListTests =
     [tastyBatch $ monad (undefined :: MaybeList (Int, String, Int))]
 
 -- ==========================================
+-- 6. Hover Dam Tests
+-- ==========================================
+
+hoverDamTests :: TestTree
+hoverDamTests =
+  testGroup
+    "Hover Dam"
+    [ testCase "Safe Scenario: 2 enter, 2 leave" $
+        (damOpens >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= Just 0,
+      testCase "Collapse Scenario: Exceeding 3 cars" $
+        (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= Nothing,
+      testProperty "Random Safe Path Survival" prop_damRandomPathSurvival
+    ]
+
+-- Generates a single move that is guaranteed to be safe from the current state.
+genSafeNextMove :: Int -> Gen (Int -> Maybe Int)
+genSafeNextMove 0 = pure carEnters
+genSafeNextMove n | n < damCapacity = elements [carEnters, carLeaves]
+genSafeNextMove _ = pure carLeaves
+
+-- Generates a final state by applying `genSafeNextMove` `steps` times from `startState`.
+genSafeStateAfterSteps :: Int -> Int -> Gen (Maybe Int)
+genSafeStateAfterSteps steps startState =
+  runMaybeT $
+    foldM
+      ( \curr _ -> do
+          move <- lift $ genSafeNextMove curr
+          MaybeT $ pure (move curr)
+      )
+      startState
+      [1 .. steps]
+
+prop_damRandomPathSurvival :: Property
+prop_damRandomPathSurvival = property $ do
+  state <- choose (0, damCapacity)
+  steps <- choose (0, 50)
+  finalStateMaybe <- genSafeStateAfterSteps steps state
+  let safePathSurvived = finalStateMaybe /= Nothing
+  let collapsedState = do
+        nbCar <- finalStateMaybe
+        let collapsingMoves = replicate (damCapacity + 1 - nbCar) carEnters
+        foldl (>>=) finalStateMaybe collapsingMoves
+
+  -- The safe path must survive, AND adding just enough cars must ALWAYS cause a collapse
+  return $ safePathSurvived && collapsedState == Nothing
+
+-- ==========================================
 -- Master Test Tree
 -- ==========================================
 functorTests :: TestTree
@@ -172,5 +221,6 @@ functorTests =
       functorMyReaderTests,
       functorMaybeListTests,
       applicativeMaybeListTests,
-      monadMaybeListTests
+      monadMaybeListTests,
+      hoverDamTests
     ]

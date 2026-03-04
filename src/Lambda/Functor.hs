@@ -7,6 +7,10 @@ module Lambda.Functor
     MyReader (..),
     runMyReader,
     MaybeList (..),
+    carEnters,
+    carLeaves,
+    damOpens,
+    damCapacity,
   )
 where
 
@@ -30,7 +34,24 @@ runMyReader = unwrap
 
 -- ==========================================
 -- Inspired by: https://lmf.di.uminho.pt/quantum-logic-2021/LQ-Monads.pdf
+-- Exercice: Hover Dam
 -- ==========================================
+
+-- A car reaches the top of the dam. There can only be three cars
+-- on the dam at the same time
+damCapacity :: Int
+damCapacity = 3
+
+carEnters :: Int -> Maybe Int
+carEnters x = if x < damCapacity then Just (x + 1) else Nothing
+
+-- A car leaves the top of the dam.
+carLeaves :: Int -> Maybe Int
+carLeaves x = if x > 1 then Just (x - 1) else Just 0
+
+-- The dam opens (initial state)
+damOpens :: Maybe Int
+damOpens = Just 0
 
 newtype MaybeList a = MaybeList {getMaybeList :: [Maybe a]}
   deriving (Show, Eq)
