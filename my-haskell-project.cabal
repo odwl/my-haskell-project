@@ -21,7 +21,7 @@ common share-tests-deps
     tasty-quickcheck,
     text,
     megaparsec,
-    transformers,
+    parser-combinators,
 
 -- The main library for the project
 library
@@ -47,6 +47,7 @@ library
     transformers,
     text,
     megaparsec,
+    parser-combinators,
 
 
 test-suite lambda-test

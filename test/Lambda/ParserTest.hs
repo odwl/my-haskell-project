@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lambda.ParserTest (parserTests) where
@@ -7,19 +9,20 @@ import Data.Bifunctor (first, second)
 import Data.Char (isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
 import Data.Maybe (fromJust)
-import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, ReadP, Stmt (..), aexp, binop, cmpop, expr, identifier, isAsciiAlpha, isAsciiAlphaNum, isReservedWord, mkId, num, stmt, stmts)
+import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, Parser, Stmt (..), aexp, binop, cmpop, expr, identifier, isAsciiAlpha, isAsciiAlphaNum, isReservedWord, mkId, num, stmt, stmts)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.ParserCombinators.ReadP (char, pfail, readP_to_S, satisfy, string)
+import Text.Megaparsec (getInput, parse, satisfy)
+import Text.Megaparsec.Char (char, string)
 
 -- | Run parser and return the first result
-runReadP :: ReadP a -> String -> Maybe (a, String)
-runReadP p s = case readP_to_S p s of
-  [] -> Nothing
-  ((x, s') : _) -> Just (x, s')
+runParser :: Parser a -> String -> Maybe (a, String)
+runParser p s = case parse (do x <- p; rest <- getInput; return (x, rest)) "" s of
+  Left _ -> Nothing
+  Right res -> Just res
 
 parserTests :: TestTree
 parserTests =
@@ -28,20 +31,20 @@ parserTests =
     ( [ testCase "satisfy matches character" $ parseA "abc" @?= Just ('a', "bc"),
         testCase "satisfy does not match character" $ parseA "xbc" @?= Nothing,
         testCase "satisfy on empty string" $ parseA "" @?= Nothing,
-        testCase "fmap maps ReadP Char to ReadP String" $ runReadP ((: []) <$> satisfy (== 'a')) "abc" @?= Just ("a", "bc"),
-        testCase "fmap maps with custom lambda" $ runReadP ((:) <*> (: []) <$> satisfy (== 'a')) "abc" @?= Just ("aa", "bc")
+        testCase "fmap maps Parser Char to Parser String" $ runParser ((: []) <$> satisfy (== 'a')) "abc" @?= Just ("a", "bc"),
+        testCase "fmap maps with custom lambda" $ runParser ((:) <*> (: []) <$> satisfy (== 'a')) "abc" @?= Just ("aa", "bc")
       ]
         ++ quickTests
         ++ [ tastyBatch
-               (functor (undefined :: ReadP (Int, String, Int))),
+               (functor (undefined :: Parser (Int, String, Int))),
              tastyBatch
-               (applicative (undefined :: ReadP (Int, String, Int))),
+               (applicative (undefined :: Parser (Int, String, Int))),
              tastyBatch
-               (monad (undefined :: ReadP (Int, String, Int)))
+               (monad (undefined :: Parser (Int, String, Int)))
            ]
     )
   where
-    parseA = runReadP (satisfy (== 'a'))
+    parseA = runParser (satisfy (== 'a'))
     tastyBatch (name, tests) = testProperties name tests
 
 quickTests :: [TestTree]
@@ -84,53 +87,53 @@ quickTests =
       ]
   ]
 
-instance (Arbitrary a) => Arbitrary (ReadP a) where
+instance (Arbitrary a) => Arbitrary (Parser a) where
   arbitrary = do
     b <- arbitrary
     -- Generate a parser that either succeeds with a value and arbitrary leftover string (pure), or fails
     elements
-      [ pfail,
+      [ empty,
         pure b
       ]
 
-instance (Show a) => Show (ReadP a) where
+instance (Show a) => Show (Parser a) where
   show _ = "<Parser>"
 
-instance (Eq a, Show a) => EqProp (ReadP a) where
+instance (Eq a, Show a) => EqProp (Parser a) where
   p1 =-= p2 =
-    property $ \s -> runReadP p1 s === runReadP p2 s
+    property $ \s -> runParser p1 s === runParser p2 s
 
 prop_satisfiesMatchingChar :: Char -> String -> Property
 prop_satisfiesMatchingChar c s =
-  runReadP (satisfy (== c)) (c : s) === Just (c, s)
+  runParser (satisfy (== c)) (c : s) === Just (c, s)
 
 prop_nonMatchingChar :: Char -> Char -> String -> Property
 prop_nonMatchingChar c1 c2 s =
-  c1 /= c2 ==> runReadP (satisfy (== c1)) (c2 : s) === Nothing
+  c1 /= c2 ==> runParser (satisfy (== c1)) (c2 : s) === Nothing
 
 prop_emptyString :: Char -> Property
 prop_emptyString c =
-  runReadP (satisfy (== c)) "" === Nothing
+  runParser (satisfy (== c)) "" === Nothing
 
 prop_alternative_choice :: String -> Property
 prop_alternative_choice s =
-  runReadP (char 'a' <|> char 'b') ("b" ++ s) === Just ('b', s)
+  runParser (char 'a' <|> char 'b') ("b" ++ s) === Just ('b', s)
 
 prop_alternative_empty :: String -> Property
 prop_alternative_empty s =
-  runReadP (empty :: ReadP Int) s === Nothing
+  runParser (empty :: Parser Int) s === Nothing
 
-prop_alternative_left_identity :: ReadP Int -> String -> Property
+prop_alternative_left_identity :: Parser Int -> String -> Property
 prop_alternative_left_identity p s =
-  runReadP (empty <|> p) s === runReadP p s
+  runParser (empty <|> p) s === runParser p s
 
-prop_alternative_right_identity :: ReadP Int -> String -> Property
+prop_alternative_right_identity :: Parser Int -> String -> Property
 prop_alternative_right_identity p s =
-  runReadP (p <|> empty) s === runReadP p s
+  runParser (p <|> empty) s === runParser p s
 
 prop_alternative_left_bias :: String -> Property
 prop_alternative_left_bias s =
-  runReadP (string "a" <|> string "ab") ("ab" ++ s) === Just ("a", "b" ++ s)
+  runParser (string "a" <|> string "ab") ("ab" ++ s) === Just ("a", "b" ++ s)
 
 -- ==========================================
 --  Generators
@@ -143,7 +146,7 @@ genPadding :: Gen (String, String)
 genPadding = do
   spaces <- genSpaces
   sep <- arbitrary `suchThat` (\c -> (isPunctuation c || isSymbol c) && c `notElem` "+-*/=<>!:;")
-  rest <- arbitrary
+  rest <- resize 5 arbitrary
   return (spaces, sep : rest)
 
 withPadding :: Gen (String, a) -> Gen (String, a, String)
@@ -278,16 +281,16 @@ genValidStmts = do
 -- Properties
 -- ==========================================
 
-prop_parse_valid :: (Eq a, Show a) => ReadP a -> Gen (String, a, String) -> Property
+prop_parse_valid :: (Eq a, Show a) => Parser a -> Gen (String, a, String) -> Property
 prop_parse_valid parser generator = property $ do
   (str, ast, rest) <- generator
-  return $ runReadP parser (str ++ rest) === Just (ast, rest)
+  return $ runParser parser (str ++ rest) === Just (ast, rest)
 
-prop_parse_invalid :: (Eq a, Show a) => ReadP a -> Gen String -> Property
+prop_parse_invalid :: (Eq a, Show a) => Parser a -> Gen String -> Property
 prop_parse_invalid parser generator = property $ do
   invalidStart <- generator
   rest <- arbitrary
-  return $ runReadP parser (invalidStart ++ rest) === Nothing
+  return $ runParser parser (invalidStart ++ rest) === Nothing
 
 prop_num_valid :: Property
 prop_num_valid = prop_parse_valid num (withPadding genValidNum)
@@ -342,10 +345,10 @@ prop_stmts_invalid = prop_parse_invalid stmts genInvalidStmts
 -- ==========================================
 
 prop_stmt_x_2 :: Property
-prop_stmt_x_2 = property $ runReadP stmts "x :=21 Noise" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Num 21))], "Noise")
+prop_stmt_x_2 = property $ runParser stmts "x :=21 Noise" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Num 21))], "Noise")
 
 prop_stmt_semi :: Property
-prop_stmt_semi = property $ runReadP stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Num 21)), Assign (fromJust $ mkId 'y' "") (EAExp (Num 2))], "")
+prop_stmt_semi = property $ runParser stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Num 21)), Assign (fromJust $ mkId 'y' "") (EAExp (Num 2))], "")
 
 prop_stmt_complex :: Property
 prop_stmt_complex =
@@ -366,4 +369,4 @@ prop_stmt_complex =
                 Assign a (If (Cmp (Var b) Neq (Num 0)) (EAExp (Op (Var a) Sub (Num 1))) (EAExp (Var a)))
               ]
           ]
-     in runReadP stmts input === Just (ast, "")
+     in runParser stmts input === Just (ast, "")

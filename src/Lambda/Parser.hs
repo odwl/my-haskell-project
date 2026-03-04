@@ -1,14 +1,41 @@
-module Lambda.Parser (ReadP, Id, mkId, num, binop, cmpop, identifier, aexp, expr, stmt, stmts, Stmt (..), Exp (..), AExp (..), BinOp (..), CmpOp (..), reservedWords, isReservedWord, isAsciiAlpha, isAsciiAlphaNum) where
+module Lambda.Parser
+  ( Parser,
+    Id,
+    mkId,
+    num,
+    binop,
+    cmpop,
+    identifier,
+    aexp,
+    expr,
+    stmt,
+    stmts,
+    Stmt (..),
+    Exp (..),
+    AExp (..),
+    BinOp (..),
+    CmpOp (..),
+    reservedWords,
+    isReservedWord,
+    isAsciiAlpha,
+    isAsciiAlphaNum,
+  )
+where
 
 -- Inspired by: https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2019/ex/ex5.pdf
 
 import Control.Monad (guard)
-import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit)
-import Text.ParserCombinators.ReadP (ReadP, char, choice, munch, munch1, satisfy, skipSpaces, string, (<++))
+import Data.Char (isAlpha, isAlphaNum, isAscii)
+import Data.Void (Void)
+import Text.Megaparsec (Parsec, choice, many, satisfy, sepBy1, try, (<|>))
+import Text.Megaparsec.Char (space1, string)
+import qualified Text.Megaparsec.Char.Lexer as L
 
 -- ==========================================
 -- Types Definitions
 -- ==========================================
+
+type Parser = Parsec Void String
 
 reservedWords :: [String]
 reservedWords = ["not", "if", "then", "else", "fi", "while", "do", "done"]
@@ -58,55 +85,62 @@ data Stmt
 -- Parser Definitions
 -- ==========================================
 
-identifier :: ReadP Id
-identifier = lexeme $ do
+-- | `sc` (Space Consumer) handles whitespace and comments.
+sc :: Parser ()
+sc = L.space space1 (L.skipLineComment "//") (L.skipBlockComment "/*" "*/")
+
+-- | `lexeme` runs a given parser, then consumes any trailing whitespace.
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme sc
+
+-- | `symbol` parses a specific string and consumes trailing whitespace.
+symbol :: String -> Parser String
+symbol = L.symbol sc
+
+identifier :: Parser Id
+identifier = lexeme $ try $ do
   c <- satisfy isAsciiAlpha
-  cs <- munch isAsciiAlphaNum
+  cs <- many (satisfy isAsciiAlphaNum)
   let name = c : cs
   guard (not (isReservedWord name))
   return (Id c cs)
 
-binop :: ReadP BinOp
+binop :: Parser BinOp
 binop =
-  lexeme $
-    choice
-      [ Add <$ char '+',
-        Sub <$ char '-',
-        Mul <$ char '*',
-        Div <$ char '/'
-      ]
+  choice
+    [ Add <$ symbol "+",
+      Sub <$ symbol "-",
+      Mul <$ symbol "*",
+      Div <$ symbol "/"
+    ]
 
-cmpop :: ReadP CmpOp
+cmpop :: Parser CmpOp
 cmpop =
-  lexeme $
-    choice
-      [ Le <$ string "<=",
-        Gt <$ char '>',
-        Eq <$ string "==",
-        Neq <$ string "!="
-      ]
+  choice
+    [ Le <$ symbol "<=",
+      Gt <$ symbol ">",
+      Eq <$ symbol "==",
+      Neq <$ symbol "!="
+    ]
 
-num :: ReadP Int
-num = lexeme $ read <$> munch1 isDigit
+num :: Parser Int
+num = lexeme L.decimal
 
-aexp :: ReadP AExp
-aexp = (Num <$> num) <++ (Var <$> identifier) <++ opP
+aexp :: Parser AExp
+aexp = opP <|> (Num <$> num) <|> (Var <$> identifier)
   where
-    opP =
-      Op
-        <$ lexeme (char '(')
-        <*> aexp
-        <*> binop
-        <*> aexp
-        <* lexeme (char ')')
+    opP = do
+      _ <- symbol "("
+      left <- aexp
+      op <- binop
+      right <- aexp
+      _ <- symbol ")"
+      return (Op left op right)
 
-expr :: ReadP Exp
-expr = notP <++ ifP <++ aexpP
+expr :: Parser Exp
+expr = notP <|> ifP <|> aexpBased
   where
     notP = Not <$> (keyword "not" *> expr)
-    aexpP = do
-      left <- aexp
-      (Cmp left <$> cmpop <*> aexp) <++ pure (EAExp left)
     ifP =
       If
         <$ keyword "if"
@@ -116,14 +150,20 @@ expr = notP <++ ifP <++ aexpP
         <* keyword "else"
         <*> expr
         <* keyword "fi"
+    aexpBased = do
+      left <- aexp
+      choice
+        [ Cmp left <$> cmpop <*> aexp,
+          pure (EAExp left)
+        ]
 
-stmt :: ReadP Stmt
-stmt = assignP <++ whileP
+stmt :: Parser Stmt
+stmt = assignP <|> whileP
   where
     assignP =
       Assign
         <$> identifier
-        <* lexeme (string ":=")
+        <* symbol ":="
         <*> expr
     whileP =
       While
@@ -133,19 +173,17 @@ stmt = assignP <++ whileP
         <*> stmts
         <* keyword "done"
 
-stmts :: ReadP [Stmt]
-stmts = (:) <$> stmt <*> ((lexeme (char ';') *> stmts) <++ pure [])
-
--- -- ==========================================
--- -- AST and ReadP Definitions
--- -- ==========================================
-
--- | `lexeme` runs a given parser, then consumes any trailing whitespace.
-lexeme :: ReadP a -> ReadP a
-lexeme p = p <* skipSpaces
+stmts :: Parser [Stmt]
+stmts = sepBy1 stmt (symbol ";")
 
 -- | Extracts a reserved keyword.
-keyword :: String -> ReadP ()
-keyword k = lexeme $ do
-  kw <- munch1 (liftA2 (&&) isAscii isAlphaNum)
-  guard (kw == k)
+keyword :: String -> Parser String
+keyword k = lexeme (string k <* notFollowedBy (satisfy (liftA2 (&&) isAscii isAlphaNum)))
+
+-- Helper from Text.Megaparsec
+notFollowedBy :: Parser a -> Parser ()
+notFollowedBy p = do
+  res <- (Just <$> try p) <|> pure Nothing
+  case res of
+    Nothing -> return ()
+    Just _ -> fail "keyword followed by alphanumeric character"
