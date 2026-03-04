@@ -17,6 +17,11 @@ where
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Prelude
 
+-- Note: The Functor, Applicative, and Monad laws implemented and tested for these
+-- structures are deeply aligned with the categorical foundations detailed in
+-- "Category Theory for Programmers" by Bartosz Milewski:
+-- https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf
+
 data MyMaybe a = MyNothing | MyJust a deriving (Show, Eq)
 
 instance Functor MyMaybe where
@@ -36,22 +41,31 @@ runMyReader = unwrap
 -- Exercice: Hover Dam
 -- ==========================================
 
--- A car reaches the top of the dam. There can only be three cars
--- on the dam at the same time
+-- A car reaches the top of the dam.
 damCapacity :: Int
 damCapacity = 3
 
-carEnters :: Int -> Maybe Int
-carEnters x = if x < damCapacity then Just (x + 1) else Nothing
-
--- A car leaves the top of the dam.
-carLeaves :: Int -> Maybe Int
-carLeaves x = if x > 1 then Just (x - 1) else Just 0
-
--- The dam opens (initial state)
-damOpens :: Maybe Int
-damOpens = Just 0
+-- The absolute physical limit before guaranteed collapse.
+damCollapseThreshold :: Int
+damCollapseThreshold = 4
 
 newtype MaybeList a = MaybeList {getMaybeList :: [Maybe a]}
   deriving (Show, Eq)
   deriving (Functor, Applicative, Monad) via (MaybeT [])
+
+-- The dam opens (initial state)
+damOpens :: MaybeList Int
+damOpens = MaybeList [Just 0]
+
+-- A car reaches the top of the dam.
+carEnters :: Int -> MaybeList Int
+carEnters nbCars =
+  MaybeList $
+    [Just (nbCars + 1) | nbCars < damCollapseThreshold]
+      ++ [Nothing | nbCars >= damCapacity]
+
+-- A car leaves the top of the dam. Leaving is always safe (deterministic).
+carLeaves :: Int -> MaybeList Int
+carLeaves nbCars
+  | nbCars <= 1 = MaybeList [Just 0]
+  | otherwise = MaybeList [Just (nbCars - 1)]

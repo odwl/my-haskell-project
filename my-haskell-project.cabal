@@ -63,6 +63,7 @@ test-suite lambda-test
     Lambda
     Lambda.Functor
     Lambda.FunctorTest
+    Lambda.RandomWalkTest
     Lambda.MiniWhile
     Lambda.MiniWhileTest
     Lambda.MonadTest

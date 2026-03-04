@@ -1,13 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lambda.FunctorTest where
 
-import Control.Monad (foldM)
 import Control.Monad.Reader
-import Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
 import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), carEnters, carLeaves, damCapacity, damOpens, runMyReader)
+import Lambda.RandomWalkTest (Action (..), genBoundedActions)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -20,11 +20,6 @@ tastyBatch (name, tests) = testProperties name tests
 -- ==========================================
 -- 1. Standard Maybe Tests
 -- ==========================================
--- prop_maybeIdentity :: Maybe String -> Property
--- prop_maybeIdentity m = fmap id m === m
-
--- prop_maybeComposition :: Fun String Int -> Fun Int String -> Maybe Int -> Property
--- prop_maybeComposition (Fn f) (Fn g) m = fmap (f . g) m === (fmap f . fmap g) m
 
 functorMaybeTests :: TestTree
 functorMaybeTests =
@@ -33,8 +28,6 @@ functorMaybeTests =
     [ testCase "Hardcoded Just 10" $ fmap id (Just (10 :: Int)) @?= Just (10 :: Int),
       testCase "Hardcoded Nothing" $ fmap id (Nothing :: Maybe Int) @?= Nothing,
       tastyBatch (functor (undefined :: Maybe (Int, String, Int)))
-      -- , testProperty "Identity Law" prop_maybeIdentity
-      -- , testProperty "Composition Law" prop_maybeComposition
     ]
 
 -- ==========================================
@@ -55,27 +48,6 @@ instance (Eq a) => EqProp (MyMaybe a) where
 -- Generate all functor tests automatically
 functorMyMaybeTests :: TestTree
 functorMyMaybeTests = tastyBatch $ functor (undefined :: MyMaybe (Int, String, Int))
-
--- ==========================================
--- 2. Custom MyMaybe Tests
--- ==========================================
--- instance Arbitrary a => Arbitrary (MyMaybe a) where
---     arbitrary = frequency
---         [ (1, pure MyNothing)
---         , (3, fmap MyJust arbitrary)
---         ]
-
--- prop_myFunctorIdentity :: MyMaybe String -> Property
--- prop_myFunctorIdentity m = fmap id m === m
-
--- prop_myFunctorComposition :: Fun Int String -> Fun String Int -> MyMaybe Int -> Property
--- prop_myFunctorComposition (Fn f) (Fn g) m = fmap (g . f) m === (fmap g . fmap f) m
-
--- functorMyMaybeTests :: TestTree
--- functorMyMaybeTests = testGroup "Functor MyMaybe"
---     [ testProperty "Identity Law" prop_myFunctorIdentity
---     , testProperty "Composition Law" prop_myFunctorComposition
---     ]
 
 -- ==========================================
 -- 3. Standard Reader (Function) Tests
@@ -170,43 +142,67 @@ hoverDamTests =
   testGroup
     "Hover Dam"
     [ testCase "Safe Scenario: 2 enter, 2 leave" $
-        (damOpens >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= Just 0,
+        (damOpens >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= MaybeList [Just 0],
       testCase "Collapse Scenario: Exceeding 3 cars" $
-        (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= Nothing,
-      testProperty "Random Safe Path Survival" prop_damRandomPathSurvival
+        (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= MaybeList [Just 2, Nothing],
+      testProperty "Random Safe Path Survival" prop_damRandomSafePath,
+      testProperty "Random Danger Path Recovery" prop_damRandomDangerPath,
+      testProperty "Bifurcation and Collapse" prop_damBifurcationAndCollapse,
+      testProperty "MaybeList carEnters Consistency" prop_maybeListEnterConsistency
     ]
 
--- Generates a single move that is guaranteed to be safe from the current state.
-genSafeNextMove :: Int -> Gen (Int -> Maybe Int)
-genSafeNextMove 0 = pure carEnters
-genSafeNextMove n | n < damCapacity = elements [carEnters, carLeaves]
-genSafeNextMove _ = pure carLeaves
+prop_maybeListEnterConsistency :: MaybeList Int -> Property
+prop_maybeListEnterConsistency ml =
+  (ml >>= carEnters) === manualEnter ml
+  where
+    manualEnter (MaybeList ms) = MaybeList $ concatMap applyEnter ms
+    applyEnter Nothing = [Nothing]
+    applyEnter (Just n) = getMaybeList (carEnters n)
 
--- Generates a final state by applying `genSafeNextMove` `steps` times from `startState`.
-genSafeStateAfterSteps :: Int -> Int -> Gen (Maybe Int)
-genSafeStateAfterSteps steps startState =
-  runMaybeT $
-    foldM
-      ( \curr _ -> do
-          move <- lift $ genSafeNextMove curr
-          MaybeT $ pure (move curr)
-      )
-      startState
-      [1 .. steps]
+-- Generates a list of movement functions (carEnters or carLeaves) that stay within [0, damCapacity]
+genSafeMovesStartingAt :: Int -> Gen [Int -> MaybeList Int]
+genSafeMovesStartingAt start = do
+  numSteps <- choose (0, 50 :: Int)
+  actions <- genBoundedActions 0 damCapacity start numSteps
+  return $ map (\case Inc -> carEnters; Dec -> carLeaves) actions
 
-prop_damRandomPathSurvival :: Property
-prop_damRandomPathSurvival = property $ do
-  state <- choose (0, damCapacity)
-  steps <- choose (0, 50)
-  finalStateMaybe <- genSafeStateAfterSteps steps state
-  let safePathSurvived = finalStateMaybe /= Nothing
-  let collapsedState = do
-        nbCar <- finalStateMaybe
-        let collapsingMoves = replicate (damCapacity + 1 - nbCar) carEnters
-        foldl (>>=) finalStateMaybe collapsingMoves
+genSafeMoves :: Gen [Int -> MaybeList Int]
+genSafeMoves = genSafeMovesStartingAt 0
 
-  -- The safe path must survive, AND adding just enough cars must ALWAYS cause a collapse
-  return $ safePathSurvived && collapsedState == Nothing
+prop_damRandomSafePath :: Property
+prop_damRandomSafePath = property $ do
+  MaybeList lastSafeState <- foldl (>>=) damOpens <$> genSafeMoves
+  return $ case lastSafeState of [Just n] -> n <= damCapacity; _ -> False
+
+prop_damRandomDangerPath :: Property
+prop_damRandomDangerPath = property $ do
+  let state = foldl (>>=) damOpens (replicate 4 carEnters ++ [carLeaves])
+  -- 1. Check initial recovery to [Just 3, Nothing]
+  if state /= MaybeList [Just 3, Nothing]
+    then return $ counterexample ("Initial recovery failed: " ++ show state) False
+    else do
+      -- 2. Continue with safe random walk from 3
+      moves <- genSafeMovesStartingAt 3
+      let MaybeList finalState = foldl (>>=) state moves
+      return $ case finalState of
+        [Just n, Nothing] -> counterexample ("Final state out of bounds: " ++ show n) (n <= damCapacity)
+        other -> counterexample ("Unexpected final state (expected exactly one healthy path): " ++ show other) False
+
+prop_damBifurcationAndCollapse :: Property
+prop_damBifurcationAndCollapse = property $ do
+  -- 1. Pick a random valid car count [0..damCapacity]
+  nbCars <- choose (0, damCapacity)
+  -- 2. Push that state to damCapacity, then enter once: must bifurcate
+  let movesToDanger = replicate (damCapacity - nbCars + 1) carEnters
+      atDangerCapacity = foldl (>>=) (pure nbCars) movesToDanger
+      bifurcates = getMaybeList atDangerCapacity == [Just (damCapacity + 1), Nothing]
+      -- 3. One more enter: all paths must collapse to Nothing
+      allCollapsed = getMaybeList (atDangerCapacity >>= carEnters) == [Nothing, Nothing]
+  return $
+    counterexample ("nbCars=" ++ show nbCars) $
+      counterexample ("atDangerCapacity=" ++ show (getMaybeList atDangerCapacity)) $
+        counterexample ("bifurcates=" ++ show bifurcates ++ " allCollapsed=" ++ show allCollapsed) $
+          bifurcates && allCollapsed
 
 -- ==========================================
 -- Master Test Tree

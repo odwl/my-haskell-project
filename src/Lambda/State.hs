@@ -6,6 +6,9 @@
 module Lambda.State (module Lambda.State, module Control.Monad.State) where
 
 -- Inspired by: https://shaagerup.github.io/dm552/files/MonadsLab.pdf
+-- Note: The functional derivation of the State monad here closely mirrors
+-- chapter 14 of "Category Theory for Programmers" by Bartosz Milewski.
+-- Link: https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf
 
 import Control.Monad (ap)
 import Control.Monad.State (State, state)
