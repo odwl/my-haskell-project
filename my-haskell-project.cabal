@@ -37,6 +37,7 @@ library
     Lambda.MiniWhile
     Lambda.Parser
     Lambda.State
+    Lambda.Subdist
 
   hs-source-dirs: src
   ghc-options: -fbyte-code
@@ -71,6 +72,8 @@ test-suite lambda-test
     Lambda.ParserTest
     Lambda.State
     Lambda.StateTest
+    Lambda.Subdist
+    Lambda.SubdistTest
     LambdaTest
     Lambda.MiniWhileRepro
 
@@ -123,7 +126,9 @@ test-suite all-tests
     Lambda.MiniWhileTest
     Lambda.MonadTest
     Lambda.ParserTest
+    Lambda.RandomWalkTest
     Lambda.StateTest
+    Lambda.SubdistTest
     LambdaTest
 
   build-depends:

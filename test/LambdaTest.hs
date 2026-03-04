@@ -7,6 +7,7 @@ import Lambda.MonadTest (monadTests)
 import Lambda.ParserTest (parserTests)
 import Lambda.RandomWalkTest (randomWalkTests)
 import Lambda.StateTest (stateTests)
+import Lambda.SubdistTest (subdistTests)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -69,5 +70,6 @@ lambdaSuite =
       parserTests,
       stateTests,
       miniWhileTests,
-      randomWalkTests
+      randomWalkTests,
+      subdistTests
     ]
