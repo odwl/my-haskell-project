@@ -14,7 +14,6 @@ module Lambda.Functor
   )
 where
 
-import Control.Monad (ap)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Prelude
 

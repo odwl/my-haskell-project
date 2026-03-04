@@ -137,7 +137,7 @@ functorMyReaderTests =
 -- ==========================================
 
 instance (Arbitrary a) => Arbitrary (MaybeList a) where
-  arbitrary = fmap MaybeList (scale (`div` 3) arbitrary)
+  arbitrary = fmap MaybeList (scale (\n -> min n 5) arbitrary)
 
 instance (Eq a) => EqProp (MaybeList a) where
   (=-=) :: (Eq a) => MaybeList a -> MaybeList a -> Property

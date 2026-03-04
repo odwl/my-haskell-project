@@ -22,6 +22,7 @@ common share-tests-deps
     text,
     megaparsec,
     parser-combinators,
+    transformers,
 
 -- The main library for the project
 library
