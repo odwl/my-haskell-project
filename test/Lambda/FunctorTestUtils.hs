@@ -8,6 +8,7 @@ module Lambda.FunctorTestUtils where
 import Control.Monad (foldM)
 import Control.Monad.Reader
 import Lambda.Functor
+import Lambda.Subdist (Subdist)
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
 
@@ -44,13 +45,13 @@ genBoundedActions minB maxB start numSteps = do
 -- ==========================================
 
 -- Generates a list of movement functions (carEnters or carLeaves) that stay within [0, damCapacity]
-genSafeMovesStartingAt :: Int -> Gen [Int -> MaybeList Int]
+genSafeMovesStartingAt :: Int -> Gen [Int -> Subdist Int]
 genSafeMovesStartingAt start = do
   numSteps <- choose (0, 50 :: Int)
   actions <- genBoundedActions 0 damCapacity start numSteps
   return $ map (\case Inc -> carEnters; Dec -> carLeaves) actions
 
-genSafeMoves :: Gen [Int -> MaybeList Int]
+genSafeMoves :: Gen [Int -> Subdist Int]
 genSafeMoves = genSafeMovesStartingAt 0
 
 -- ==========================================
@@ -65,13 +66,6 @@ instance (Arbitrary a) => Arbitrary (MyMaybe a) where
       ]
 
 instance (Eq a) => EqProp (MyMaybe a) where
-  (=-=) = eq
-
-instance (Arbitrary a) => Arbitrary (MaybeList a) where
-  arbitrary = fmap MaybeList (scale (\n -> min n 5) arbitrary)
-
-instance (Eq a) => EqProp (MaybeList a) where
-  (=-=) :: (Eq a) => MaybeList a -> MaybeList a -> Property
   (=-=) = eq
 
 -- ==========================================

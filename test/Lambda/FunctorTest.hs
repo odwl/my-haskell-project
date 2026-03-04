@@ -1,10 +1,11 @@
 module Lambda.FunctorTest where
 
 import Control.Monad.Reader (reader)
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), carEnters, carLeaves, damCapacity, damOpens)
-import Lambda.FunctorTestUtils (eqMyReader, eqReader, genSafeMoves, genSafeMovesStartingAt)
+import Lambda.Functor
+import Lambda.FunctorTestUtils (eqMyReader, eqReader, genSafeMoves)
+import Lambda.Subdist (runSubdist)
 import Test.QuickCheck.Checkers
-import Test.QuickCheck.Classes (applicative, functor, monad)
+import Test.QuickCheck.Classes (functor)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -28,10 +29,7 @@ functorMaybeTests =
 -- ==========================================
 -- 2. Custom MyMaybe Tests
 -- ==========================================
--- 2. Custom MyMaybe Tests
--- ==========================================
 
--- Generate all functor tests automatically
 functorMyMaybeTests :: TestTree
 functorMyMaybeTests = tastyBatch $ functor (undefined :: MyMaybe (Int, String, Int))
 
@@ -84,93 +82,54 @@ functorMyReaderTests =
     ]
 
 -- ==========================================
--- 5. MaybeList Tests
--- ==========================================
--- 5. MaybeList Tests
--- ==========================================
-
-functorMaybeListTests :: TestTree
-functorMaybeListTests =
-  testGroup
-    "Functor MaybeList"
-    [tastyBatch $ functor (undefined :: MaybeList (Int, String, Int))]
-
-applicativeMaybeListTests :: TestTree
-applicativeMaybeListTests =
-  testGroup
-    "Applicative MaybeList"
-    [tastyBatch $ applicative (undefined :: MaybeList (Int, String, Int))]
-
-monadMaybeListTests :: TestTree
-monadMaybeListTests =
-  testGroup
-    "Monad MaybeList"
-    [tastyBatch $ monad (undefined :: MaybeList (Int, String, Int))]
-
--- ==========================================
--- 6. Hover Dam Tests
+-- 5. Hover Dam Tests (Subdist version)
 -- ==========================================
 
 hoverDamTests :: TestTree
 hoverDamTests =
   testGroup
-    "Hover Dam"
+    "Hover Dam (Subdist)"
     [ testCase "Safe Scenario: 2 enter, 2 leave" $
-        (damOpens >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= MaybeList [Just 0],
-      testCase "Collapse Scenario: Exceeding 3 cars" $
-        (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= MaybeList [Just 2, Nothing],
+        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves)
+         in dist @?= [(0, 1.0)],
+      testCase "Bifurcation Scenario: Reaching Capacity" $
+        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters)
+         in dist @?= [(3, 1.0)],
+      testCase "Collapse Scenario: 50% chance at threshold" $
+        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters)
+         in -- We expect [(4, 0.5)] because the other 0.5 is lost to "crash" (Nothing in Subdist)
+            dist @?= [(4, 0.5)],
+      testCase "Collapse Scenario: 25% chance at threshold" $
+        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carLeaves >>= carEnters)
+         in -- We expect [(4, 0.25)] because the other 0.75 is lost to "crash" (Nothing in Subdist)
+            dist @?= [(4, 0.25)],
+      testCase "Total Collapse: Exceeding threshold" $
+        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carEnters)
+         in dist @?= [],
       testProperty "Random Safe Path Survival" prop_damRandomSafePath,
-      testProperty "Random Danger Path Recovery" prop_damRandomDangerPath,
-      testProperty "Bifurcation and Collapse" prop_damBifurcationAndCollapse,
-      testProperty "MaybeList carEnters Consistency" prop_maybeListEnterConsistency
+      testProperty "Probability decreases or stays same" prop_damProbNonIncreasing
     ]
-
-prop_maybeListEnterConsistency :: MaybeList Int -> Property
-prop_maybeListEnterConsistency ml =
-  (ml >>= carEnters) === manualEnter ml
-  where
-    manualEnter (MaybeList ms) = MaybeList $ concatMap applyEnter ms
-    applyEnter Nothing = [Nothing]
-    applyEnter (Just n) = getMaybeList (carEnters n)
 
 prop_damRandomSafePath :: Property
 prop_damRandomSafePath = property $ do
-  MaybeList lastSafeState <- foldl (>>=) damOpens <$> genSafeMoves
-  return $ case lastSafeState of [Just n] -> n <= damCapacity; _ -> False
+  moves <- genSafeMoves
+  let dist = runSubdist (foldl (>>=) damOpens moves)
+  return $ case dist of
+    [(n, p)] -> counterexample ("State: " ++ show n ++ " Prob: " ++ show p) (n <= damCapacity && p == 1.0)
+    [] -> counterexample "Dam collapsed unexpectedly on safe path" False
+    _ -> counterexample ("Unexpected distribution: " ++ show dist) False
 
-prop_damRandomDangerPath :: Property
-prop_damRandomDangerPath = property $ do
-  let state = foldl (>>=) damOpens (replicate 4 carEnters ++ [carLeaves])
-  -- 1. Check initial recovery to [Just 3, Nothing]
-  if state /= MaybeList [Just 3, Nothing]
-    then return $ counterexample ("Initial recovery failed: " ++ show state) False
-    else do
-      -- 2. Continue with safe random walk from 3
-      moves <- genSafeMovesStartingAt 3
-      let MaybeList finalState = foldl (>>=) state moves
-      return $ case finalState of
-        [Just n, Nothing] -> counterexample ("Final state out of bounds: " ++ show n) (n <= damCapacity)
-        other -> counterexample ("Unexpected final state (expected exactly one healthy path): " ++ show other) False
-
-prop_damBifurcationAndCollapse :: Property
-prop_damBifurcationAndCollapse = property $ do
-  -- 1. Pick a random valid car count [0..damCapacity]
-  nbCars <- choose (0, damCapacity)
-  -- 2. Push that state to damCapacity, then enter once: must bifurcate
-  let movesToDanger = replicate (damCapacity - nbCars + 1) carEnters
-      atDangerCapacity = foldl (>>=) (pure nbCars) movesToDanger
-      bifurcates = getMaybeList atDangerCapacity == [Just (damCapacity + 1), Nothing]
-      -- 3. One more enter: all paths must collapse to Nothing
-      allCollapsed = getMaybeList (atDangerCapacity >>= carEnters) == [Nothing, Nothing]
-  return $
-    counterexample ("nbCars=" ++ show nbCars) $
-      counterexample ("atDangerCapacity=" ++ show (getMaybeList atDangerCapacity)) $
-        counterexample ("bifurcates=" ++ show bifurcates ++ " allCollapsed=" ++ show allCollapsed) $
-          bifurcates && allCollapsed
+prop_damProbNonIncreasing :: Property
+prop_damProbNonIncreasing = property $ do
+  nbEnters <- choose (0, 10 :: Int)
+  let dist = runSubdist (foldl (>>=) damOpens (replicate nbEnters carEnters))
+      totalProb = sum (map snd dist)
+  return $ counterexample ("Total prob: " ++ show totalProb) (totalProb <= 1.0)
 
 -- ==========================================
 -- Master Test Tree
 -- ==========================================
+
 functorTests :: TestTree
 functorTests =
   testGroup
@@ -179,8 +138,5 @@ functorTests =
       functorMyMaybeTests,
       functorReaderTests,
       functorMyReaderTests,
-      functorMaybeListTests,
-      applicativeMaybeListTests,
-      monadMaybeListTests,
       hoverDamTests
     ]

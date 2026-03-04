@@ -22,7 +22,7 @@ common share-tests-deps
     text,
     megaparsec,
     parser-combinators,
-    transformers,
+
 
 -- The main library for the project
 library
@@ -46,7 +46,7 @@ library
     base >=4.14 && <5,
     containers,
     mtl,
-    transformers,
+
     text,
     megaparsec,
     parser-combinators,

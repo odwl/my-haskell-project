@@ -1,0 +1,9 @@
+Build profile: -w ghc-9.6.7 -O1
+In order, the following will be built (use -v for more details):
+ - my-haskell-project-0.1.0.0 (test:all-tests) (file test/Lambda/FunctorTest.hs changed)
+Preprocessing test suite 'all-tests' for my-haskell-project-0.1.0.0...
+Building test suite 'all-tests' for my-haskell-project-0.1.0.0...
+[ 7 of 15] Compiling Lambda.FunctorTest ( test/Lambda/FunctorTest.hs, dist-newstyle/build/aarch64-osx/ghc-9.6.7/my-haskell-project-0.1.0.0/t/all-tests/build/all-tests/all-tests-tmp/Lambda/FunctorTest.o ) [Source file changed]
+[14 of 15] Compiling LambdaTest       ( test/LambdaTest.hs, dist-newstyle/build/aarch64-osx/ghc-9.6.7/my-haskell-project-0.1.0.0/t/all-tests/build/all-tests/all-tests-tmp/LambdaTest.o ) [Lambda.FunctorTest changed]
+[15 of 15] Compiling Main             ( test/Main.hs, dist-newstyle/build/aarch64-osx/ghc-9.6.7/my-haskell-project-0.1.0.0/t/all-tests/build/all-tests/all-tests-tmp/Main.o ) [LambdaTest changed]
+[16 of 16] Linking dist-newstyle/build/aarch64-osx/ghc-9.6.7/my-haskell-project-0.1.0.0/t/all-tests/build/all-tests/all-tests [Objects changed]

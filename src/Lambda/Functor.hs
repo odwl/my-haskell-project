@@ -1,20 +1,19 @@
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
 
 module Lambda.Functor
   ( MyMaybe (..),
     MyReader (..),
     runMyReader,
-    MaybeList (..),
     carEnters,
     carLeaves,
     damOpens,
     damCapacity,
+    damCollapseThreshold,
   )
 where
 
-import Control.Monad.Trans.Maybe (MaybeT (..))
+import Data.Maybe (fromJust)
+import Lambda.Subdist (Subdist, makeSubdist)
 import Prelude
 
 -- Note: The Functor, Applicative, and Monad laws implemented and tested for these
@@ -49,23 +48,19 @@ damCapacity = 3
 damCollapseThreshold :: Int
 damCollapseThreshold = 4
 
-newtype MaybeList a = MaybeList {getMaybeList :: [Maybe a]}
-  deriving (Show, Eq)
-  deriving (Functor, Applicative, Monad) via (MaybeT [])
-
 -- The dam opens (initial state)
-damOpens :: MaybeList Int
-damOpens = MaybeList [Just 0]
+damOpens :: Subdist Int
+damOpens = fromJust $ makeSubdist [(0, 1.0)]
 
 -- A car reaches the top of the dam.
-carEnters :: Int -> MaybeList Int
-carEnters nbCars =
-  MaybeList $
-    [Just (nbCars + 1) | nbCars < damCollapseThreshold]
-      ++ [Nothing | nbCars >= damCapacity]
+carEnters :: Int -> Subdist Int
+carEnters nbCars
+  | nbCars < damCapacity = fromJust $ makeSubdist [(nbCars + 1, 1.0)] -- 100% safe
+  | nbCars == damCapacity = fromJust $ makeSubdist [(nbCars + 1, 0.5)] -- 50% safe, 50% crash (mass lost)
+  | otherwise = fromJust $ makeSubdist [] -- 100% crash
 
 -- A car leaves the top of the dam. Leaving is always safe (deterministic).
-carLeaves :: Int -> MaybeList Int
+carLeaves :: Int -> Subdist Int
 carLeaves nbCars
-  | nbCars <= 1 = MaybeList [Just 0]
-  | otherwise = MaybeList [Just (nbCars - 1)]
+  | nbCars <= 1 = fromJust $ makeSubdist [(0, 1.0)]
+  | otherwise = fromJust $ makeSubdist [(nbCars - 1, 1.0)]
