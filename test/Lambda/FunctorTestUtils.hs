@@ -3,7 +3,18 @@
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Lambda.FunctorTestUtils where
+module Lambda.FunctorTestUtils
+  ( Action (..),
+    WalkResult (..),
+    applyAction,
+    genBoundedActions,
+    genSafeMovesStartingAt,
+    genSafeMoves,
+    genHoverDamWalk,
+    eqReader,
+    eqMyReader,
+  )
+where
 
 import Control.Monad (foldM)
 import Control.Monad.Reader
@@ -53,6 +64,49 @@ genSafeMovesStartingAt start = do
 
 genSafeMoves :: Gen [Int -> Subdist Int]
 genSafeMoves = genSafeMovesStartingAt 0
+
+-- ==========================================
+-- Enhanced Walk Tracking
+-- ==========================================
+
+data WalkResult = WalkResult
+  { wrPath :: [Int], -- Sequence of states
+    wrRiskCount :: Int, -- Number of times an 'Inc' was performed at 'damCapacity'
+    wrCollapsed :: Bool -- True if a state > 'damCollapseThreshold' was reached
+  }
+  deriving (Show, Eq)
+
+-- | Generates a random walk for the hover dam simulation.
+-- It returns a list of functions (carEnters or carLeaves),
+-- and tracks how many times 'carEnters' was called when the dam was at capacity.
+genHoverDamWalk :: Int -> Int -> Gen (WalkResult, [Int -> Subdist Int])
+genHoverDamWalk start numSteps = do
+  (res, moves) <- foldM next (WalkResult [start] 0 False, []) [1 .. numSteps]
+  return (res {wrPath = reverse (wrPath res)}, reverse moves)
+  where
+    next (res, moves) _ = do
+      let curr = head (wrPath res)
+      if wrCollapsed res
+        then return (res, moves)
+        else do
+          action <- elements [Inc, Dec]
+          let -- Match physical transitions exactly
+              nextState = case action of
+                Inc -> curr + 1
+                Dec -> if curr <= 1 then 0 else curr - 1
+              isRisk = action == Inc && curr == damCapacity
+              isCollapse = action == Inc && curr >= damCollapseThreshold
+              move = case action of
+                Inc -> carEnters
+                Dec -> carLeaves
+          return
+            ( res
+                { wrPath = nextState : wrPath res,
+                  wrRiskCount = if isRisk then wrRiskCount res + 1 else wrRiskCount res,
+                  wrCollapsed = isCollapse
+                },
+              move : moves
+            )
 
 -- ==========================================
 -- Arbitrary and EqProp Instances

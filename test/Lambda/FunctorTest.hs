@@ -2,7 +2,7 @@ module Lambda.FunctorTest where
 
 import Control.Monad.Reader (reader)
 import Lambda.Functor
-import Lambda.FunctorTestUtils (eqMyReader, eqReader, genSafeMoves)
+import Lambda.FunctorTestUtils (WalkResult (..), eqMyReader, eqReader, genHoverDamWalk, genSafeMoves)
 import Lambda.Subdist (runSubdist)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (functor)
@@ -107,8 +107,35 @@ hoverDamTests =
         let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carEnters)
          in dist @?= [],
       testProperty "Random Safe Path Survival" prop_damRandomSafePath,
-      testProperty "Probability decreases or stays same" prop_damProbNonIncreasing
+      testProperty "Probability decreases or stays same" prop_damProbNonIncreasing,
+      testProperty "Manual Probability Verification" prop_damManualProbVerify
     ]
+
+prop_damManualProbVerify :: Property
+prop_damManualProbVerify = property $ do
+  numSteps <- choose (0, 30 :: Int)
+  (result, moves) <- genHoverDamWalk 0 numSteps
+  let dist = runSubdist (foldl (>>=) damOpens moves)
+      expectedProb = 0.5 ^ wrRiskCount result
+      actualProb = case dist of
+        [(_, p)] -> p
+        [] -> 0.0
+        _ -> -1.0 -- Should not happen in this simplified model
+  return $
+    if wrCollapsed result
+      then counterexample ("Expected collapse for path " ++ show (wrPath result)) (null dist)
+      else
+        counterexample
+          ( "Path: "
+              ++ show (wrPath result)
+              ++ " Risks: "
+              ++ show (wrRiskCount result)
+              ++ " Expected: "
+              ++ show expectedProb
+              ++ " Actual: "
+              ++ show actualProb
+          )
+          (abs (actualProb - expectedProb) < 1e-6)
 
 prop_damRandomSafePath :: Property
 prop_damRandomSafePath = property $ do
