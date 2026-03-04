@@ -1,38 +1,8 @@
 module Lambda.RandomWalkTest where
 
-import Control.Monad (foldM)
+import Lambda.FunctorTestUtils (applyAction, genBoundedActions)
 import Test.Tasty
 import Test.Tasty.QuickCheck
-
-data Action = Inc | Dec deriving (Show, Eq)
-
-applyAction :: Action -> Int -> Int
-applyAction Inc n = n + 1
-applyAction Dec n = n - 1
-
--- | Generates a list of actions (Inc or Dec) that, when applied sequentially
--- starting from 'start', keep the value within [minB, maxB].
---
--- Arguments:
--- 1. minB: Lower boundary (inclusive)
--- 2. maxB: Upper boundary (inclusive)
--- 3. start: Initial value
--- 4. numSteps: Number of actions to generate
-genBoundedActions :: Int -> Int -> Int -> Int -> Gen [Action]
-genBoundedActions minB maxB start numSteps = do
-  (_, actions) <- foldM next (start, []) [1 .. numSteps]
-  return (reverse actions)
-  where
-    next (curr, acc) _ = do
-      let canInc = curr < maxB
-          canDec = curr > minB
-
-      action <- case (canInc, canDec) of
-        (True, True) -> elements [Inc, Dec]
-        (True, False) -> return Inc
-        (False, True) -> return Dec
-        (False, False) -> return Inc -- Should not happen if minB < maxB
-      return (applyAction action curr, action : acc)
 
 -- | Property to verify that the generated walk stays within boundaries.
 prop_randomWalkStayWithinBoundaries :: Int -> Int -> Int -> Property

@@ -64,6 +64,7 @@ test-suite lambda-test
     Lambda
     Lambda.Functor
     Lambda.FunctorTest
+    Lambda.FunctorTestUtils
     Lambda.RandomWalkTest
     Lambda.MiniWhile
     Lambda.MiniWhileTest
@@ -123,6 +124,7 @@ test-suite all-tests
     Exercism.ReverseStringTest
     ExercismTest
     Lambda.FunctorTest
+    Lambda.FunctorTestUtils
     Lambda.MiniWhileTest
     Lambda.MonadTest
     Lambda.ParserTest

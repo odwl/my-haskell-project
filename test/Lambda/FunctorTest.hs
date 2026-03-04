@@ -1,13 +1,8 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Lambda.FunctorTest where
 
-import Control.Monad.Reader
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), carEnters, carLeaves, damCapacity, damOpens, runMyReader)
-import Lambda.RandomWalkTest (Action (..), genBoundedActions)
+import Control.Monad.Reader (reader)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), carEnters, carLeaves, damCapacity, damOpens)
+import Lambda.FunctorTestUtils (eqMyReader, eqReader, genSafeMoves, genSafeMovesStartingAt)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -33,17 +28,8 @@ functorMaybeTests =
 -- ==========================================
 -- 2. Custom MyMaybe Tests
 -- ==========================================
-
-instance (Arbitrary a) => Arbitrary (MyMaybe a) where
-  arbitrary =
-    frequency
-      [ (1, pure MyNothing),
-        (3, fmap MyJust arbitrary)
-      ]
-
--- Tell checkers how to compare MyMaybe
-instance (Eq a) => EqProp (MyMaybe a) where
-  (=-=) = eq
+-- 2. Custom MyMaybe Tests
+-- ==========================================
 
 -- Generate all functor tests automatically
 functorMyMaybeTests :: TestTree
@@ -52,10 +38,6 @@ functorMyMaybeTests = tastyBatch $ functor (undefined :: MyMaybe (Int, String, I
 -- ==========================================
 -- 3. Standard Reader (Function) Tests
 -- ==========================================
-
--- A custom operator for "Extensional Equality" of Readers
-eqReader :: (Eq a, Show a) => Reader r a -> Reader r a -> r -> Property
-eqReader r1 r2 x = runReader r1 x === runReader r2 x
 
 prop_readerIdentity :: Fun Int String -> Int -> Property
 prop_readerIdentity (Fn rawR) x =
@@ -81,9 +63,6 @@ functorReaderTests =
 -- 4. Custom MyReader Tests
 -- ==========================================
 
-eqMyReader :: (Eq b, Show b) => MyReader a b -> MyReader a b -> a -> Property
-eqMyReader m1 m2 x = runMyReader m1 x === runMyReader m2 x
-
 prop_myReaderIdentity :: Fun Int String -> Int -> Property
 prop_myReaderIdentity (Fn rawR) val =
   let r = MyReader rawR
@@ -107,13 +86,8 @@ functorMyReaderTests =
 -- ==========================================
 -- 5. MaybeList Tests
 -- ==========================================
-
-instance (Arbitrary a) => Arbitrary (MaybeList a) where
-  arbitrary = fmap MaybeList (scale (\n -> min n 5) arbitrary)
-
-instance (Eq a) => EqProp (MaybeList a) where
-  (=-=) :: (Eq a) => MaybeList a -> MaybeList a -> Property
-  (=-=) = eq
+-- 5. MaybeList Tests
+-- ==========================================
 
 functorMaybeListTests :: TestTree
 functorMaybeListTests =
@@ -158,16 +132,6 @@ prop_maybeListEnterConsistency ml =
     manualEnter (MaybeList ms) = MaybeList $ concatMap applyEnter ms
     applyEnter Nothing = [Nothing]
     applyEnter (Just n) = getMaybeList (carEnters n)
-
--- Generates a list of movement functions (carEnters or carLeaves) that stay within [0, damCapacity]
-genSafeMovesStartingAt :: Int -> Gen [Int -> MaybeList Int]
-genSafeMovesStartingAt start = do
-  numSteps <- choose (0, 50 :: Int)
-  actions <- genBoundedActions 0 damCapacity start numSteps
-  return $ map (\case Inc -> carEnters; Dec -> carLeaves) actions
-
-genSafeMoves :: Gen [Int -> MaybeList Int]
-genSafeMoves = genSafeMovesStartingAt 0
 
 prop_damRandomSafePath :: Property
 prop_damRandomSafePath = property $ do
