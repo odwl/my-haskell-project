@@ -5,8 +5,11 @@ This project is a comprehensive collection of Haskell exercises focused on core 
 ## 📂 Project Structure
 
 - **src/Lambda/**
-    - `Functor.hs`: Implementation of `MaybeList`, `MyMaybe`, and `MyReader`. Includes a **non-deterministic Hover Dam** state machine using the `MaybeList` monad.
+    - `Functor.hs`: Implementation of `MaybeList`, `MyMaybe`, and `MyReader`.
+    - `HoverDam.hs`: A **probabilistic Hover Dam** state machine using the **`Subdist`** (Probability Distribution) monad.
         - *Inspiration: This section was inspired by the exercises at [Quantum Logic 2021 - Monads](https://lmf.di.uminho.pt/quantum-logic-2021/LQ-Monads.pdf).*
+    - `Subdist.hs`: Implementation of the `Subdist` monad for discrete probability distributions.
+    - `RandomWalk.hs`: Generalized Random Walk utilities used by the Hover Dam simulation.
     - `State.hs`: Custom implementation of the State Monad.
         - *Inspiration: This section was inspired by the [Monads Lab](https://shaagerup.github.io/dm552/files/MonadsLab.pdf) exercise.*
     - `Parser.hs`: A robust parser implemented using **MegaParsec**.
@@ -20,7 +23,8 @@ This project is a comprehensive collection of Haskell exercises focused on core 
     - [Pangram](https://exercism.org/tracks/haskell/exercises/pangram)
     - [Reverse String](https://exercism.org/tracks/haskell/exercises/reverse-string)
 - **test/Lambda/**
-    - `FunctorTest.hs`: Law-based tests for `MaybeList` and other functors using `Checkers`, alongside extensive QuickCheck properties verifying robust Hover Dam state transitions (using `MaybeT`).
+    - `FunctorTest.hs`: Law-based tests for `MaybeList` and other functors.
+    - `HoverDamTest.hs`: Strategy-based property tests for the Hover Dam simulation, supporting multiple entry probabilities (`Linear`, `Step`, `TwoStep`).
     - `ParserTest.hs`: Comprehensive test suite for the MegaParsec parser.
     - `StateTest.hs`: Tests for the custom State Monad.
 - **test/Exercism/**
@@ -38,16 +42,13 @@ The `MaybeList` type (`[Maybe a]`) has been carefully implemented to strictly ad
 - **Architecture**: `MaybeList` is a newtype over `[Maybe a]`, deriving its logic directly from `MaybeT []`.
 - **Performance**: The law-based test suite for `MaybeList` executes in under **0.3 seconds** by optimizing QuickCheck generation sizes.
 
-## 🌊 The Hover Dam Simulation
+## 🌊 Probabilistic Hover Dam
 
-One of the more complex exercises in this project is the **Hover Dam** state machine. It uses the `MaybeList` monad to model **non-deterministic** outcomes.
+The Hover Dam simulation has been upgraded to use a **Probabilistic** approach via the `Subdist` monad.
 
-- **Non-Determinism**: At the dam's capacity, `carEnters` branches the universe into two possible futures: one where the car enters safely (`Just (n+1)`) and one where the dam collapses (`Nothing`).
-- **3-Act Property Testing**: We verify the simulation's robustness with a unique 3-act QuickCheck property:
-    1. **Survival**: A random safe walk starting from `damOpens` always maintains a single healthy timeline.
-    2. **Bifurcation**: Pushing the dam to its limit triggers a precise bifurcation into `[Just 4, Nothing]`.
-    3. **Collapse**: One more entry at the limit results in "death all around", where all timelines collapse: `[Nothing, Nothing]`.
-- **Diagnostic Reporting**: The property tests use `counterexample` to provide detailed diagnostic traces upon any invariant violation.
+- **Strategy-Based Entry**: The simulation now supports multiple `DamStrategy` implementations, allowing for different car entry probabilities (e.g., linear decay vs. step functions).
+- **Subdist Monad**: Outcomes are modeled as lists of `(value, probability)` pairs, allowing for exact probabilistic reasoning about dam survival.
+- **Verification**: The suite verifies that for any given strategy, the dam recovers or fails according to defined invariants across randomized paths.
 
 ## 🛠 How to Run
 

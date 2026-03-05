@@ -7,10 +7,6 @@ module Lambda.Functor
     MyReader (..),
     runMyReader,
     MaybeList (..),
-    carEnters,
-    carLeaves,
-    damOpens,
-    damCapacity,
     takeWhileM,
   )
 where
@@ -37,39 +33,9 @@ instance Functor (MyReader c) where
 runMyReader :: MyReader a b -> a -> b
 runMyReader = unwrap
 
--- ==========================================
--- Inspired by: https://lmf.di.uminho.pt/quantum-logic-2021/LQ-Monads.pdf
--- Exercice: Hover Dam
--- ==========================================
-
--- A car reaches the top of the dam.
-damCapacity :: Int
-damCapacity = 3
-
--- The absolute physical limit before guaranteed collapse.
-damCollapseThreshold :: Int
-damCollapseThreshold = 4
-
 newtype MaybeList a = MaybeList {getMaybeList :: [Maybe a]}
   deriving (Show, Eq)
   deriving (Functor, Applicative, Monad) via (MaybeT [])
-
--- The dam opens (initial state)
-damOpens :: MaybeList Int
-damOpens = MaybeList [Just 0]
-
--- A car reaches the top of the dam.
-carEnters :: Int -> MaybeList Int
-carEnters nbCars =
-  MaybeList $
-    [Just (nbCars + 1) | nbCars < damCollapseThreshold]
-      ++ [Nothing | nbCars >= damCapacity]
-
--- A car leaves the top of the dam. Leaving is always safe (deterministic).
-carLeaves :: Int -> MaybeList Int
-carLeaves nbCars
-  | nbCars <= 1 = MaybeList [Just 0]
-  | otherwise = MaybeList [Just (nbCars - 1)]
 
 ------------------------
 -- Functor Utilities ---

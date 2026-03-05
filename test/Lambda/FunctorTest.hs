@@ -2,8 +2,8 @@ module Lambda.FunctorTest where
 
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), carEnters, carLeaves, damCapacity, damOpens, takeWhileM)
-import Lambda.FunctorTestUtils (eqMyReader, eqReader, genSafeMoves, genSafeMovesStartingAt)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), takeWhileM)
+import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -108,70 +108,6 @@ monadMaybeListTests =
     "Monad MaybeList"
     [tastyBatch $ monad (undefined :: MaybeList (Int, String, Int))]
 
--- ==========================================
--- 6. Hover Dam Tests
--- ==========================================
-
-hoverDamTests :: TestTree
-hoverDamTests =
-  testGroup
-    "Hover Dam"
-    [ testCase "Safe Scenario: 2 enter, 2 leave" $
-        (damOpens >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= MaybeList [Just 0],
-      testCase "Collapse Scenario: Exceeding 3 cars" $
-        (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves) @?= MaybeList [Just 2, Nothing],
-      testProperty "Random Safe Path Survival" prop_damRandomSafePath,
-      testProperty "Random Danger Path Recovery" prop_damRandomDangerPath,
-      testProperty "Bifurcation and Collapse" prop_damBifurcationAndCollapse,
-      testProperty "MaybeList carEnters Consistency" prop_maybeListEnterConsistency
-    ]
-
-prop_maybeListEnterConsistency :: MaybeList Int -> Property
-prop_maybeListEnterConsistency ml =
-  (ml >>= carEnters) === manualEnter ml
-  where
-    manualEnter (MaybeList ms) = MaybeList $ concatMap applyEnter ms
-    applyEnter Nothing = [Nothing]
-    applyEnter (Just n) = getMaybeList (carEnters n)
-
-prop_damRandomSafePath :: Property
-prop_damRandomSafePath = property $ do
-  MaybeList lastSafeState <- foldl (>>=) damOpens <$> genSafeMoves
-  return $ case lastSafeState of [Just n] -> n <= damCapacity; _ -> False
-
-prop_damRandomDangerPath :: Property
-prop_damRandomDangerPath = property $ do
-  let state = foldl (>>=) damOpens (replicate 4 carEnters ++ [carLeaves])
-  -- 1. Check initial recovery to [Just 3, Nothing]
-  if state /= MaybeList [Just 3, Nothing]
-    then return $ counterexample ("Initial recovery failed: " ++ show state) False
-    else do
-      -- 2. Continue with safe random walk from 3
-      moves <- genSafeMovesStartingAt 3
-      let MaybeList finalState = foldl (>>=) state moves
-      return $ case finalState of
-        [Just n, Nothing] -> counterexample ("Final state out of bounds: " ++ show n) (n <= damCapacity)
-        other -> counterexample ("Unexpected final state (expected exactly one healthy path): " ++ show other) False
-
-prop_damBifurcationAndCollapse :: Property
-prop_damBifurcationAndCollapse = property $ do
-  -- 1. Pick a random valid car count [0..damCapacity]
-  nbCars <- choose (0, damCapacity)
-  -- 2. Push that state to damCapacity, then enter once: must bifurcate
-  let movesToDanger = replicate (damCapacity - nbCars + 1) carEnters
-      atDangerCapacity = foldl (>>=) (pure nbCars) movesToDanger
-      bifurcates = getMaybeList atDangerCapacity == [Just (damCapacity + 1), Nothing]
-      -- 3. One more enter: all paths must collapse to Nothing
-      allCollapsed = getMaybeList (atDangerCapacity >>= carEnters) == [Nothing, Nothing]
-  return $
-    counterexample ("nbCars=" ++ show nbCars) $
-      counterexample ("atDangerCapacity=" ++ show (getMaybeList atDangerCapacity)) $
-        counterexample ("bifurcates=" ++ show bifurcates ++ " allCollapsed=" ++ show allCollapsed) $
-          bifurcates && allCollapsed
-
--- ==========================================
--- Master Test Tree
--- ==========================================
 functorTests :: TestTree
 functorTests =
   testGroup
@@ -183,7 +119,6 @@ functorTests =
       functorMaybeListTests,
       applicativeMaybeListTests,
       monadMaybeListTests,
-      hoverDamTests,
       takeWhileMTests
     ]
 

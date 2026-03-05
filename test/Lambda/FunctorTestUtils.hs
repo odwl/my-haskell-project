@@ -5,44 +5,10 @@
 
 module Lambda.FunctorTestUtils where
 
-import Control.Monad (foldM)
 import Control.Monad.Reader
 import Lambda.Functor
-import Lambda.RandomWalk (Action (..), applyAction)
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
-
--- | Generates a list of actions (Inc or Dec) that, when applied sequentially
--- starting from 'start', keep the value within [minB, maxB].
-genBoundedActions :: Int -> Int -> Int -> Int -> Gen [Action]
-genBoundedActions minB maxB start numSteps = do
-  (_, actions) <- foldM next (start, []) [1 .. numSteps]
-  return (reverse actions)
-  where
-    next (curr, acc) _ = do
-      let canInc = curr < maxB
-          canDec = curr > minB
-
-      action <- case (canInc, canDec) of
-        (True, True) -> elements [Inc, Dec]
-        (True, False) -> return Inc
-        (False, True) -> return Dec
-        (False, False) -> return Inc -- Should not happen if minB < maxB
-      return (applyAction action curr, action : acc)
-
--- ==========================================
--- Hover Dam Domains
--- ==========================================
-
--- Generates a list of movement functions (carEnters or carLeaves) that stay within [0, damCapacity]
-genSafeMovesStartingAt :: Int -> Gen [Int -> MaybeList Int]
-genSafeMovesStartingAt start = do
-  numSteps <- choose (0, 50 :: Int)
-  actions <- genBoundedActions 0 damCapacity start numSteps
-  return $ map (\case Inc -> carEnters; Dec -> carLeaves) actions
-
-genSafeMoves :: Gen [Int -> MaybeList Int]
-genSafeMoves = genSafeMovesStartingAt 0
 
 -- ==========================================
 -- Arbitrary and EqProp Instances
