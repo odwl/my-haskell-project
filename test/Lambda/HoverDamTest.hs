@@ -31,7 +31,7 @@ genRandomActions = do
 calculateExpectedResult :: DamStrategy -> [Action] -> Int -> [(CarCount, Double)]
 calculateExpectedResult strategy actions start =
   let (f, p, col) = foldl step (start, 1.0, False) actions
-   in if col then [] else [(CarCount f, p)]
+   in [(CarCount f, p) | not col]
   where
     step (s, p, col) Inc =
       let next = s + 1

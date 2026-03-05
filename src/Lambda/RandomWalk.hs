@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module Lambda.RandomWalk
   ( Action (..),
     RandomWalk (..),

@@ -25,9 +25,10 @@ where
 -- Inspired by: https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2019/ex/ex5.pdf
 
 import Control.Monad (guard)
+import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Char (isAlpha, isAlphaNum, isAscii)
 import Data.Void (Void)
-import Text.Megaparsec (Parsec, choice, many, satisfy, sepBy1, try, (<|>))
+import Text.Megaparsec (Parsec, choice, many, optional, satisfy, sepBy1, try, (<|>))
 import Text.Megaparsec.Char (space1, string)
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -44,7 +45,7 @@ isReservedWord :: String -> Bool
 isReservedWord = (`elem` reservedWords)
 
 data Id = Id Char String
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 -- | Predicates for identifier characters.
 isAsciiAlpha :: Char -> Bool
@@ -126,16 +127,29 @@ cmpop =
 num :: Parser Int
 num = lexeme L.decimal
 
+aTerm :: Parser AExp
+aTerm =
+  choice
+    [ parens aexp,
+      Num <$> num,
+      Var <$> identifier
+    ]
+
+parens :: Parser a -> Parser a
+parens p = symbol "(" *> p <* symbol ")"
+
+aOperators :: [[Operator Parser AExp]]
+aOperators =
+  [ [ InfixL ((`Op` Mul) <$ symbol "*"),
+      InfixL ((`Op` Div) <$ symbol "/")
+    ],
+    [ InfixL ((`Op` Add) <$ symbol "+"),
+      InfixL ((`Op` Sub) <$ symbol "-")
+    ]
+  ]
+
 aexp :: Parser AExp
-aexp = opP <|> (Num <$> num) <|> (Var <$> identifier)
-  where
-    opP = do
-      _ <- symbol "("
-      left <- aexp
-      op <- binop
-      right <- aexp
-      _ <- symbol ")"
-      return (Op left op right)
+aexp = makeExprParser aTerm aOperators
 
 expr :: Parser Exp
 expr = notP <|> ifP <|> aexpBased
@@ -183,7 +197,7 @@ keyword k = lexeme (string k <* notFollowedBy (satisfy (liftA2 (&&) isAscii isAl
 -- Helper from Text.Megaparsec
 notFollowedBy :: Parser a -> Parser ()
 notFollowedBy p = do
-  res <- (Just <$> try p) <|> pure Nothing
+  res <- optional (try p)
   case res of
     Nothing -> return ()
     Just _ -> fail "keyword followed by alphanumeric character"

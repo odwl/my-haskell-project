@@ -7,7 +7,9 @@ maintainer: odewolf@gmail.com
 
 -- Common GHC warning flags
 common warnings
-  ghc-options: -Wall
+  ghc-options:
+    -Wall
+    -fbyte-code
 
 -- Common test dependencies, shared across all test suites
 common share-tests-deps
@@ -35,14 +37,13 @@ library
     Lambda
     Lambda.Functor
     Lambda.HoverDam
-    Lambda.MiniWhile
+    Lambda.Interpreter
     Lambda.Parser
     Lambda.RandomWalk
     Lambda.State
     Lambda.Subdist
 
   hs-source-dirs: src
-  ghc-options: -fbyte-code
   default-language: Haskell2010
   build-depends:
     QuickCheck,
@@ -60,26 +61,16 @@ test-suite lambda-test
   main-is: LambdaMain.hs
   hs-source-dirs:
     test
-    src
 
   other-modules:
-    Lambda
-    Lambda.Functor
     Lambda.FunctorTest
     Lambda.FunctorTestUtils
-    Lambda.HoverDam
     Lambda.HoverDamTest
-    Lambda.MiniWhile
-    Lambda.MiniWhileRepro
-    Lambda.MiniWhileTest
+    Lambda.InterpreterTest
     Lambda.MonadTest
-    Lambda.Parser
     Lambda.ParserTest
-    Lambda.RandomWalk
     Lambda.RandomWalkTest
-    Lambda.State
     Lambda.StateTest
-    Lambda.Subdist
     Lambda.SubdistTest
     LambdaTest
 
@@ -87,33 +78,26 @@ test-suite lambda-test
     QuickCheck,
     checkers,
     mtl,
-
-  ghc-options: -fbyte-code
+    my-haskell-project,
 
 test-suite exercism-test
   import: share-tests-deps
   type: exitcode-stdio-1.0
   main-is: ExercismMain.hs
   other-modules:
-    Exercism.Anagram
     Exercism.AnagramTest
-    Exercism.Bob
     Exercism.BobTest
-    Exercism.Pangram
     Exercism.PangramTest
-    Exercism.ReverseString
     Exercism.ReverseStringTest
     ExercismTest
 
   hs-source-dirs:
     test
-    src
 
   build-depends:
     QuickCheck,
     containers,
-
-  ghc-options: -fbyte-code
+    my-haskell-project,
 
 test-suite all-tests
   import: share-tests-deps
@@ -131,7 +115,7 @@ test-suite all-tests
     Lambda.FunctorTest
     Lambda.FunctorTestUtils
     Lambda.HoverDamTest
-    Lambda.MiniWhileTest
+    Lambda.InterpreterTest
     Lambda.MonadTest
     Lambda.ParserTest
     Lambda.RandomWalkTest

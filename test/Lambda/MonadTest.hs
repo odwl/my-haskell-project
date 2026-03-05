@@ -1,5 +1,8 @@
+-- | This module contains tests for various Monad and Random Generator (QuickCheck) patterns.
+-- It demonstrates property-based testing of generators and simple monadic compositions.
 module Lambda.MonadTest (monadTests) where
 
+import Data.Maybe (isNothing)
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
@@ -17,7 +20,7 @@ randomNum :: Gen Int
 randomNum = choose (1, 50)
 
 genEvenNum :: Gen Int
-genEvenNum = fmap (\x -> 2 * x) randomNum
+genEvenNum = fmap (2 *) randomNum
 
 genEvenNumBetter :: Gen Int
 -- genEvenNumBetter = choose (2, 100)
@@ -31,7 +34,7 @@ prop_genEven :: Property
 prop_genEven = forAll genEvenNum even
 
 prop_gen_2_100 :: Property
-prop_gen_2_100 = forAll genEvenNumBetter (\x -> x <= 100)
+prop_gen_2_100 = forAll genEvenNumBetter (<= 100)
 
 data User = User String Int
   deriving (Show)
@@ -62,4 +65,4 @@ fullName = do
   pure $ unwords [fName, lName]
 
 prop_fullName :: Property
-prop_fullName = property $ fullName == Nothing || fullName == Just "Alice Smith"
+prop_fullName = property $ isNothing fullName || fullName == Just "Alice Smith"

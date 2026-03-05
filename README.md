@@ -14,7 +14,7 @@ This project is a comprehensive collection of Haskell exercises focused on core 
         - *Inspiration: This section was inspired by the [Monads Lab](https://shaagerup.github.io/dm552/files/MonadsLab.pdf) exercise.*
     - `Parser.hs`: A robust parser implemented using **MegaParsec**.
         - *Inspiration: This section was inspired by [Exercise 5](https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2019/ex/ex5.pdf) from the Functional Programming course at Uni Freiburg.*
-    - `MiniWhile.hs`: An interpreter for a minimal "While" language.
+    - `Interpreter.hs`: An interpreter for a minimal "While" language.
         - *Inspiration: This section was inspired by [Exercise 6](https://proglang.informatik.uni-freiburg.de/teaching/functional-programming/2019/ex/ex6.pdf) from the Functional Programming course at Uni Freiburg.*
 - **src/Exercism/**
     - A collection of solved exercises from the [Exercism Haskell Track](https://exercism.org/tracks/haskell).
