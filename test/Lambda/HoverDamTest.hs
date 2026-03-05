@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Lambda.HoverDamTest where
@@ -15,7 +14,6 @@ import Test.Tasty.QuickCheck
 -- Hover Dam Domains
 -- ==========================================
 
-<<<<<<< HEAD
 -- | Converts a RandomWalk Action to a HoverDam movement function for a given strategy.
 actionToMove :: DamStrategy -> Action -> (CarCount -> Subdist CarCount)
 actionToMove strategy = \case
@@ -56,9 +54,10 @@ _ ~= _ = False
 -- | Runs a scenario defined by a list of 'Action's and checks
 -- it matches the Oracle's prediction for the given strategy.
 damTest :: DamStrategy -> String -> [Action] -> TestTree
-damTest strategy name actions = testCase name $
-  let dist = runSubdist (foldl (>>=) damOpens (map (actionToMove strategy) actions))
-   in dist @?= calculateExpectedResult strategy actions 0
+damTest strategy name actions =
+  testCase name $
+    let dist = runSubdist (foldl (>>=) damOpens (map (actionToMove strategy) actions))
+     in dist @?= calculateExpectedResult strategy actions 0
 
 -- | Generic property that verifies ANY random sequence of moves for a given strategy.
 prop_damRandomPath :: DamStrategy -> Property
@@ -74,11 +73,11 @@ hoverDamScenarioTests :: String -> DamStrategy -> TestTree
 hoverDamScenarioTests name strategy =
   testGroup
     name
-    [ damTest strategy "Safe Scenario: 2 enter, 2 leave"            [Inc, Inc, Dec, Dec],
-      damTest strategy "Bifurcation Scenario: Reaching Capacity"    [Inc, Inc, Inc],
+    [ damTest strategy "Safe Scenario: 2 enter, 2 leave" [Inc, Inc, Dec, Dec],
+      damTest strategy "Bifurcation Scenario: Reaching Capacity" [Inc, Inc, Inc],
       damTest strategy "Collapse Scenario: 50% chance at threshold" [Inc, Inc, Inc, Inc],
       damTest strategy "Collapse Scenario: 25% chance at threshold" [Inc, Inc, Inc, Inc, Dec, Inc],
-      damTest strategy "Total Collapse: Exceeding threshold"        [Inc, Inc, Inc, Inc, Inc],
+      damTest strategy "Total Collapse: Exceeding threshold" [Inc, Inc, Inc, Inc, Inc],
       testProperty "Random Arbitrary Path Verification" (prop_damRandomPath strategy)
     ]
 
