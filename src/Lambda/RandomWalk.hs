@@ -4,7 +4,6 @@ module Lambda.RandomWalk
   ( Action (..),
     RandomWalk (..),
     genInfiniteActions,
-    genReflectingActions,
     applyAction,
     applyReflectingBounds,
     applyAbsorbingBounds,
@@ -26,10 +25,6 @@ data Action = Inc | Dec deriving (Show, Eq)
 
 genInfiniteActions :: Gen [Action]
 genInfiniteActions = infiniteListOf (elements [Inc, Dec])
-
--- | Generates an infinite stream of actions that are reflected off the boundaries.
-genReflectingActions :: Int -> Int -> Int -> Gen [Action]
-genReflectingActions minB maxB start = applyReflectingBounds minB maxB start <$> genInfiniteActions
 
 -- | A random walk consisting of a starting state and a generator of actions.
 data RandomWalk = RandomWalk Int (Gen [Action])

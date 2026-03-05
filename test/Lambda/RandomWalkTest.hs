@@ -1,7 +1,7 @@
 module Lambda.RandomWalkTest where
 
 import qualified Data.Map as Map
-import Lambda.RandomWalk (Action (..), RandomWalk (..), applyAction, applyReflectingBounds, genReflectingActions, pathSnapshots)
+import Lambda.RandomWalk (Action (..), RandomWalk (..), applyAction, applyReflectingBounds, genInfiniteActions, pathSnapshots)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -17,7 +17,7 @@ prop_randomWalkStayWithinBoundaries b1 b2 s =
       (fixedMin, fixedMax) = if minB == maxB then (minB, minB + 1) else (minB, maxB)
       start = max fixedMin (min fixedMax s)
       numSteps = 100
-   in forAll (genReflectingActions fixedMin fixedMax start) $ \infActions ->
+   in forAll (applyReflectingBounds fixedMin fixedMax start <$> genInfiniteActions) $ \infActions ->
         let actions = take numSteps infActions
             trajectory = scanl (flip applyAction) start actions
          in counterexample ("Trajectory: " ++ show trajectory) $
@@ -31,7 +31,7 @@ prop_analyzePathCounts b1 b2 s =
       (fixedMin, fixedMax) = if minB == maxB then (minB, minB + 1) else (minB, maxB)
       start = max fixedMin (min fixedMax s)
       numSteps = 100
-   in forAll (genReflectingActions fixedMin fixedMax start) $ \infActions ->
+   in forAll (applyReflectingBounds fixedMin fixedMax start <$> genInfiniteActions) $ \infActions ->
         let actions = take numSteps infActions
             rwalk = RandomWalk start (pure actions)
          in forAll (last <$> pathSnapshots rwalk) $ \visits ->

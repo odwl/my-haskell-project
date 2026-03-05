@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Lambda.HoverDamTest where
@@ -14,6 +15,7 @@ import Test.Tasty.QuickCheck
 -- Hover Dam Domains
 -- ==========================================
 
+<<<<<<< HEAD
 -- | Converts a RandomWalk Action to a HoverDam movement function for a given strategy.
 actionToMove :: DamStrategy -> Action -> (CarCount -> Subdist CarCount)
 actionToMove strategy = \case
@@ -80,50 +82,6 @@ hoverDamScenarioTests name strategy =
       testProperty "Random Arbitrary Path Verification" (prop_damRandomPath strategy)
     ]
 
-<<<<<<< HEAD
-=======
-prop_damManualProbVerify :: Property
-prop_damManualProbVerify = property $ do
-  numSteps <- choose (0, 30 :: Int)
-  let CarCount thresh = damCollapseThreshold
-  actions <- take numSteps <$> genReflectingActions 0 (thresh + 1) 0
-  result <- genHoverDamWalk 0 (pure actions)
-  let moves = map actionToMove actions
-      dist = runSubdist (foldl (>>=) damOpens moves)
-      expectedProb = wrExpectedProb result
-      actualProb = case dist of
-        [(_, p)] -> p
-        [] -> 0.0
-        _ -> -1.0 -- Should not happen in this simplified model
-  return $
-    if wrCollapsed result
-      then counterexample "Expected collapse." (null dist)
-      else
-        counterexample
-          ( "Expected: "
-              ++ show expectedProb
-              ++ " Actual: "
-              ++ show actualProb
-          )
-          (abs (actualProb - expectedProb) < 1e-6)
-
-prop_damRandomSafePath :: Property
-prop_damRandomSafePath = property $ do
-  moves <- genSafeMoves
-  let dist = runSubdist (foldl (>>=) damOpens moves)
-  return $ case dist of
-    [(n, p)] -> counterexample ("State: " ++ show n ++ " Prob: " ++ show p) (n <= damCapacity && p == 1.0)
-    [] -> counterexample "Dam collapsed unexpectedly on safe path" False
-    _ -> counterexample ("Unexpected distribution: " ++ show dist) False
-
-prop_damProbNonIncreasing :: Property
-prop_damProbNonIncreasing = property $ do
-  nbEnters <- choose (0, 10 :: Int)
-  let dist = runSubdist (foldl (>>=) damOpens (replicate nbEnters carEnters))
-      totalProb = sum (map snd dist)
-  return $ counterexample ("Total prob: " ++ show totalProb) (totalProb <= 1.0)
-
->>>>>>> f82d4f1 (Refactor: Unified RandomWalk analysis with streaming snapshots and added genReflectingActions)
 -- ==========================================
 -- Master Test Tree
 -- ==========================================

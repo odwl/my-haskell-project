@@ -42,6 +42,7 @@ damCollapseThreshold = CarCount 4
 damOpens :: Subdist CarCount
 damOpens = fromJust $ makeSubdist [(CarCount 0, 1.0)]
 
+<<<<<<< HEAD
 -- ==========================================
 -- Strategies
 -- ==========================================
