@@ -1,6 +1,7 @@
 module Lambda.FunctorTest where
 
 import Control.Monad.Reader (reader)
+import Data.Functor.Identity ()
 import Lambda.Functor
 import Lambda.FunctorHelp (eqMyReader, eqReader)
 import Test.QuickCheck.Checkers
