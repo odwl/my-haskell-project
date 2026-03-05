@@ -8,18 +8,9 @@ module Lambda.FunctorTestUtils where
 import Control.Monad (foldM)
 import Control.Monad.Reader
 import Lambda.Functor
+import Lambda.RandomWalk (Action (..), applyAction)
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
-
--- ==========================================
--- Random Walk Actions
--- ==========================================
-
-data Action = Inc | Dec deriving (Show, Eq)
-
-applyAction :: Action -> Int -> Int
-applyAction Inc n = n + 1
-applyAction Dec n = n - 1
 
 -- | Generates a list of actions (Inc or Dec) that, when applied sequentially
 -- starting from 'start', keep the value within [minB, maxB].
