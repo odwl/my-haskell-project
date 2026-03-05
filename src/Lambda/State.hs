@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE InstanceSigs #-}
 
@@ -51,4 +49,4 @@ replace :: (Eq a) => [(a, b)] -> Expr a -> Expr (Maybe b)
 replace l = fmap (`lookup` l)
 
 convert :: Expr (Maybe a) -> Maybe (Expr a)
-convert = traverse id
+convert = sequenceA

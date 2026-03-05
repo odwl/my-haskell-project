@@ -1,0 +1,6 @@
+# Ormolu configuration
+# https://github.com/tweag/ormolu
+
+column-limit: 100
+unicode-syntax: never
+indent-ways: true

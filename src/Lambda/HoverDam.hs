@@ -1,5 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
-
 module Lambda.HoverDam
   ( CarCount (..),
     DamStrategy,
@@ -15,8 +13,7 @@ module Lambda.HoverDam
   )
 where
 
-import Data.Maybe (fromJust)
-import Lambda.Subdist (Subdist, makeSubdist)
+import Lambda.Subdist (Subdist, certainly, weighted)
 import Prelude
 
 -- ==========================================
@@ -40,7 +37,7 @@ damCollapseThreshold = CarCount 4
 
 -- The dam opens (initial state)
 damOpens :: Subdist CarCount
-damOpens = fromJust $ makeSubdist [(CarCount 0, 1.0)]
+damOpens = certainly (CarCount 0)
 
 -- ==========================================
 -- Strategies
@@ -61,7 +58,7 @@ strategyTwoStep count
 
 -- | Linear: probability decreases linearly, p(n) = max(0, 1 - n/10).
 strategyLinear :: DamStrategy
-strategyLinear (CarCount n) = max 0.0 (1.0 - fromIntegral n / 10.0)
+strategyLinear (CarCount n) = max 0.0 (min 1.0 (1.0 - fromIntegral n / 10.0))
 
 -- ==========================================
 -- Dam Operations
@@ -71,13 +68,10 @@ strategyLinear (CarCount n) = max 0.0 (1.0 - fromIntegral n / 10.0)
 carEnters :: DamStrategy -> CarCount -> Subdist CarCount
 carEnters strategy nbCars =
   let nextCount = case nbCars of CarCount n -> CarCount (n + 1)
-      p = strategy nextCount
-   in if p > 0
-        then fromJust $ makeSubdist [(nextCount, p)]
-        else fromJust $ makeSubdist []
+   in weighted nextCount $ strategy nextCount
 
 -- A car leaves the top of the dam. Leaving is always safe (deterministic).
 carLeaves :: CarCount -> Subdist CarCount
 carLeaves (CarCount nbCars)
-  | nbCars <= 1 = fromJust $ makeSubdist [(CarCount 0, 1.0)]
-  | otherwise = fromJust $ makeSubdist [(CarCount (nbCars - 1), 1.0)]
+  | nbCars <= 1 = certainly (CarCount 0)
+  | otherwise = certainly (CarCount (nbCars - 1))

@@ -1,0 +1,14 @@
+# HLint configuration file
+# https://github.com/ndmitchell/hlint
+
+- ignore: {name: Use liftA2} # Allow manual applicative style if clearer
+- ignore: {name: Use <$>}
+- ignore: {name: Use section}
+- ignore: {name: Redundant bracket}
+
+- arguments: [-XTypeApplications, -XOverloadedStrings, -XLambdaCase]
+
+# Safety: Warn about partial functions
+- warn: {lhs: head, rhs: safeHead}
+- warn: {lhs: fromJust, rhs: "handled Maybe"}
+- warn: {lhs: tail, rhs: "handled list pattern matching"}

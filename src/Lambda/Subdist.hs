@@ -1,6 +1,10 @@
 module Lambda.Subdist
-  ( Subdist (..),
+  ( Subdist,
+    runSubdist,
     makeSubdist,
+    certainly,
+    impossible,
+    weighted,
     simplify,
   )
 where
@@ -9,6 +13,22 @@ import qualified Data.Map.Strict as Map
 
 newtype Subdist a = Subdist {runSubdist :: [(a, Double)]}
   deriving (Show, Eq)
+
+-- | Represents a deterministic outcome with probability 1.0.
+certainly :: a -> Subdist a
+certainly x = Subdist [(x, 1.0)]
+
+-- | Represents an impossible outcome (empty distribution).
+impossible :: Subdist a
+impossible = Subdist []
+
+-- | Constructs a distribution for a single outcome with a given probability.
+-- Clamps probability to [0, 1].
+weighted :: a -> Double -> Subdist a
+weighted x p
+  | p <= 0.0 = impossible
+  | p >= 1.0 = certainly x
+  | otherwise = Subdist [(x, p)]
 
 -- | Smart constructor that enforces sub-probability invariants:
 -- 1. All weights are non-negative.
