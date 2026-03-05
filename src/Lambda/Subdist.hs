@@ -1,7 +1,6 @@
 module Lambda.Subdist
-  ( Subdist, -- Export type only
-    runSubdist, -- Export accessor
-    makeSubdist, -- Export smart constructor
+  ( Subdist (..),
+    makeSubdist,
     simplify,
   )
 where

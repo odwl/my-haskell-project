@@ -16,12 +16,12 @@ common share-tests-deps
   build-depends:
     base >=4.14 && <5,
     containers,
+    megaparsec,
+    parser-combinators,
     tasty,
     tasty-hunit,
     tasty-quickcheck,
     text,
-    megaparsec,
-    parser-combinators,
     transformers,
 
 -- The main library for the project
@@ -34,8 +34,10 @@ library
     Exercism.ReverseString
     Lambda
     Lambda.Functor
+    Lambda.HoverDam
     Lambda.MiniWhile
     Lambda.Parser
+    Lambda.RandomWalk
     Lambda.State
     Lambda.Subdist
 
@@ -43,14 +45,14 @@ library
   ghc-options: -fbyte-code
   default-language: Haskell2010
   build-depends:
+    QuickCheck,
     base >=4.14 && <5,
     containers,
-    mtl,
-    transformers,
-    text,
     megaparsec,
+    mtl,
     parser-combinators,
-
+    text,
+    transformers,
 
 test-suite lambda-test
   import: share-tests-deps
@@ -65,18 +67,21 @@ test-suite lambda-test
     Lambda.Functor
     Lambda.FunctorTest
     Lambda.FunctorTestUtils
-    Lambda.RandomWalkTest
+    Lambda.HoverDam
+    Lambda.HoverDamTest
     Lambda.MiniWhile
+    Lambda.MiniWhileRepro
     Lambda.MiniWhileTest
     Lambda.MonadTest
     Lambda.Parser
     Lambda.ParserTest
+    Lambda.RandomWalk
+    Lambda.RandomWalkTest
     Lambda.State
     Lambda.StateTest
     Lambda.Subdist
     Lambda.SubdistTest
     LambdaTest
-    Lambda.MiniWhileRepro
 
   build-depends:
     QuickCheck,
@@ -125,6 +130,7 @@ test-suite all-tests
     ExercismTest
     Lambda.FunctorTest
     Lambda.FunctorTestUtils
+    Lambda.HoverDamTest
     Lambda.MiniWhileTest
     Lambda.MonadTest
     Lambda.ParserTest
@@ -134,10 +140,10 @@ test-suite all-tests
     LambdaTest
 
   build-depends:
-    my-haskell-project,
     QuickCheck,
     checkers,
     containers,
     mtl,
+    my-haskell-project,
 
   ghc-options: -fbyte-code
