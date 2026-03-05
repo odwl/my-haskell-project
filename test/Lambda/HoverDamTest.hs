@@ -16,14 +16,15 @@ import Test.Tasty.QuickCheck
 -- ==========================================
 
 -- Generates a list of movement functions (carEnters or carLeaves) that stay within [0, damCapacity]
-genSafeMovesStartingAt :: Int -> Gen [Int -> Subdist Int]
+genSafeMovesStartingAt :: Int -> Gen [CarCount -> Subdist CarCount]
 genSafeMovesStartingAt start = do
   numSteps <- choose (0, 50 :: Int)
-  let RandomWalk _ genActions = genBoundedActions 0 damCapacity start numSteps
+  let CarCount cap = damCapacity
+  let RandomWalk _ genActions = genBoundedActions 0 cap start numSteps
   actions <- genActions
   return $ map (\case Inc -> carEnters; Dec -> carLeaves) actions
 
-genSafeMoves :: Gen [Int -> Subdist Int]
+genSafeMoves :: Gen [CarCount -> Subdist CarCount]
 genSafeMoves = genSafeMovesStartingAt 0
 
 -- ==========================================
@@ -42,8 +43,10 @@ genHoverDamWalk :: Int -> Gen [Action] -> Gen WalkResult
 genHoverDamWalk start genActions = do
   -- Use analyzePath to extract stats
   visits <- analyzePath (RandomWalk start genActions)
-  let riskCount = Map.findWithDefault 0 (damCapacity + 1) visits
-      col = any (> damCollapseThreshold) (Map.keys visits)
+  let CarCount cap = damCapacity
+      CarCount thresh = damCollapseThreshold
+  let riskCount = Map.findWithDefault 0 (cap + 1) visits
+      col = any (> thresh) (Map.keys visits)
   return (WalkResult (0.5 ^ riskCount) col)
 
 -- ==========================================
@@ -56,18 +59,18 @@ hoverDamScenarioTests =
     "Hover Dam (Subdist)"
     [ testCase "Safe Scenario: 2 enter, 2 leave" $
         let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves)
-         in dist @?= [(0, 1.0)],
+         in dist @?= [(CarCount 0, 1.0)],
       testCase "Bifurcation Scenario: Reaching Capacity" $
         let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters)
-         in dist @?= [(3, 1.0)],
+         in dist @?= [(CarCount 3, 1.0)],
       testCase "Collapse Scenario: 50% chance at threshold" $
         let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters)
          in -- We expect [(4, 0.5)] because the other 0.5 is lost to "crash" (Nothing in Subdist)
-            dist @?= [(4, 0.5)],
+            dist @?= [(CarCount 4, 0.5)],
       testCase "Collapse Scenario: 25% chance at threshold" $
         let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carLeaves >>= carEnters)
          in -- We expect [(4, 0.25)] because the other 0.75 is lost to "crash" (Nothing in Subdist)
-            dist @?= [(4, 0.25)],
+            dist @?= [(CarCount 4, 0.25)],
       testCase "Total Collapse: Exceeding threshold" $
         let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carEnters)
          in dist @?= [],
@@ -79,7 +82,8 @@ hoverDamScenarioTests =
 prop_damManualProbVerify :: Property
 prop_damManualProbVerify = property $ do
   numSteps <- choose (0, 30 :: Int)
-  let RandomWalk _ genActions = genBoundedActions 0 (damCollapseThreshold + 1) 0 numSteps
+  let CarCount thresh = damCollapseThreshold
+  let RandomWalk _ genActions = genBoundedActions 0 (thresh + 1) 0 numSteps
   actions <- genActions
   result <- genHoverDamWalk 0 (pure actions)
   let moves = map (\case Inc -> carEnters; Dec -> carLeaves) actions
