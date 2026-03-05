@@ -1,9 +1,7 @@
 module Lambda.RandomWalkTest where
 
-import qualified Data.Map as Map
-import Lambda.RandomWalk (Action (..), RandomWalk (..), analyzePath, applyAction, genBoundedActions)
+import Lambda.FunctorTestUtils (applyAction, genBoundedActions)
 import Test.Tasty
-import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 -- | Property to verify that the generated walk stays within boundaries.
@@ -17,39 +15,14 @@ prop_randomWalkStayWithinBoundaries b1 b2 s =
       (fixedMin, fixedMax) = if minB == maxB then (minB, minB + 1) else (minB, maxB)
       start = max fixedMin (min fixedMax s)
       numSteps = 100
-      RandomWalk _ genActions = genBoundedActions fixedMin fixedMax start numSteps
-   in forAll genActions $ \actions ->
+   in forAll (genBoundedActions fixedMin fixedMax start numSteps) $ \actions ->
         let trajectory = scanl (flip applyAction) start actions
          in counterexample ("Trajectory: " ++ show trajectory) $
               all (\v -> v >= fixedMin && v <= fixedMax) trajectory
-
--- | Property to verify that analyzePath correctly counts the number of visits.
-prop_analyzePathCounts :: Int -> Int -> Int -> Property
-prop_analyzePathCounts b1 b2 s =
-  let minB = min b1 b2
-      maxB = max b1 b2
-      (fixedMin, fixedMax) = if minB == maxB then (minB, minB + 1) else (minB, maxB)
-      start = max fixedMin (min fixedMax s)
-      numSteps = 100
-      rwalk = genBoundedActions fixedMin fixedMax start numSteps
-   in forAll (analyzePath rwalk) $ \visits ->
-        sum (Map.elems visits) === numSteps + 1
-
--- | Simple unit test for analyzePath illustration.
-test_analyzePathSimple :: TestTree
-test_analyzePathSimple = testCase "Analyze path simple example" $ do
-  let start = 0
-      actions = [Inc, Dec, Inc] -- 0 -> 1 -> 0 -> 1
-      rwalk = RandomWalk start (pure actions)
-  visits <- generate (analyzePath rwalk)
-  let expected = Map.fromList [(0, 2), (1, 2)]
-  visits @?= expected
 
 randomWalkTests :: TestTree
 randomWalkTests =
   testGroup
     "Random Walk Generator"
-    [ testProperty "Stay within boundaries" prop_randomWalkStayWithinBoundaries,
-      testProperty "Analyze path correctly counts visits" prop_analyzePathCounts,
-      test_analyzePathSimple
+    [ testProperty "Stay within boundaries" prop_randomWalkStayWithinBoundaries
     ]

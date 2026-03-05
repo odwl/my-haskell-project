@@ -1,5 +1,3 @@
-{-# LANGUAGE DerivingVia #-}
-
 module Lambda.Subdist
   ( Subdist, -- Export type only
     runSubdist, -- Export accessor
@@ -8,13 +6,10 @@ module Lambda.Subdist
   )
 where
 
-import Control.Monad.Trans.Writer (WriterT (..))
 import qualified Data.Map.Strict as Map
-import Data.Monoid (Product (..))
 
 newtype Subdist a = Subdist {runSubdist :: [(a, Double)]}
   deriving (Show, Eq)
-  deriving (Functor, Applicative, Monad) via WriterT (Product Double) []
 
 -- | Smart constructor that enforces sub-probability invariants:
 -- 1. All weights are non-negative.
@@ -36,6 +31,21 @@ consolidate = Map.toList . Map.fromListWith (+) . filter ((> 0) . snd)
 -- For standard Monad laws without `Ord` constraints, we must NOT consolidate
 -- during `>>=`, but instead rely on a custom `EqProp` instance that treats
 -- unconsolidated lists as equivalent if their grouped sums match.
+
+instance Functor Subdist where
+  fmap f (Subdist xs) = Subdist [(f x, p) | (x, p) <- xs]
+
+instance Applicative Subdist where
+  pure x = Subdist [(x, 1.0)]
+  (Subdist fs) <*> (Subdist xs) =
+    Subdist [(f x, p * q) | (f, p) <- fs, (x, q) <- xs]
+
+instance Monad Subdist where
+  return = pure
+  (Subdist xs) >>= f = Subdist $ do
+    (x, p) <- xs
+    (y, q) <- runSubdist (f x)
+    return (y, p * q)
 
 -- A helper function to expose the merged/consolidated view if needed,
 -- since we can't restrict Functor/Monad to (Ord a) in Haskell
