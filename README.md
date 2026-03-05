@@ -5,7 +5,7 @@ This project is a comprehensive collection of Haskell exercises focused on core 
 ## 📂 Project Structure
 
 - **src/Lambda/**
-    - `Functor.hs`: Implementation of `MaybeList`, `MyMaybe`, and `MyReader`.
+    - `Functor.hs`: Implementation of `MaybeList`, `MyMaybe`, and `MyReader`. Now includes **`Maybe` arithmetic functions** (`myDiv`, `mySum`, `myMult`).
     - `HoverDam.hs`: A **probabilistic Hover Dam** state machine using the **`Subdist`** (Probability Distribution) monad.
         - *Inspiration: This section was inspired by the exercises at [Quantum Logic 2021 - Monads](https://lmf.di.uminho.pt/quantum-logic-2021/LQ-Monads.pdf).*
     - `Subdist.hs`: Implementation of the `Subdist` monad for discrete probability distributions.
@@ -23,7 +23,7 @@ This project is a comprehensive collection of Haskell exercises focused on core 
     - [Pangram](https://exercism.org/tracks/haskell/exercises/pangram)
     - [Reverse String](https://exercism.org/tracks/haskell/exercises/reverse-string)
 - **test/Lambda/**
-    - `FunctorTest.hs`: Law-based tests for `MaybeList` and other functors.
+    - `FunctorTest.hs`: Law-based tests for `MaybeList` and other functors, and unit tests for `Maybe` arithmetic.
     - `HoverDamTest.hs`: Strategy-based property tests for the Hover Dam simulation, supporting multiple entry probabilities (`Linear`, `Step`, `TwoStep`).
     - `ParserTest.hs`: Comprehensive test suite for the MegaParsec parser.
     - `StateTest.hs`: Tests for the custom State Monad.
@@ -49,6 +49,13 @@ The Hover Dam simulation has been upgraded to use a **Probabilistic** approach v
 - **Strategy-Based Entry**: The simulation now supports multiple `DamStrategy` implementations, allowing for different car entry probabilities (e.g., linear decay vs. step functions).
 - **Subdist Monad**: Outcomes are modeled as lists of `(value, probability)` pairs, allowing for exact probabilistic reasoning about dam survival.
 - **Verification**: The suite verifies that for any given strategy, the dam recovers or fails according to defined invariants across randomized paths.
+
+## ➕ Maybe Arithmetic
+
+We've added a set of arithmetic functions that operate within the `Maybe` monad to demonstrate basic monadic composition:
+
+- **`myDiv`**: Safely divides numbers with a custom "limit" condition where a result of `3` is considered invalid (returns `Nothing`).
+- **`mySum` / `myMult`**: Standard arithmetic wrapped in `Maybe`.
 
 ## 🛠 How to Run
 

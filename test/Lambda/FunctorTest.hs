@@ -2,7 +2,7 @@ module Lambda.FunctorTest where
 
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), takeWhileM)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), myDiv, takeWhileM)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
@@ -108,6 +108,15 @@ monadMaybeListTests =
     "Monad MaybeList"
     [tastyBatch $ monad (undefined :: MaybeList (Int, String, Int))]
 
+mathFunctionsTests :: TestTree
+mathFunctionsTests =
+  testGroup
+    "Math Functions"
+    [ testCase "myDiv 4 3" $ myDiv (4 :: Int) 3 @?= Just 1,
+      testCase "myDiv 6 3" $ myDiv (6 :: Int) 3 @?= Just 2,
+      testCase "myDiv 9 3 (The if-clause)" $ myDiv (9 :: Int) 3 @?= Nothing
+    ]
+
 functorTests :: TestTree
 functorTests =
   testGroup
@@ -119,6 +128,7 @@ functorTests =
       functorMaybeListTests,
       applicativeMaybeListTests,
       monadMaybeListTests,
+      mathFunctionsTests,
       takeWhileMTests
     ]
 

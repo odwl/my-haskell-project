@@ -8,11 +8,25 @@ module Lambda.Functor
     runMyReader,
     MaybeList (..),
     takeWhileM,
+    myDiv,
+    mySum,
+    myMult,
   )
 where
 
 import Control.Monad.Trans.Maybe (MaybeT (..))
-import Prelude
+
+-- | A function for dividing numbers. Note the if-clause.
+myDiv :: (Integral a) => a -> a -> Maybe a
+myDiv a b = if b /= 0 && (div a b) /= 3 then Just (div a b) else Nothing
+
+-- | A function for adding numbers.
+mySum :: (Integral a) => a -> a -> Maybe a
+mySum a b = Just (a + b)
+
+-- | A function for multiplying numbers
+myMult :: (Integral a) => a -> a -> Maybe a
+myMult a b = Just (a * b)
 
 -- Note: The Functor, Applicative, and Monad laws implemented and tested for these
 -- structures are deeply aligned with the categorical foundations detailed in
