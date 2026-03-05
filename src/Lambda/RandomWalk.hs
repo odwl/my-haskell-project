@@ -4,16 +4,18 @@ module Lambda.RandomWalk
   ( Action (..),
     RandomWalk (..),
     genInfiniteActions,
+    genReflectingActions,
     applyAction,
     applyReflectingBounds,
     applyAbsorbingBounds,
-    analyzePath,
+    pathSnapshots,
   )
 where
 
-import Data.List (mapAccumL)
+import Control.Monad.State (State, evalState, get, gets, modify, put)
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Lambda.Functor (takeWhileM)
 import Test.QuickCheck (Gen, elements, infiniteListOf)
 
 -- ==========================================
@@ -25,6 +27,17 @@ data Action = Inc | Dec deriving (Show, Eq)
 genInfiniteActions :: Gen [Action]
 genInfiniteActions = infiniteListOf (elements [Inc, Dec])
 
+-- | Generates an infinite stream of actions that are reflected off the boundariesxxx.
+genReflectingActions ::
+  -- | The lower boundary (inclusive).
+  Int ->
+  -- | The upper boundary (inclusive).
+  Int ->
+  -- | The initial position of the walk.
+  Int ->
+  Gen [Action]
+genReflectingActions minB maxB start = applyReflectingBounds minB maxB start <$> genInfiniteActions
+
 -- | A random walk consisting of a starting state and a generator of actions.
 data RandomWalk = RandomWalk Int (Gen [Action])
 
@@ -35,39 +48,38 @@ applyAction Dec n = n - 1
 -- | Takes an infinite stream of actions and "reflects" them off the boundaries
 applyReflectingBounds :: Int -> Int -> Int -> [Action] -> [Action]
 applyReflectingBounds minB maxB start actions =
-  snd $ mapAccumL step start actions
+  evalState (traverse step actions) start
   where
-    step curr action =
-      let canInc = curr < maxB
-          canDec = curr > minB
+    step :: Action -> State Int Action
+    step action = do
+      let reflect currentState = case action of
+            Inc | currentState >= maxB -> Dec
+            Dec | currentState <= minB -> Inc
+            _ -> action
 
-          -- Modify the action if it hits a wall
-          boundedAction = case (canInc, canDec, action) of
-            (False, True, Inc) -> Dec -- Hit the ceiling, bounce down
-            (True, False, Dec) -> Inc -- Hit the floor, bounce up
-            _ -> action -- Safe to proceed
-       in (applyAction boundedAction curr, boundedAction)
+      newAction <- gets reflect
+      modify (applyAction newAction)
+      return newAction
 
 -- | Takes a stream of actions and stops if it exceeds the boundaries
 applyAbsorbingBounds :: Int -> Int -> Int -> [Action] -> [Action]
-applyAbsorbingBounds minB maxB start = go start
+applyAbsorbingBounds minB maxB start actions =
+  evalState (takeWhileM check actions) start
   where
-    go _ [] = []
-    go curr (a : as) =
-      let next = applyAction a curr
-       in if next < minB || next > maxB
-            then [a] -- Include the violating action then stop
-            else a : go next as
+    check :: Action -> State Int Bool
+    check action = do
+      currentState <- get
+      let next = applyAction action currentState
+      if next >= minB && next <= maxB
+        then put next >> return True
+        else return False
 
--- | Analyzes a 'RandomWalk' from its starting state to count the number of visits
--- to each state.
+-- | Returns an infinite stream (list) of 'Map' snapshots, where each map
+-- represents the visit counts up to that point in the walk.
 --
--- * 'walk': The 'RandomWalk' to analyze.
---
--- Returns a 'Map' wrapped in 'Gen' where each key is a visited state and the value
--- is the number of times that state was reached (including the starting state).
-analyzePath :: RandomWalk -> Gen (Map Int Int)
-analyzePath (RandomWalk start genActions) = do
+-- This is safe to use on infinite walks because it builds the maps lazily.
+pathSnapshots :: RandomWalk -> Gen [Map Int Int]
+pathSnapshots (RandomWalk start genActions) = do
   actions <- genActions
   let path = scanl (flip applyAction) start actions
-  return $ Map.fromListWith (+) [(state, 1) | state <- path]
+  return $ scanl (\m pos -> Map.insertWith (+) pos 1 m) (Map.singleton start 1) (tail path)

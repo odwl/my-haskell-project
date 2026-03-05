@@ -11,6 +11,7 @@ module Lambda.Functor
     carLeaves,
     damOpens,
     damCapacity,
+    takeWhileM,
   )
 where
 
@@ -69,3 +70,16 @@ carLeaves :: Int -> MaybeList Int
 carLeaves nbCars
   | nbCars <= 1 = MaybeList [Just 0]
   | otherwise = MaybeList [Just (nbCars - 1)]
+
+------------------------
+-- Functor Utilities ---
+------------------------
+
+-- | Monadic version of takeWhile that includes the first element that fails the predicate.
+takeWhileM :: (Monad m) => (a -> m Bool) -> [a] -> m [a]
+takeWhileM _ [] = return []
+takeWhileM p (x : xs) = do
+  ok <- p x
+  if ok
+    then (x :) <$> takeWhileM p xs
+    else return [x] -- Return the one that failed, then stop

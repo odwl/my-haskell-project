@@ -1,7 +1,8 @@
 module Lambda.FunctorTest where
 
 import Control.Monad.Reader (reader)
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), carEnters, carLeaves, damCapacity, damOpens)
+import Data.Functor.Identity (Identity (..), runIdentity)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), carEnters, carLeaves, damCapacity, damOpens, takeWhileM)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader, genSafeMoves, genSafeMovesStartingAt)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
@@ -182,5 +183,28 @@ functorTests =
       functorMaybeListTests,
       applicativeMaybeListTests,
       monadMaybeListTests,
-      hoverDamTests
+      hoverDamTests,
+      takeWhileMTests
+    ]
+
+-- ==========================================
+-- 5. takeWhileM (Utility) Tests
+-- ==========================================
+
+-- Helper to include failing element purely
+takeThrough :: (a -> Bool) -> [a] -> [a]
+takeThrough _ [] = []
+takeThrough p (x : xs)
+  | p x = x : takeThrough p xs
+  | otherwise = [x]
+
+prop_takeWhileMIdentity :: (Int -> Bool) -> [Int] -> Property
+prop_takeWhileMIdentity p xs =
+  runIdentity (takeWhileM (Identity . p) xs) === takeThrough p xs
+
+takeWhileMTests :: TestTree
+takeWhileMTests =
+  testGroup
+    "takeWhileM Utility"
+    [ testProperty "Behaves like takeThrough (inclusive takeWhile)" prop_takeWhileMIdentity
     ]
