@@ -29,8 +29,6 @@ functorMaybeTests =
 -- ==========================================
 -- 2. Custom MyMaybe Tests
 -- ==========================================
--- 2. Custom MyMaybe Tests
--- ==========================================
 
 -- Generate all functor tests automatically
 functorMyMaybeTests :: TestTree
