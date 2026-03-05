@@ -2,8 +2,7 @@ module Lambda.FunctorTest where
 
 import Control.Monad.Reader (reader)
 import Lambda.Functor
-import Lambda.FunctorTestUtils (WalkResult (..), eqMyReader, eqReader, genHoverDamWalk, genSafeMoves)
-import Lambda.Subdist (runSubdist)
+import Lambda.FunctorHelp (eqMyReader, eqReader)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (functor)
 import Test.Tasty
@@ -82,78 +81,6 @@ functorMyReaderTests =
     ]
 
 -- ==========================================
--- 5. Hover Dam Tests (Subdist version)
--- ==========================================
-
-hoverDamTests :: TestTree
-hoverDamTests =
-  testGroup
-    "Hover Dam (Subdist)"
-    [ testCase "Safe Scenario: 2 enter, 2 leave" $
-        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carLeaves >>= carLeaves)
-         in dist @?= [(0, 1.0)],
-      testCase "Bifurcation Scenario: Reaching Capacity" $
-        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters)
-         in dist @?= [(3, 1.0)],
-      testCase "Collapse Scenario: 50% chance at threshold" $
-        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters)
-         in -- We expect [(4, 0.5)] because the other 0.5 is lost to "crash" (Nothing in Subdist)
-            dist @?= [(4, 0.5)],
-      testCase "Collapse Scenario: 25% chance at threshold" $
-        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carLeaves >>= carEnters)
-         in -- We expect [(4, 0.25)] because the other 0.75 is lost to "crash" (Nothing in Subdist)
-            dist @?= [(4, 0.25)],
-      testCase "Total Collapse: Exceeding threshold" $
-        let dist = runSubdist (damOpens >>= carEnters >>= carEnters >>= carEnters >>= carEnters >>= carEnters)
-         in dist @?= [],
-      testProperty "Random Safe Path Survival" prop_damRandomSafePath,
-      testProperty "Probability decreases or stays same" prop_damProbNonIncreasing,
-      testProperty "Manual Probability Verification" prop_damManualProbVerify
-    ]
-
-prop_damManualProbVerify :: Property
-prop_damManualProbVerify = property $ do
-  numSteps <- choose (0, 30 :: Int)
-  (result, moves) <- genHoverDamWalk 0 numSteps
-  let dist = runSubdist (foldl (>>=) damOpens moves)
-      expectedProb = 0.5 ^ wrRiskCount result
-      actualProb = case dist of
-        [(_, p)] -> p
-        [] -> 0.0
-        _ -> -1.0 -- Should not happen in this simplified model
-  return $
-    if wrCollapsed result
-      then counterexample ("Expected collapse for path " ++ show (wrPath result)) (null dist)
-      else
-        counterexample
-          ( "Path: "
-              ++ show (wrPath result)
-              ++ " Risks: "
-              ++ show (wrRiskCount result)
-              ++ " Expected: "
-              ++ show expectedProb
-              ++ " Actual: "
-              ++ show actualProb
-          )
-          (abs (actualProb - expectedProb) < 1e-6)
-
-prop_damRandomSafePath :: Property
-prop_damRandomSafePath = property $ do
-  moves <- genSafeMoves
-  let dist = runSubdist (foldl (>>=) damOpens moves)
-  return $ case dist of
-    [(n, p)] -> counterexample ("State: " ++ show n ++ " Prob: " ++ show p) (n <= damCapacity && p == 1.0)
-    [] -> counterexample "Dam collapsed unexpectedly on safe path" False
-    _ -> counterexample ("Unexpected distribution: " ++ show dist) False
-
-prop_damProbNonIncreasing :: Property
-prop_damProbNonIncreasing = property $ do
-  nbEnters <- choose (0, 10 :: Int)
-  let dist = runSubdist (foldl (>>=) damOpens (replicate nbEnters carEnters))
-      totalProb = sum (map snd dist)
-  return $ counterexample ("Total prob: " ++ show totalProb) (totalProb <= 1.0)
-
--- ==========================================
 -- Master Test Tree
 -- ==========================================
 
@@ -164,6 +91,5 @@ functorTests =
     [ functorMaybeTests,
       functorMyMaybeTests,
       functorReaderTests,
-      functorMyReaderTests,
-      hoverDamTests
+      functorMyReaderTests
     ]

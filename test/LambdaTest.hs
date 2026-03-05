@@ -2,6 +2,7 @@ module LambdaTest (lambdaSuite) where
 
 import Lambda
 import Lambda.FunctorTest (functorTests)
+import Lambda.HoverDamTest (hoverDamTests)
 import Lambda.MiniWhileTest (miniWhileTests)
 import Lambda.MonadTest (monadTests)
 import Lambda.ParserTest (parserTests)
@@ -60,12 +61,13 @@ lambdaSuite :: TestTree
 lambdaSuite =
   testGroup
     "Lambda Suite"
-    [ addMaybesTests,
+    [ functorTests,
+      addMaybesTests,
       safeHeadTests,
       yFactTests,
       testDoubleApplication,
       safeDivTests,
-      functorTests,
+      hoverDamTests,
       monadTests,
       parserTests,
       stateTests,
