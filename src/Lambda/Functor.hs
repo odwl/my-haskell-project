@@ -12,11 +12,15 @@ module Lambda.Functor
   )
 where
 
+import Control.Monad (guard)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 
 -- | A function for dividing numbers. Note the if-clause.
 myDiv :: (Integral a) => a -> a -> Maybe a
-myDiv a b = if b /= 0 && (div a b) /= 3 then Just (div a b) else Nothing
+myDiv a b = do
+  let result = div a b
+  guard (b /= 0 && result /= 3)
+  return result
 
 -- | A function for adding numbers.
 mySum :: (Integral a) => a -> a -> Maybe a
