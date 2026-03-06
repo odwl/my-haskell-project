@@ -5,7 +5,7 @@
 module Lambda.ParserTest (parserTests) where
 
 import Control.Applicative (Alternative (..))
-import Data.Bifunctor (first, second)
+import Data.Bifunctor (second)
 import Data.Char (isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
 import Data.Maybe (fromJust)
@@ -277,10 +277,10 @@ genInvalidStmts = genInvalidStmt
 genValidStmts :: Gen (String, [Stmt], String)
 genValidStmts = do
   (strList, stmtList, _) <- unzip3 <$> scale (`div` 3) (listOf1 (scale (`div` 2) genValidStmt))
-  (semicolon, rest) <- first (';' :) <$> genPadding
-  let input = intercalate semicolon strList
-  let result = stmtList
-  return (input, result, rest)
+  spaces <- genSpaces
+  let semicolon = ";" ++ spaces
+  (str, ast, rest) <- withPadding $ pure (intercalate semicolon strList, stmtList)
+  return (str, ast, rest)
 
 -- ==========================================
 -- Properties
