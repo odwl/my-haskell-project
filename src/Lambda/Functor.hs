@@ -156,5 +156,23 @@ testIdentity =
       x = 10
    in (my_comp my_identity f x == f x) && (my_comp f my_identity x == f x)
 
+-- memoize :: Ord a => (a -> b) -> (a -> b)
+-- memoize f = mem_f
+--   where 
+--     cache = Map.empty
+--     mem_f x = 
+--       case Map.lookup x cache of
+--         Just y -> y
+--         Nothing -> 
+--           let y = f x
+--           in Map.insert x y cache
+
+
+-- f: Bool -> Bool 
+-- f True = True
+-- f False = False 
+
+  
+
 
 
