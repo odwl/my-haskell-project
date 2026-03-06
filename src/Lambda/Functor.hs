@@ -15,6 +15,7 @@ where
 
 import Control.Monad (guard)
 import Control.Monad.Trans.Maybe (MaybeT (..))
+import Data.Functor.Const (Const (..))
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
 myDiv :: (Integral a) => a -> a -> Maybe a
@@ -72,3 +73,65 @@ takeWhileM p (x : xs) = do
   if ok
     then (x :) <$> takeWhileM p xs
     else return [x] -- Return the one that failed, then stop
+
+
+
+
+------------------------
+-- Natural Transformation ---
+------------------------
+
+-- Define a natural transformation from the Maybe functor to the list
+-- functor. Prove the naturality condition for it.
+
+
+alpha :: Maybe a -> [a]
+alpha Nothing = []
+alpha (Just x) = [x]
+
+headNat :: [a] -> Maybe a
+headNat [] = Nothing
+headNat (x : _) = Just x
+
+tailNat :: [a] -> Maybe [a]
+tailNat [] = Nothing
+tailNat (_ : xs) = Just xs
+
+my_length :: [a] -> Const Int a
+my_length [] = Const 0
+my_length (_ : xs) = Const (1 + getConst (my_length xs))
+
+-- f: a-> b; my_length . fmap f.....  [b] .... Const Int a that contain the length of the list 
+-- fmap f. mylengtth .... Const Int b that contain the length of the list. fmap just change the useleess type.
+
+-- Const Int String = Int 
+-- fmap f (Const Int x) = Const (f x) -- I see. 
+
+data MyFunc b a = MyFunc b
+
+-- Proper Functor Instance
+instance Functor (MyFunc b) where
+  fmap f (MyFunc x) = MyFunc x
+
+scam :: Const Int a -> Maybe a
+scam (Const _) = Nothing -- Cannot invent an a.
+
+-- | A natural transformation from the Maybe functor to the list functor.
+--
+-- This function converts a `Maybe a` into a list of `Maybe a`.
+-- If the input is `Nothing`, it returns an empty list `[]`.
+-- If the input is `Just x`, it returns a list containing a single element `[Just x]`.
+--
+-- The type signature `Maybe a -> [Maybe a]` demonstrates that this transformation
+-- is polymorphic over `a` and preserves the `Maybe` structure within the list context.
+--
+-- This is a natural transformation because it satisfies the naturality condition:
+-- for any function `f :: a -> b` and any `Maybe a`, the following holds:
+--
+-- > fmap f . nat == nat . fmap f
+--
+-- In other words, applying `f` before or after the natural transformation yields
+-- the same result, which is a fundamental property of natural transformations.
+nat :: Maybe a -> [Maybe a]
+nat Nothing = []
+nat (Just x) = [Just x]
