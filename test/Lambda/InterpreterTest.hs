@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Lambda.InterpreterTest (interpreterTests) where
 
 import Control.Monad.State (evalState, execState)
