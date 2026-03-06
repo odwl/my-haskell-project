@@ -19,6 +19,7 @@ module Lambda.Parser
     isReservedWord,
     isAsciiAlpha,
     isAsciiAlphaNum,
+    Value (..),
   )
 where
 
@@ -39,7 +40,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 type Parser = Parsec Void String
 
 reservedWords :: [String]
-reservedWords = ["not", "if", "then", "else", "fi", "while", "do", "done"]
+reservedWords = ["not", "if", "then", "else", "fi", "while", "do", "done", "true", "false"]
 
 isReservedWord :: String -> Bool
 isReservedWord = (`elem` reservedWords)
@@ -64,8 +65,11 @@ data CmpOp = Le | Gt | Eq | Neq deriving (Show, Eq)
 
 data BinOp = Add | Sub | Mul | Div deriving (Show, Eq)
 
+data Value = VInt Int | VBool Bool
+  deriving (Show, Eq)
+
 data AExp
-  = Num Int
+  = Lit Value
   | Var Id
   | Op AExp BinOp AExp
   deriving (Show, Eq)
@@ -104,7 +108,7 @@ identifier = lexeme $ try $ do
   cs <- many (satisfy isAsciiAlphaNum)
   let name = c : cs
   guard (not (isReservedWord name))
-  return (Id c cs)
+  pure (Id c cs)
 
 binop :: Parser BinOp
 binop =
@@ -127,11 +131,19 @@ cmpop =
 num :: Parser Int
 num = lexeme L.decimal
 
+literal :: Parser Value
+literal =
+  choice
+    [ VInt <$> num,
+      VBool True <$ keyword "true",
+      VBool False <$ keyword "false"
+    ]
+
 aTerm :: Parser AExp
 aTerm =
   choice
     [ parens aexp,
-      Num <$> num,
+      Lit <$> literal,
       Var <$> identifier
     ]
 
@@ -199,5 +211,5 @@ notFollowedBy :: Parser a -> Parser ()
 notFollowedBy p = do
   res <- optional (try p)
   case res of
-    Nothing -> return ()
+    Nothing -> pure ()
     Just _ -> fail "keyword followed by alphanumeric character"

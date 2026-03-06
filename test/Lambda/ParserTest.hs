@@ -9,7 +9,7 @@ import Data.Bifunctor (first, second)
 import Data.Char (isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
 import Data.Maybe (fromJust)
-import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, Parser, Stmt (..), aexp, binop, cmpop, expr, identifier, isAsciiAlpha, isAsciiAlphaNum, isReservedWord, mkId, num, stmt, stmts)
+import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, Parser, Stmt (..), Value (..), aexp, binop, cmpop, expr, identifier, isAsciiAlpha, isAsciiAlphaNum, isReservedWord, mkId, num, stmt, stmts)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -83,7 +83,9 @@ quickTests =
       "Test Examples"
       [ testProperty "stmts parses one assign" prop_stmt_x_2,
         testProperty "stmt parses two assigns" prop_stmt_semi,
-        testProperty "stmts parses complex program" prop_stmt_complex
+        testProperty "stmts parses complex program" prop_stmt_complex,
+        testCase "parse true" $ runParser aexp "true" @?= Just (Lit (VBool True), ""),
+        testCase "parse false" $ runParser aexp "false" @?= Just (Lit (VBool False), "")
       ]
   ]
 
@@ -161,6 +163,9 @@ genValidNum = (\n -> (show n, n)) <$> arbitrary `suchThat` (>= 0)
 genInvalidNum :: Gen String
 genInvalidNum = pure <$> arbitrary `suchThat` (not . isDigit)
 
+genValidBool :: Gen (String, Value)
+genValidBool = oneof [pure ("true", VBool True), pure ("false", VBool False)]
+
 genValidOp :: [(String, a)] -> Gen (String, a)
 genValidOp ops = elements ops
 
@@ -190,7 +195,7 @@ genValidAExp :: Gen (String, AExp)
 genValidAExp = sized genAExpSized
 
 genAExpSized :: Int -> Gen (String, AExp)
-genAExpSized 0 = oneof [second Num <$> genValidNum, second Var <$> genValidId]
+genAExpSized 0 = oneof [second (Lit . VInt) <$> genValidNum, second Lit <$> genValidBool, second Var <$> genValidId]
 genAExpSized n = do
   spaces <- genSpaces
   (leftS, leftA) <- genAExpSized (n `div` 2)
@@ -345,10 +350,10 @@ prop_stmts_invalid = prop_parse_invalid stmts genInvalidStmts
 -- ==========================================
 
 prop_stmt_x_2 :: Property
-prop_stmt_x_2 = property $ runParser stmts "x :=21 Noise" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Num 21))], "Noise")
+prop_stmt_x_2 = property $ runParser stmts "x :=21 Noise" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Lit (VInt 21)))], "Noise")
 
 prop_stmt_semi :: Property
-prop_stmt_semi = property $ runParser stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Num 21)), Assign (fromJust $ mkId 'y' "") (EAExp (Num 2))], "")
+prop_stmt_semi = property $ runParser stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Lit (VInt 21))), Assign (fromJust $ mkId 'y' "") (EAExp (Lit (VInt 2)))], "")
 
 prop_stmt_complex :: Property
 prop_stmt_complex =
@@ -359,14 +364,14 @@ prop_stmt_complex =
         res = fromJust $ mkId 'r' "es"
         curr = fromJust $ mkId 'c' "urr"
         ast =
-          [ Assign a (EAExp (Num 10)),
-            Assign b (EAExp (Num 2)),
-            Assign res (EAExp (Num 0)),
+          [ Assign a (EAExp (Lit (VInt 10))),
+            Assign b (EAExp (Lit (VInt 2))),
+            Assign res (EAExp (Lit (VInt 0))),
             While
-              (Not (Cmp (Var a) Le (Num 0)))
-              [ Assign curr (If (Cmp (Var a) Gt (Num 5)) (EAExp (Op (Var a) Add (Var b))) (EAExp (Op (Var a) Div (Var b)))),
+              (Not (Cmp (Var a) Le (Lit (VInt 0))))
+              [ Assign curr (If (Cmp (Var a) Gt (Lit (VInt 5))) (EAExp (Op (Var a) Add (Var b))) (EAExp (Op (Var a) Div (Var b)))),
                 Assign res (EAExp (Op (Var res) Mul (Var curr))),
-                Assign a (If (Cmp (Var b) Neq (Num 0)) (EAExp (Op (Var a) Sub (Num 1))) (EAExp (Var a)))
+                Assign a (If (Cmp (Var b) Neq (Lit (VInt 0))) (EAExp (Op (Var a) Sub (Lit (VInt 1)))) (EAExp (Var a)))
               ]
           ]
      in runParser stmts input === Just (ast, "")
