@@ -28,6 +28,10 @@ repl:
 watch:
 	ghcid
 
+# Run tests on file change (fast TDD loop)
+watch-test:
+	ghcid --command="cabal repl lambda-test" --test=":main"
+
 # Clean build artifacts
 clean:
 	cabal clean
