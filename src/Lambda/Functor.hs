@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Lambda.Functor
   ( MyMaybe (..),
@@ -111,27 +112,49 @@ data MyFunc b a = MyFunc b
 
 -- Proper Functor Instance
 instance Functor (MyFunc b) where
-  fmap f (MyFunc x) = MyFunc x
+  fmap _ (MyFunc x) = MyFunc x
 
 scam :: Const Int a -> Maybe a
 scam (Const _) = Nothing -- Cannot invent an a.
 
--- | A natural transformation from the Maybe functor to the list functor.
---
--- This function converts a `Maybe a` into a list of `Maybe a`.
--- If the input is `Nothing`, it returns an empty list `[]`.
--- If the input is `Just x`, it returns a list containing a single element `[Just x]`.
---
--- The type signature `Maybe a -> [Maybe a]` demonstrates that this transformation
--- is polymorphic over `a` and preserves the `Maybe` structure within the list context.
---
--- This is a natural transformation because it satisfies the naturality condition:
--- for any function `f :: a -> b` and any `Maybe a`, the following holds:
---
--- > fmap f . nat == nat . fmap f
+newtype Reader e a = Reader (e -> a)
+instance Functor (Reader e) where
+  fmap f (Reader g) = Reader (f . g)
+
+obvious:: Reader () a -> Maybe a
+obvious (Reader g) = Just (g ())
+
+dumb:: Reader () a -> Maybe a
+dumb (Reader _) = Nothing
+-- Linked to Yoneda Lemma.
 --
 -- In other words, applying `f` before or after the natural transformation yields
 -- the same result, which is a fundamental property of natural transformations.
 nat :: Maybe a -> [Maybe a]
 nat Nothing = []
 nat (Just x) = [Just x]
+
+
+------------------------
+-- Identity and Composition ---
+-- Challenges page 28 of pdf
+-- https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf
+------------------------
+
+-- Implement, as best as you can, the identity function in your favorite language (or the second favorite, if your favorite language
+-- happens to be Haskell).
+my_identity :: a -> a
+my_identity = id
+
+my_comp :: (a -> b) -> (b -> c) -> (a -> c)
+my_comp f g = g . f
+
+-- | Write a program that tries to test that your composition function respects identity.
+testIdentity :: Bool
+testIdentity =
+  let f = (+ 1) :: Int -> Int
+      x = 10
+   in (my_comp my_identity f x == f x) && (my_comp f my_identity x == f x)
+
+
+
