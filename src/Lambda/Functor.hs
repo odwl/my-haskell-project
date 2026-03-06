@@ -9,13 +9,14 @@ module Lambda.Functor
     myDiv,
     mySum,
     myMult,
+    calc,
   )
 where
 
 import Control.Monad (guard)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 
--- | A function for dividing numbers. Note the if-clause.
+-- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
 myDiv :: (Integral a) => a -> a -> Maybe a
 myDiv a b = do
   let result = div a b
@@ -29,6 +30,12 @@ mySum a b = Just (a + b)
 -- | A function for multiplying numbers
 myMult :: (Integral a) => a -> a -> Maybe a
 myMult a b = Just (a * b)
+
+calc :: (Integral a) => a -> a -> Maybe a
+calc l r = do
+  x <- myDiv l r
+  y <- myDiv r l
+  mySum x y
 
 -- Note: The Functor, Applicative, and Monad laws implemented and tested for these
 -- structures are deeply aligned with the categorical foundations detailed in

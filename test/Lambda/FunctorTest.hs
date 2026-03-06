@@ -2,7 +2,7 @@ module Lambda.FunctorTest where
 
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), myDiv, takeWhileM)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), calc, myDiv, takeWhileM)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
@@ -85,8 +85,6 @@ functorMyReaderTests =
 -- ==========================================
 -- 5. MaybeList Tests
 -- ==========================================
--- 5. MaybeList Tests
--- ==========================================
 
 functorMaybeListTests :: TestTree
 functorMaybeListTests =
@@ -112,7 +110,13 @@ mathFunctionsTests =
     "Math Functions"
     [ testCase "myDiv 4 3" $ myDiv (4 :: Int) 3 @?= Just 1,
       testCase "myDiv 6 3" $ myDiv (6 :: Int) 3 @?= Just 2,
-      testCase "myDiv 9 3 (The if-clause)" $ myDiv (9 :: Int) 3 @?= Nothing
+      testCase "myDiv 9 3 (The if-clause)" $ myDiv (9 :: Int) 3 @?= Nothing,
+      testProperty "calc is commutative" prop_calcCommutative,
+      testProperty "calc matches manual calculation" prop_calcCorrect,
+      testCase "calc 4 2 (2 + 0)" $ calc (4 :: Int) 2 @?= Just 2,
+      testCase "calc 1 1 (1 + 1)" $ calc (1 :: Int) 1 @?= Just 2,
+      testCase "calc 6 2 (myDiv 6 2 is 3 -> Nothing)" $ calc (6 :: Int) 2 @?= Nothing,
+      testCase "calc 4 0 (Nothing)" $ calc (4 :: Int) 0 @?= Nothing
     ]
 
 functorTests :: TestTree
@@ -144,6 +148,16 @@ takeThrough p (x : xs)
 prop_takeWhileMIdentity :: (Int -> Bool) -> [Int] -> Property
 prop_takeWhileMIdentity p xs =
   runIdentity (takeWhileM (Identity . p) xs) === takeThrough p xs
+
+prop_calcCommutative :: Int -> Int -> Property
+prop_calcCommutative l r = calc l r === calc r l
+
+prop_calcCorrect :: Int -> Int -> Property
+prop_calcCorrect l r =
+  let expected = case (myDiv l r, myDiv r l) of
+        (Just v1, Just v2) -> Just (v1 + v2)
+        _ -> Nothing
+   in calc l r === expected
 
 takeWhileMTests :: TestTree
 takeWhileMTests =
