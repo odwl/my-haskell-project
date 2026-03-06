@@ -57,7 +57,8 @@ damTest :: DamStrategy -> String -> [Action] -> TestTree
 damTest strategy name actions =
   testCase name $
     let dist = runSubdist (foldl (>>=) damOpens (map (actionToMove strategy) actions))
-     in dist @?= calculateExpectedResult strategy actions 0
+        expected = calculateExpectedResult strategy actions 0
+     in assertBool ("Results differ: " ++ show dist ++ " != " ++ show expected) (dist ~= expected)
 
 -- | Generic property that verifies ANY random sequence of moves for a given strategy.
 prop_damRandomPath :: DamStrategy -> Property
