@@ -12,12 +12,18 @@ module Lambda.Subdist
     impossible,
     weighted,
     simplify,
+    myDist,
+    g,
+    testSubdist,
+    testSubdist2,
   )
 where
 
+import Control.Monad (join)
 import Control.Monad.Bayes.Class
 import Control.Monad.Bayes.Enumerator (Enumerator, explicit, fromList)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe)
 
 -- | Subdist represents a probabilistic distribution that can have a total weight <= 1.0.
 -- We wrap the monad-bayes Enumerator, which handles discrete probabilistic choices.
@@ -29,6 +35,9 @@ instance (Show a) => Show (Subdist a) where
 
 instance (Ord a) => Eq (Subdist a) where
   (Subdist m) == (Subdist n) = consolidate (explicit m) == consolidate (explicit n)
+
+instance (Ord a) => Ord (Subdist a) where
+  compare (Subdist m) (Subdist n) = compare (consolidate (explicit m)) (consolidate (explicit n))
 
 -- | Executes the distribution and returns a list of (outcome, probability) pairs.
 -- We use 'explicit' to get the raw weights (unnormalized), supporting sub-distributions.
@@ -69,3 +78,22 @@ consolidate = Map.toList . Map.fromListWith (+) . filter ((> 1e-12) . snd)
 -- but 'explicit' preserves the structure.
 simplify :: (Ord a) => Subdist a -> Subdist a
 simplify = Subdist . fromList . map (\(x, p) -> (x, Exp (log p))) . consolidate . runSubdist
+
+myDist :: Subdist Bool
+myDist = fromMaybe impossible $ makeSubdist [(True, 0.8), (False, 0.2)]
+
+exp1 :: Subdist Char
+exp1 = fromMaybe impossible $ makeSubdist [('H', 0.6), ('L', 0.4)]
+
+exp2 :: Subdist Char
+exp2 = certainly 'L'
+
+g :: Bool -> Subdist Char
+g True = exp1
+g False = exp2
+
+testSubdist :: Bool
+testSubdist = (g <$> myDist) == (fromMaybe impossible $ makeSubdist [(exp1, 0.8), (exp2, 0.2)])
+
+testSubdist2 :: Bool
+testSubdist2 = join (g <$> myDist) == (fromMaybe impossible $ makeSubdist [('H', 0.48), ('L', 0.52)])
