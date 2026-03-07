@@ -18,8 +18,9 @@ module Lambda.Functor
     rainStep,
     evapStep,
     oneDay,
-    waterResult,
-    expectedWater,
+    checkOverflow,
+    capacity,
+    empty,
   )
 where
 
@@ -27,7 +28,7 @@ import Control.Monad (guard, join, (>=>))
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Functor.Const (Const (..))
 import Data.Maybe (fromMaybe)
-import Lambda.Subdist (Subdist, certainly, impossible, makeSubdist, runSubdist)
+import Lambda.Subdist (Subdist, certainly, impossible, makeSubdist)
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
 myDiv :: (Integral a) => a -> a -> Maybe a
@@ -205,6 +206,9 @@ fishB f g = join . fmap g . f
 
 type Water = Int
 
+empty :: () -> Subdist Water
+empty () = certainly 0
+
 -- Rain adds 10L (80% chance) or 0L (20% chance)
 rainStep :: Water -> Subdist Water
 rainStep current = fromMaybe (certainly current) $ makeSubdist [(current + 10, 0.8), (current, 0.2)]
@@ -216,8 +220,8 @@ evapStep current = certainly (max 0 (current - 5))
 oneDay :: Water -> Subdist Water
 oneDay = rainStep >=> evapStep
 
-waterResult :: [(Water, Double)]
-waterResult = runSubdist (oneDay 0)
+capacity :: Water
+capacity = 15
 
-expectedWater :: Subdist Water
-expectedWater = fromMaybe impossible $ makeSubdist [(5, 0.8), (0, 0.2)]
+checkOverflow :: Water -> Subdist Water
+checkOverflow current = fromMaybe (certainly current) $ makeSubdist [(min capacity current, 1)]

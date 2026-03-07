@@ -11,9 +11,9 @@ import Control.Monad ((>=>))
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
 import Data.Maybe (fromMaybe, isNothing)
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), calc, expectedWater, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), Water, calc, capacity, checkOverflow, empty, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
-import Lambda.Subdist (impossible, makeSubdist)
+import Lambda.Subdist (Subdist, certainly, impossible, makeSubdist, runSubdist)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -148,15 +148,43 @@ functorTests =
       waterSimulationTests
     ]
 
+waterResult :: [(Water, Double)]
+waterResult = runSubdist (oneDay 0)
+
+expectedWater :: Subdist Water
+expectedWater = fromMaybe impossible $ makeSubdist [(5, 0.8), (0, 0.2)]
+
 waterSimulationTests :: TestTree
 waterSimulationTests =
   testGroup
     "Water Simulation"
     [ testCase "oneDay 0 matches expectedWater" $ (oneDay 0) @?= expectedWater,
+      testCase "four days check overflow consolidated expected" $
+        let result = (oneDay >=> oneDay >=> oneDay >=> oneDay >=> checkOverflow) 0
+            expected = fromMaybe impossible $ makeSubdist [(15, 0.512), (10, 0.3328), (5, 0.0832), (0, 0.072)]
+         in result @?= expected,
       testCase "twoDays matches consolidated expected" $
         let result = (oneDay >=> oneDay) 0
             expected = fromMaybe impossible $ makeSubdist [(10, 0.64), (5, 0.16), (0, 0.20)]
-         in result @?= expected
+         in result @?= expected,
+      testCase "oneDay check overflow" $
+        let result = (oneDay >=> checkOverflow) 0
+            expected = fromMaybe impossible $ makeSubdist [(5, 0.8), (0, 0.2)]
+         in result @?= expected,
+      testCase "empty returns 0 and 1" $
+        let result = empty ()
+            expected = certainly 0
+         in result @?= expected,
+      testCase "checkOverflow handles values above capacity" $
+        let result = checkOverflow (capacity + 5)
+            expected = certainly capacity
+         in result @?= expected,
+      testProperty "n-day simulation followed by checkOverflow respects capacity" $ \n start ->
+        let n' = abs n `mod` 10 -- limit to 10 days for performance
+            start' = max 0 start
+            simulation = foldr (>=>) certainly (replicate n' oneDay) >=> checkOverflow
+            results = map fst (runSubdist (simulation start'))
+         in all (\w -> w >= 0 && w <= capacity) results
     ]
 
 testSqrtInvAddOne :: TestTree
