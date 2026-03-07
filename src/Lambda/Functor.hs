@@ -185,6 +185,10 @@ testZob2 =
         pure (not y)
    in logg == "Start even 3 not False End" && res
 
+-- ==========================================
+-- Kleisli
+-- ==========================================
+
 sqrtInvAddOne :: Float -> Maybe Float
 sqrtInvAddOne x = do
   guard (x /= 0)
@@ -204,6 +208,10 @@ sqrtInvAddOneKleisli =
 fishB :: (Monad m) => (a -> m b) -> (b -> m c) -> (a -> m c)
 {-# ANN fishB "HLint: ignore Use =<<" #-}
 fishB f g = join . fmap g . f
+
+-- ==========================================
+-- Water Simulation
+-- ==========================================
 
 type Water = Int
 

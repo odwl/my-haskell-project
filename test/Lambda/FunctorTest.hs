@@ -199,6 +199,10 @@ waterSimulationTests =
     "Water Simulation"
     $ map (\(n, s, e) -> testSim n s () e) waterSimulationCases
 
+-- ==========================================
+-- Kleisli Tests
+-- ==========================================
+
 testSqrtInvAddOne :: TestTree
 testSqrtInvAddOne =
   testGroup
