@@ -79,16 +79,12 @@ takeWhileM p (x : xs) = do
     then (x :) <$> takeWhileM p xs
     else return [x] -- Return the one that failed, then stop
 
-
-
-
 ------------------------
 -- Natural Transformation ---
 ------------------------
 
 -- Define a natural transformation from the Maybe functor to the list
 -- functor. Prove the naturality condition for it.
-
 
 alpha :: Maybe a -> [a]
 alpha Nothing = []
@@ -106,11 +102,11 @@ my_length :: [a] -> Const Int a
 my_length [] = Const 0
 my_length (_ : xs) = Const (1 + getConst (my_length xs))
 
--- f: a-> b; my_length . fmap f.....  [b] .... Const Int a that contain the length of the list 
+-- f: a-> b; my_length . fmap f.....  [b] .... Const Int a that contain the length of the list
 -- fmap f. mylengtth .... Const Int b that contain the length of the list. fmap just change the useleess type.
 
--- Const Int String = Int 
--- fmap f (Const Int x) = Const (f x) -- I see. 
+-- Const Int String = Int
+-- fmap f (Const Int x) = Const (f x) -- I see.
 
 data MyFunc b a = MyFunc b
 
@@ -122,14 +118,16 @@ scam :: Const Int a -> Maybe a
 scam (Const _) = Nothing -- Cannot invent an a.
 
 newtype Reader e a = Reader (e -> a)
+
 instance Functor (Reader e) where
   fmap f (Reader g) = Reader (f . g)
 
-obvious:: Reader () a -> Maybe a
+obvious :: Reader () a -> Maybe a
 obvious (Reader g) = Just (g ())
 
-dumb:: Reader () a -> Maybe a
+dumb :: Reader () a -> Maybe a
 dumb (Reader _) = Nothing
+
 -- Linked to Yoneda Lemma.
 --
 -- In other words, applying `f` before or after the natural transformation yields
@@ -137,7 +135,6 @@ dumb (Reader _) = Nothing
 nat :: Maybe a -> [Maybe a]
 nat Nothing = []
 nat (Just x) = [Just x]
-
 
 ------------------------
 -- Identity and Composition ---
@@ -160,67 +157,21 @@ testIdentity =
       x = 10
    in (my_comp my_identity f x == f x) && (my_comp f my_identity x == f x)
 
--- memoize :: Ord a => (a -> b) -> (a -> b)
--- memoize f = mem_f
---   where 
---     cache = Map.empty
---     mem_f x = 
---       case Map.lookup x cache of
---         Just y -> y
---         Nothing -> 
---           let y = f x
---           in Map.insert x y cache
+-- newtype MyWriter a = MyWriter (String, a)
+--   deriving (Show, Eq)
+--   deriving (Functor, Applicative, Monad) via ((,) String)
 
-
--- f: Bool -> Bool 
--- f True = True
--- f False = False 
-
-  
-
-
-
+tell :: String -> (String, ())
+tell s = (s, ())
 
 testZob2 :: Bool
 testZob2 =
   let (logg, res) = do
         let x = 3 :: Int
         let y = even x
-        tell ("Start ") >> tell ("even " ++ show x ++ " ")
+        tell ("Start ")
+        tell ("even " ++ show x ++ " ")
         tell ("not " ++ show y ++ " ")
-        tell ("End") >> pure (not y)
+        tell ("End")
+        pure (not y)
    in logg == "Start even 3 not False End" && res == True
-
--- (>=>) :: (a -> (String, b)) -> (b -> (String, c)) -> (a -> (String, c))
--- f >=> g = \x -> f x >>= g
-
-process :: Float -> Maybe Float
-process x = do
-  guard (x /= 0)
-  let inv = 1 / x
-  guard (inv >= 0)
-  let sq = sqrt inv
-  guard (sq <= 99)
-  return (sq + 1)
-
-process2 :: Float -> Maybe Float
-process2 = 
-  let inv y = guard (y /= 0) >> pure (1 / y)
-      sq y = guard (y >= 0) >> pure (sqrt y)
-      addOne y = guard (y <= 99) >> pure (y+1)
-  in inv >=> sq >=> addOne
-
-testProcess :: Bool
-testProcess = 
-  process 4.0 == Just 1.5 && 
-  process 0.0 == Nothing && 
-  process 0.0001 == Nothing && 
-  process (-1.0) == Nothing
-
-testProcess2 :: Bool
-testProcess2 = 
-  process2 4.0 == Just 1.5 && 
-  process2 0.0 == Nothing && 
-  process2 0.0001 == Nothing && 
-  process2 (-1.0) == Nothing
-
