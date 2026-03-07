@@ -7,7 +7,6 @@ import Control.Applicative (Alternative (..))
 import Data.Bifunctor (second)
 import Data.Char (isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
-import Data.Maybe (fromJust)
 import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, Parser, Stmt (..), Value (..), aexp, binop, cmpop, expr, identifier, isAsciiAlpha, isAsciiAlphaNum, isReservedWord, mkId, num, stmt, stmts)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)

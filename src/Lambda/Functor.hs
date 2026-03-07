@@ -11,15 +11,23 @@ module Lambda.Functor
     mySum,
     myMult,
     calc,
-    process,
-    process2,
+    sqrtInvAddOne,
+    sqrtInvAddOneKleisli,
     fishB,
+    Water,
+    rainStep,
+    evapStep,
+    oneDay,
+    waterResult,
+    expectedWater,
   )
 where
 
 import Control.Monad (guard, join, (>=>))
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Functor.Const (Const (..))
+import Data.Maybe (fromMaybe)
+import Lambda.Subdist (Subdist, certainly, impossible, makeSubdist, runSubdist)
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
 myDiv :: (Integral a) => a -> a -> Maybe a
@@ -175,8 +183,8 @@ testZob2 =
         pure (not y)
    in logg == "Start even 3 not False End" && res
 
-process :: Float -> Maybe Float
-process x = do
+sqrtInvAddOne :: Float -> Maybe Float
+sqrtInvAddOne x = do
   guard (x /= 0)
   let inv = 1 / x
   guard (inv >= 0)
@@ -184,8 +192,8 @@ process x = do
   guard (sq <= 99)
   return (sq + 1)
 
-process2 :: Float -> Maybe Float
-process2 =
+sqrtInvAddOneKleisli :: Float -> Maybe Float
+sqrtInvAddOneKleisli =
   let inv y = guard (y /= 0) >> pure (1 / y)
       sq y = guard (y >= 0) >> pure (sqrt y)
       addOne y = guard (y <= 99) >> pure (y + 1)
@@ -194,3 +202,22 @@ process2 =
 fishB :: (Monad m) => (a -> m b) -> (b -> m c) -> (a -> m c)
 {-# ANN fishB "HLint: ignore Use =<<" #-}
 fishB f g = join . fmap g . f
+
+type Water = Int
+
+-- Rain adds 10L (80% chance) or 0L (20% chance)
+rainStep :: Water -> Subdist Water
+rainStep current = fromMaybe (certainly current) $ makeSubdist [(current + 10, 0.8), (current, 0.2)]
+
+-- Evaporation removes 5L (always)
+evapStep :: Water -> Subdist Water
+evapStep current = certainly (max 0 (current - 5))
+
+oneDay :: Water -> Subdist Water
+oneDay = rainStep >=> evapStep
+
+waterResult :: [(Water, Double)]
+waterResult = runSubdist (oneDay 0)
+
+expectedWater :: Subdist Water
+expectedWater = fromMaybe impossible $ makeSubdist [(5, 0.8), (0, 0.2)]

@@ -2,16 +2,18 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
-{-# HLINT ignore "Functor law" #-}
+{- HLINT ignore "Functor law" -}
+{- HLINT ignore "Redundant fmap" -}
 
 module Lambda.FunctorTest where
 
 import Control.Monad ((>=>))
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
-import Data.Maybe (isNothing)
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), calc, fishB, myDiv, process, process2, takeWhileM)
+import Data.Maybe (fromMaybe, isNothing)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), calc, expectedWater, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
+import Lambda.Subdist (impossible, makeSubdist)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -141,34 +143,46 @@ functorTests =
       mathFunctionsTests,
       kleisliTests,
       takeWhileMTests,
-      testProcess,
-      testProcess2
+      testSqrtInvAddOne,
+      testSqrtInvAddOneKleisli,
+      waterSimulationTests
     ]
 
-testProcess :: TestTree
-testProcess =
+waterSimulationTests :: TestTree
+waterSimulationTests =
   testGroup
-    "Process Tests"
-    [ testCase "Valid positive numbers" $ do
-        process 4.0 @?= Just 1.5
-        process 16.0 @?= Just 1.25,
-      testCase "Invalid numbers" $ do
-        assertBool "0.0 should be Nothing" (isNothing (process 0.0))
-        assertBool "0.0001 should be Nothing" (isNothing (process 0.0001))
-        assertBool "-1.0 should be Nothing" (isNothing (process (-1.0)))
+    "Water Simulation"
+    [ testCase "oneDay 0 matches expectedWater" $ (oneDay 0) @?= expectedWater,
+      testCase "twoDays matches consolidated expected" $
+        let result = (oneDay >=> oneDay) 0
+            expected = fromMaybe impossible $ makeSubdist [(10, 0.64), (5, 0.16), (0, 0.20)]
+         in result @?= expected
     ]
 
-testProcess2 :: TestTree
-testProcess2 =
+testSqrtInvAddOne :: TestTree
+testSqrtInvAddOne =
   testGroup
-    "Process2 Tests"
+    "SqrtInvAddOne Tests"
     [ testCase "Valid positive numbers" $ do
-        process2 4.0 @?= Just 1.5
-        process2 16.0 @?= Just 1.25,
+        sqrtInvAddOne 4.0 @?= Just 1.5
+        sqrtInvAddOne 16.0 @?= Just 1.25,
       testCase "Invalid numbers" $ do
-        assertBool "0.0 should be Nothing" (isNothing (process2 0.0))
-        assertBool "0.0001 should be Nothing" (isNothing (process2 0.0001))
-        assertBool "-1.0 should be Nothing" (isNothing (process2 (-1.0)))
+        assertBool "0.0 should be Nothing" (isNothing (sqrtInvAddOne 0.0))
+        assertBool "0.0001 should be Nothing" (isNothing (sqrtInvAddOne 0.0001))
+        assertBool "-1.0 should be Nothing" (isNothing (sqrtInvAddOne (-1.0)))
+    ]
+
+testSqrtInvAddOneKleisli :: TestTree
+testSqrtInvAddOneKleisli =
+  testGroup
+    "SqrtInvAddOneKleisli Tests"
+    [ testCase "Valid positive numbers" $ do
+        sqrtInvAddOneKleisli 4.0 @?= Just 1.5
+        sqrtInvAddOneKleisli 16.0 @?= Just 1.25,
+      testCase "Invalid numbers" $ do
+        assertBool "0.0 should be Nothing" (isNothing (sqrtInvAddOneKleisli 0.0))
+        assertBool "0.0001 should be Nothing" (isNothing (sqrtInvAddOneKleisli 0.0001))
+        assertBool "-1.0 should be Nothing" (isNothing (sqrtInvAddOneKleisli (-1.0)))
     ]
 
 -- ==========================================
@@ -209,13 +223,13 @@ kleisliTests =
     "Kleisli Utilities"
     [ testProperty "fishB is equivalent to >=> (Maybe)" (prop_fishBEquivalentToKleisli @Maybe @Int @Int @Int),
       testProperty "fishB is equivalent to >=> (List)" (prop_fishBEquivalentToKleisli @[] @Int @Int @Int),
-      testProperty "process is equivalent to process2" prop_processEquivalentToProcess2
+      testProperty "sqrtInvAddOne is equivalent to sqrtInvAddOneKleisli" prop_sqrtInvAddOneEquivalentToKleisli
     ]
 
 prop_fishBEquivalentToKleisli :: forall m a b c. (Monad m, Eq (m c), Show (m c)) => Fun a (m b) -> Fun b (m c) -> a -> Property
 prop_fishBEquivalentToKleisli (Fn f) (Fn g) x =
   fishB f g x === (f >=> g) x
 
-prop_processEquivalentToProcess2 :: Float -> Property
-prop_processEquivalentToProcess2 x =
-  process x === process2 x
+prop_sqrtInvAddOneEquivalentToKleisli :: Float -> Property
+prop_sqrtInvAddOneEquivalentToKleisli x =
+  sqrtInvAddOne x === sqrtInvAddOneKleisli x
