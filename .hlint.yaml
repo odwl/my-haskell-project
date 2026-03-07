@@ -10,5 +10,11 @@
 
 # Safety: Warn about partial functions
 - warn: {lhs: head, rhs: safeHead}
-- warn: {lhs: fromJust, rhs: "handled Maybe"}
-- warn: {lhs: tail, rhs: "handled list pattern matching"}
+- warn:
+    lhs: fromJust x
+    rhs: case x of Just y -> y; Nothing -> error ""
+    note: "handled Maybe"
+- warn:
+    lhs: tail x
+    rhs: case x of (y:ys) -> ys; [] -> error ""
+    note: "handled list pattern matching"

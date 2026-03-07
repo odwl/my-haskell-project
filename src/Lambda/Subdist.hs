@@ -1,7 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Lambda.Subdist
@@ -74,4 +72,3 @@ consolidate = Map.toList . Map.fromListWith (+) . filter ((> 1e-12) . snd)
 -- but 'explicit' preserves the structure.
 simplify :: (Ord a) => Subdist a -> Subdist a
 simplify = Subdist . fromList . map (\(x, p) -> (x, Exp (log p))) . consolidate . runSubdist
-

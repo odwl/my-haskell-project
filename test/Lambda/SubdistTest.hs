@@ -138,6 +138,7 @@ expectedOutcome = case makeSubdist [('H', 0.48), ('L', 0.52)] of
   Just d -> d
   Nothing -> error "Invalid test distribution"
 
+{-# ANN kleisliTests "HLint: ignore Use =<<" #-}
 kleisliTests :: TestTree
 kleisliTests =
   testGroup

@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lambda.ParserTest (parserTests) where
@@ -125,10 +124,12 @@ prop_alternative_empty :: String -> Property
 prop_alternative_empty s =
   runParser (empty :: Parser Int) s === Nothing
 
+{-# ANN prop_alternative_left_identity "HLint: ignore Alternative law, left identity" #-}
 prop_alternative_left_identity :: Parser Int -> String -> Property
 prop_alternative_left_identity p s =
   runParser (empty <|> p) s === runParser p s
 
+{-# ANN prop_alternative_right_identity "HLint: ignore Alternative law, right identity" #-}
 prop_alternative_right_identity :: Parser Int -> String -> Property
 prop_alternative_right_identity p s =
   runParser (p <|> empty) s === runParser p s
@@ -167,14 +168,20 @@ genValidBool :: Gen (String, Value)
 genValidBool = oneof [pure ("true", VBool True), pure ("false", VBool False)]
 
 genValidOp :: [(String, a)] -> Gen (String, a)
-genValidOp ops = elements ops
+genValidOp = elements
 
 genInvalidOp :: [String] -> Gen String
-genInvalidOp invalidPrefixes = do
-  s <-
-    arbitrary `suchThat` \str ->
-      not (null str) && not (isSpace (head str)) && not (any (`isPrefixOf` str) invalidPrefixes)
-  return s
+genInvalidOp invalidPrefixes =
+  arbitrary `suchThat` \str ->
+    not (null str)
+      && case safeHead str of
+        Just c -> not (isSpace c)
+        Nothing -> True
+      && not (any (`isPrefixOf` str) invalidPrefixes)
+
+safeHead :: [a] -> Maybe a
+safeHead [] = Nothing
+safeHead (x : _) = Just x
 
 genValidId :: Gen (String, Id)
 genValidId = do
@@ -183,7 +190,9 @@ genValidId = do
   let str = f : r
   if isReservedWord str
     then genValidId
-    else return (str, fromJust $ mkId f r)
+    else case mkId f r of
+      Just v -> return (str, v)
+      Nothing -> error "valid id generator produced invalid identifier"
 
 genInvalidId :: Gen String
 genInvalidId = pure <$> arbitrary `suchThat` (not . isAsciiAlpha)
@@ -350,19 +359,28 @@ prop_stmts_invalid = prop_parse_invalid stmts genInvalidStmts
 -- ==========================================
 
 prop_stmt_x_2 :: Property
-prop_stmt_x_2 = property $ runParser stmts "x :=21 Noise" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Lit (VInt 21)))], "Noise")
+prop_stmt_x_2 =
+  property $
+    let x = case mkId 'x' "" of
+          Just v -> v
+          Nothing -> error "Invalid test id x"
+     in runParser stmts "x :=21 Noise" === Just ([Assign x (EAExp (Lit (VInt 21)))], "Noise")
 
 prop_stmt_semi :: Property
-prop_stmt_semi = property $ runParser stmts "x :=21; y:=2" === Just ([Assign (fromJust $ mkId 'x' "") (EAExp (Lit (VInt 21))), Assign (fromJust $ mkId 'y' "") (EAExp (Lit (VInt 2)))], "")
+prop_stmt_semi =
+  property $
+    let x = case mkId 'x' "" of Just v -> v; Nothing -> error "Invalid test id x"
+        y = case mkId 'y' "" of Just v -> v; Nothing -> error "Invalid test id y"
+     in runParser stmts "x :=21; y:=2" === Just ([Assign x (EAExp (Lit (VInt 21))), Assign y (EAExp (Lit (VInt 2)))], "")
 
 prop_stmt_complex :: Property
 prop_stmt_complex =
   property $
     let input = "a:=10; b:=2; res:=0; while not a<=0 do curr:=if a>5 then (a+b) else (a/b) fi; res:=(res*curr); a:=if b!=0 then (a-1) else a fi done"
-        a = fromJust $ mkId 'a' ""
-        b = fromJust $ mkId 'b' ""
-        res = fromJust $ mkId 'r' "es"
-        curr = fromJust $ mkId 'c' "urr"
+        a = case mkId 'a' "" of Just v -> v; Nothing -> error "invalid id a"
+        b = case mkId 'b' "" of Just v -> v; Nothing -> error "invalid id b"
+        res = case mkId 'r' "es" of Just v -> v; Nothing -> error "invalid id res"
+        curr = case mkId 'c' "urr" of Just v -> v; Nothing -> error "invalid id curr"
         ast =
           [ Assign a (EAExp (Lit (VInt 10))),
             Assign b (EAExp (Lit (VInt 2))),

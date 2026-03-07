@@ -13,8 +13,6 @@ module Lambda.Functor
     calc,
     process,
     process2,
-    testProcess,
-    testProcess2,
     fishB,
   )
 where
@@ -99,9 +97,9 @@ tailNat :: [a] -> Maybe [a]
 tailNat [] = Nothing
 tailNat (_ : xs) = Just xs
 
-my_length :: [a] -> Const Int a
-my_length [] = Const 0
-my_length (_ : xs) = Const (1 + getConst (my_length xs))
+myLength :: [a] -> Const Int a
+myLength [] = Const 0
+myLength (_ : xs) = Const (1 + getConst (myLength xs))
 
 -- f: a-> b; my_length . fmap f.....  [b] .... Const Int a that contain the length of the list
 -- fmap f. mylengtth .... Const Int b that contain the length of the list. fmap just change the useleess type.
@@ -109,7 +107,7 @@ my_length (_ : xs) = Const (1 + getConst (my_length xs))
 -- Const Int String = Int
 -- fmap f (Const Int x) = Const (f x) -- I see.
 
-data MyFunc b a = MyFunc b
+newtype MyFunc b a = MyFunc b
 
 -- Proper Functor Instance
 instance Functor (MyFunc b) where
@@ -145,18 +143,18 @@ nat (Just x) = [Just x]
 
 -- Implement, as best as you can, the identity function in your favorite language (or the second favorite, if your favorite language
 -- happens to be Haskell).
-my_identity :: a -> a
-my_identity = id
+myIdentity :: a -> a
+myIdentity = id
 
-my_comp :: (a -> b) -> (b -> c) -> (a -> c)
-my_comp f g = g . f
+myComp :: (a -> b) -> (b -> c) -> (a -> c)
+myComp f g = g . f
 
 -- | Write a program that tries to test that your composition function respects identity.
 testIdentity :: Bool
 testIdentity =
   let f = (+ 1) :: Int -> Int
       x = 10
-   in (my_comp my_identity f x == f x) && (my_comp f my_identity x == f x)
+   in (myComp myIdentity f x == f x) && (myComp f myIdentity x == f x)
 
 -- newtype MyWriter a = MyWriter (String, a)
 --   deriving (Show, Eq)
@@ -175,7 +173,7 @@ testZob2 =
         tell ("not " ++ show y ++ " ")
         tell ("End")
         pure (not y)
-   in logg == "Start even 3 not False End" && res == True
+   in logg == "Start even 3 not False End" && res
 
 process :: Float -> Maybe Float
 process x = do
@@ -193,19 +191,6 @@ process2 =
       addOne y = guard (y <= 99) >> pure (y + 1)
    in inv >=> sq >=> addOne
 
-testProcess :: Bool
-testProcess =
-  process 4.0 == Just 1.5
-    && process 0.0 == Nothing
-    && process 0.0001 == Nothing
-    && process (-1.0) == Nothing
-
-testProcess2 :: Bool
-testProcess2 =
-  process2 4.0 == Just 1.5
-    && process2 0.0 == Nothing
-    && process2 0.0001 == Nothing
-    && process2 (-1.0) == Nothing
-
 fishB :: (Monad m) => (a -> m b) -> (b -> m c) -> (a -> m c)
+{-# ANN fishB "HLint: ignore Use =<<" #-}
 fishB f g = join . fmap g . f

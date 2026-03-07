@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lambda.FunctorTestUtils where
@@ -24,8 +23,8 @@ instance (Arbitrary a) => Arbitrary (MyMaybe a) where
 instance (Eq a) => EqProp (MyMaybe a) where
   (=-=) = eq
 
-instance (Arbitrary a) => Arbitrary (MaybeList a) where
-  arbitrary = fmap MaybeList (scale (\n -> min n 5) arbitrary)
+instance (Arbitrary a) => Arbitrary (MaybeList a) where -- 0 length strings handled by list of non-empty strings
+  arbitrary = fmap MaybeList (scale (`min` 5) arbitrary)
 
 instance (Eq a) => EqProp (MaybeList a) where
   (=-=) :: (Eq a) => MaybeList a -> MaybeList a -> Property

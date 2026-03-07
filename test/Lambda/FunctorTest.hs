@@ -2,11 +2,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
+{-# HLINT ignore "Functor law" #-}
+
 module Lambda.FunctorTest where
 
 import Control.Monad ((>=>))
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
+import Data.Maybe (isNothing)
 import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), calc, fishB, myDiv, process, process2, takeWhileM)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Test.QuickCheck.Checkers
@@ -137,11 +140,39 @@ functorTests =
       monadMaybeListTests,
       mathFunctionsTests,
       kleisliTests,
-      takeWhileMTests
+      takeWhileMTests,
+      testProcess,
+      testProcess2
+    ]
+
+testProcess :: TestTree
+testProcess =
+  testGroup
+    "Process Tests"
+    [ testCase "Valid positive numbers" $ do
+        process 4.0 @?= Just 1.5
+        process 16.0 @?= Just 1.25,
+      testCase "Invalid numbers" $ do
+        assertBool "0.0 should be Nothing" (isNothing (process 0.0))
+        assertBool "0.0001 should be Nothing" (isNothing (process 0.0001))
+        assertBool "-1.0 should be Nothing" (isNothing (process (-1.0)))
+    ]
+
+testProcess2 :: TestTree
+testProcess2 =
+  testGroup
+    "Process2 Tests"
+    [ testCase "Valid positive numbers" $ do
+        process2 4.0 @?= Just 1.5
+        process2 16.0 @?= Just 1.25,
+      testCase "Invalid numbers" $ do
+        assertBool "0.0 should be Nothing" (isNothing (process2 0.0))
+        assertBool "0.0001 should be Nothing" (isNothing (process2 0.0001))
+        assertBool "-1.0 should be Nothing" (isNothing (process2 (-1.0)))
     ]
 
 -- ==========================================
--- 5. takeWhileM (Utility) Tests
+-- 6. takeWhileM (Utility) Tests
 -- ==========================================
 
 -- Helper to include failing element purely

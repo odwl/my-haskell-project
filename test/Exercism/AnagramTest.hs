@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 module Exercism.AnagramTest (anagramTests, main) where
 
 import Data.Char
@@ -64,8 +66,11 @@ genMostlyAnagram :: Gen (String, String)
 genMostlyAnagram = do
   s1 <- suchThat arbitrary (not . null)
   let lowerS1 = map toLower s1
-  char <- suchThat arbitrary $ \c -> notElem (toLower c) lowerS1
-  fmap ((,) s1) $ shuffle (char : tail s1)
+  char <- suchThat arbitrary (\c -> toLower c `notElem` lowerS1)
+  let s1Tail = case s1 of
+        (_ : ys) -> ys
+        [] -> error "genMostlyAnagram: s1 should not be empty" -- This case is prevented by suchThat (not . null)
+  fmap (s1,) $ shuffle (char : s1Tail)
 
 main :: IO ()
 main = defaultMain anagramTests

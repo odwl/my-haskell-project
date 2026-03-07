@@ -68,7 +68,7 @@ exampleTests =
   testGroup
     "Examples"
     [ testCase explanation $ isPangram input @?= expected
-      | Case {..} <- cases
+    | Case {..} <- cases
     ]
 
 data Case = Case {explanation :: String, input :: String, expected :: Bool}

@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+
 module Lambda.InterpreterTest (interpreterTests) where
 
 import Control.Monad.State (evalState, execState)
 import qualified Data.Map as Map
-import Data.Maybe (fromJust)
 import Lambda.Interpreter
 import Lambda.Parser
 import Test.Tasty
@@ -69,7 +69,7 @@ interpreterTests =
   where
     runEvalA a = evalState (evalAExp a) emptyMemory
     runEvalE e = evalState (evalExp e) emptyMemory
-    mkI (c : cs) = fromJust $ mkId c cs
+    mkI (c : cs) = case mkId c cs of Just y -> y; Nothing -> error ""
     mkI [] = error "Empty ID"
 
 prop_arith_vint :: Int -> Int -> BinOp -> Property

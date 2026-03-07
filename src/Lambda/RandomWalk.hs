@@ -68,4 +68,8 @@ pathSnapshots :: RandomWalk -> Gen [Map Int Int]
 pathSnapshots (RandomWalk start genActions) = do
   actions <- genActions
   let path = scanl (flip applyAction) start actions
-  return $ scanl (\m pos -> Map.insertWith (+) pos 1 m) (Map.singleton start 1) (tail path)
+  return $
+    let pathTail = case path of
+          (_ : ys) -> ys
+          [] -> error "Path should not be empty"
+     in scanl (\m pos -> Map.insertWith (+) pos 1 m) (Map.singleton start 1) pathTail

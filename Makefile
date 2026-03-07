@@ -9,7 +9,7 @@ test:
 	cabal test
 
 # Run hlint on source and test directories
-lint:
+lint hlint:
 	hlint src test
 
 # Format all Haskell files in src and test directories

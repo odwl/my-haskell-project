@@ -47,9 +47,13 @@ prop_lengthPreserve s = length (reverseString s) === length s
 prop_reverseConcat :: String -> String -> Property
 prop_reverseConcat a b = reverseString (a ++ b) === reverseString b ++ reverseString a
 
+safeHead :: [a] -> Maybe a
+safeHead [] = Nothing
+safeHead (x : _) = Just x
+
 prop_reverseHead :: String -> Property
 prop_reverseHead s =
-  not (null s) ==> head (reverseString s) === last s
+  not (null s) ==> safeHead (reverseString s) === Just (last s)
 
 -- ==========================================
 -- Test Some Examples
@@ -60,7 +64,7 @@ exampleTests =
   testGroup
     "Examples"
     [ testCase explanation $ reverseString input @?= expected
-      | Case {..} <- cases
+    | Case {..} <- cases
     ]
 
 data Case = Case {explanation :: String, input :: String, expected :: String}
