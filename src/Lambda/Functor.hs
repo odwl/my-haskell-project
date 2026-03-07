@@ -175,3 +175,33 @@ testZob2 =
         tell ("End")
         pure (not y)
    in logg == "Start even 3 not False End" && res == True
+
+process :: Float -> Maybe Float
+process x = do
+  guard (x /= 0)
+  let inv = 1 / x
+  guard (inv >= 0)
+  let sq = sqrt inv
+  guard (sq <= 99)
+  return (sq + 1)
+
+process2 :: Float -> Maybe Float
+process2 =
+  let inv y = guard (y /= 0) >> pure (1 / y)
+      sq y = guard (y >= 0) >> pure (sqrt y)
+      addOne y = guard (y <= 99) >> pure (y + 1)
+   in inv >=> sq >=> addOne
+
+testProcess :: Bool
+testProcess =
+  process 4.0 == Just 1.5
+    && process 0.0 == Nothing
+    && process 0.0001 == Nothing
+    && process (-1.0) == Nothing
+
+testProcess2 :: Bool
+testProcess2 =
+  process2 4.0 == Just 1.5
+    && process2 0.0 == Nothing
+    && process2 0.0001 == Nothing
+    && process2 (-1.0) == Nothing
