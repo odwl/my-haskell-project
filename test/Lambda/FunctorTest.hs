@@ -1,8 +1,13 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Lambda.FunctorTest where
 
+import Control.Monad ((>=>))
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
-import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), calc, myDiv, takeWhileM)
+import Lambda.Functor (MaybeList (..), MyMaybe (..), MyReader (..), calc, fishB, myDiv, process, process2, takeWhileM)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
@@ -131,6 +136,7 @@ functorTests =
       applicativeMaybeListTests,
       monadMaybeListTests,
       mathFunctionsTests,
+      kleisliTests,
       takeWhileMTests
     ]
 
@@ -165,3 +171,20 @@ takeWhileMTests =
     "takeWhileM Utility"
     [ testProperty "Behaves like takeThrough (inclusive takeWhile)" prop_takeWhileMIdentity
     ]
+
+kleisliTests :: TestTree
+kleisliTests =
+  testGroup
+    "Kleisli Utilities"
+    [ testProperty "fishB is equivalent to >=> (Maybe)" (prop_fishBEquivalentToKleisli @Maybe @Int @Int @Int),
+      testProperty "fishB is equivalent to >=> (List)" (prop_fishBEquivalentToKleisli @[] @Int @Int @Int),
+      testProperty "process is equivalent to process2" prop_processEquivalentToProcess2
+    ]
+
+prop_fishBEquivalentToKleisli :: forall m a b c. (Monad m, Eq (m c), Show (m c)) => Fun a (m b) -> Fun b (m c) -> a -> Property
+prop_fishBEquivalentToKleisli (Fn f) (Fn g) x =
+  fishB f g x === (f >=> g) x
+
+prop_processEquivalentToProcess2 :: Float -> Property
+prop_processEquivalentToProcess2 x =
+  process x === process2 x
