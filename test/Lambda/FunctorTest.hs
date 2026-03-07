@@ -11,7 +11,7 @@ import Control.Monad ((>=>))
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
 import Data.Maybe (fromMaybe, isNothing)
-import Lambda.Functor (DamState (..), MaybeList (..), MyMaybe (..), MyReader (..), calc, capacity, checkOverflow, empty, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM)
+import Lambda.Functor (DamState (..), MaybeList (..), MyMaybe (..), MyReader (..), calc, capacity, checkOverflow, emptyDam, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Lambda.Subdist (Subdist, certainly, makeSubdist)
 import Test.QuickCheck.Checkers
@@ -168,7 +168,7 @@ testSim name sim start expected = testCase name $ sim start @?= expected
 waterSimulationCases :: [(String, () -> Subdist DamState, Subdist DamState)]
 waterSimulationCases =
   [ ( "empty returns 0 and 1",
-      empty,
+      const emptyDam,
       certainly (OK 0)
     ),
     ( "checkOverflow handles values above capacity",
@@ -176,19 +176,19 @@ waterSimulationCases =
       certainly Overflowed
     ),
     ( "oneDay 0 matches expectedWater",
-      empty >=> oneDay,
+      const emptyDam >=> oneDay,
       safeSubdist [(OK 5, 0.8), (OK 0, 0.2)]
     ),
     ( "oneDay check overflow",
-      empty >=> oneDay >=> checkOverflow,
+      const emptyDam >=> oneDay >=> checkOverflow,
       safeSubdist [(OK 5, 0.8), (OK 0, 0.2)]
     ),
     ( "twoDays matches consolidated expected",
-      empty >=> oneDay >=> oneDay,
+      const emptyDam >=> oneDay >=> oneDay,
       safeSubdist [(OK 10, 0.64), (OK 5, 0.16), (OK 0, 0.20)]
     ),
     ( "four days check overflow consolidated expected",
-      empty >=> oneDay >=> oneDay >=> oneDay >=> oneDay >=> checkOverflow,
+      const emptyDam >=> oneDay >=> oneDay >=> oneDay >=> oneDay >=> checkOverflow,
       safeSubdist [(Overflowed, 0.4096), (OK 15, 0.1024), (OK 10, 0.3328), (OK 5, 0.0832), (OK 0, 0.072)]
     )
   ]

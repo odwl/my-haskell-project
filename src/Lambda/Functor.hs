@@ -21,7 +21,7 @@ module Lambda.Functor
     oneDay,
     checkOverflow,
     capacity,
-    empty,
+    emptyDam,
   )
 where
 
@@ -218,8 +218,8 @@ type Water = Int
 
 data DamState = OK Water | Overflowed deriving (Show, Eq, Ord)
 
-empty :: () -> Subdist DamState
-empty () = certainly (OK 0)
+emptyDam :: Subdist DamState
+emptyDam = certainly (OK 0)
 
 -- Rain adds 10L (80% chance) or 0L (20% chance)
 rainStep :: DamState -> Subdist DamState
@@ -238,7 +238,6 @@ capacity :: Water
 capacity = 15
 
 checkOverflow :: DamState -> Subdist DamState
-checkOverflow (OK current)
-  | current <= capacity = certainly (OK current)
-  | otherwise = certainly Overflowed
-checkOverflow Overflowed = certainly Overflowed
+checkOverflow state = pure $ case state of
+  OK current | current > capacity -> Overflowed
+  _ -> state
