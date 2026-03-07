@@ -4,4 +4,4 @@ import ExercismTest (exercismSuite)
 import Test.Tasty (defaultMain)
 
 main :: IO ()
-main = defaultMain exercismSuite
+main = defaultMain exercismSuite 
