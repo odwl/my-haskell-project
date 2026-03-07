@@ -1,12 +1,11 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lambda.SubdistTest where
 
+import Control.Monad (join, (>=>))
 import Data.List (sort)
 import Lambda.Subdist (Subdist, makeSubdist, runSubdist, simplify)
-import Control.Monad (join, (>=>))
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -146,13 +145,13 @@ kleisliTests =
     [ testCase "g <$> myDist matches manual expected" $ do
         (g <$> myDist) @?= case makeSubdist [(exp1, 0.8), (exp2, 0.2)] of
           Just d -> d
-          Nothing -> error "Invalid test distribution"
-    , testCase "join (g <$> myDist) == expectedOutcome" $ do
-        join (g <$> myDist) @?= expectedOutcome
-    , testCase "(f >=> g) () == expectedOutcome" $ do
-        (f >=> g) () @?= expectedOutcome
-    , testProperty "join . fmap g . f  vs  f >=> g  equivalence property" $
-        let leftSide  = join . fmap g . f 
+          Nothing -> error "Invalid test distribution",
+      testCase "join (g <$> myDist) == expectedOutcome" $ do
+        join (g <$> myDist) @?= expectedOutcome,
+      testCase "(f >=> g) () == expectedOutcome" $ do
+        (f >=> g) () @?= expectedOutcome,
+      testProperty "join . fmap g . f  vs  f >=> g  equivalence property" $
+        let leftSide = join . fmap g . f
             rightSide = f >=> g
-        in leftSide =-= rightSide
+         in leftSide =-= rightSide
     ]
