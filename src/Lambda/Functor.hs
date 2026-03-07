@@ -207,7 +207,5 @@ testProcess2 =
     && process2 0.0001 == Nothing
     && process2 (-1.0) == Nothing
 
--- Hint: You need to pipe the result of (f x)
--- into the "extension" of g.
 fishB :: (Monad m) => (a -> m b) -> (b -> m c) -> (a -> m c)
 fishB f g = join . fmap g . f
