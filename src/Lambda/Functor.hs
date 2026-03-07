@@ -21,14 +21,20 @@ module Lambda.Functor
     oneDay,
     checkOverflow,
     capacity,
-    empty,
+    emptyDam,
+    Op (..),
+    MyLog (..),
+    Logger,
+    writerComputation,
   )
 where
 
 import Control.Monad (guard, join, (>=>))
+import Control.Monad.Writer (Writer, writer)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Functor.Const (Const (..))
 import Data.Maybe (fromMaybe)
+import Data.Monoid (Sum (..))
 import Lambda.Subdist (Subdist, certainly, makeSubdist)
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
@@ -166,24 +172,36 @@ testIdentity =
       x = 10
    in (myComp myIdentity f x == f x) && (myComp f myIdentity x == f x)
 
--- newtype MyWriter a = MyWriter (String, a)
---   deriving (Show, Eq)
---   deriving (Functor, Applicative, Monad) via ((,) String)
+------------------------
+-- Writer Monad ---
+------------------------
 
-tell :: String -> (String, ())
-tell s = (s, ())
+-- | Represents a specific operation executed during computation.
+data Op = EVEN | NOT
+  deriving (Show, Eq)
 
-testZob2 :: Bool
-testZob2 =
-  let (logg, res) = do
-        let x = 3 :: Int
-        let y = even x
-        tell ("Start ")
-        tell ("even " ++ show x ++ " ")
-        tell ("not " ++ show y ++ " ")
-        tell ("End")
-        pure (not y)
-   in logg == "Start even 3 not False End" && res
+-- | The MyLog newtype tracks the sequence of operations 
+newtype MyLog = MyLog [(Op, Bool)]
+  deriving (Show, Eq)
+  deriving (Semigroup, Monoid) via [(Op, Bool)]
+
+type Logger = Writer MyLog
+
+logOp :: Op -> Bool -> Logger Bool
+logOp op b = writer (b, MyLog [(op, b)])
+
+applyEven :: Int -> Logger Bool
+applyEven = logOp EVEN . even
+
+applyNot :: Bool -> Logger Bool
+applyNot = logOp NOT . not
+
+writerComputation :: Int -> Logger Bool
+writerComputation = applyEven >=> applyNot
+
+-- ==========================================
+-- Kleisli
+-- ==========================================
 
 sqrtInvAddOne :: Float -> Maybe Float
 sqrtInvAddOne x = do
@@ -205,12 +223,16 @@ fishB :: (Monad m) => (a -> m b) -> (b -> m c) -> (a -> m c)
 {-# ANN fishB "HLint: ignore Use =<<" #-}
 fishB f g = join . fmap g . f
 
+-- ==========================================
+-- Water Simulation
+-- ==========================================
+
 type Water = Int
 
 data DamState = OK Water | Overflowed deriving (Show, Eq, Ord)
 
-empty :: () -> Subdist DamState
-empty () = certainly (OK 0)
+emptyDam :: Subdist DamState
+emptyDam = certainly (OK 0)
 
 -- Rain adds 10L (80% chance) or 0L (20% chance)
 rainStep :: DamState -> Subdist DamState
@@ -229,7 +251,6 @@ capacity :: Water
 capacity = 15
 
 checkOverflow :: DamState -> Subdist DamState
-checkOverflow (OK current)
-  | current <= capacity = certainly (OK current)
-  | otherwise = certainly Overflowed
-checkOverflow Overflowed = certainly Overflowed
+checkOverflow state = pure $ case state of
+  OK current | current > capacity -> Overflowed
+  _ -> state

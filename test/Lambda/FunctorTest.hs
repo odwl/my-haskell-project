@@ -10,8 +10,9 @@ module Lambda.FunctorTest where
 import Control.Monad ((>=>))
 import Control.Monad.Reader (reader)
 import Data.Functor.Identity (Identity (..), runIdentity)
+import Control.Monad.Writer (runWriter)
 import Data.Maybe (fromMaybe, isNothing)
-import Lambda.Functor (DamState (..), MaybeList (..), MyMaybe (..), MyReader (..), calc, capacity, checkOverflow, empty, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM)
+import Lambda.Functor (DamState (..), MaybeList (..), MyLog (..), Logger, MyMaybe (..), MyReader (..), Op (..), calc, capacity, checkOverflow, emptyDam, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM, writerComputation)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Lambda.Subdist (Subdist, certainly, makeSubdist)
 import Test.QuickCheck.Checkers
@@ -24,7 +25,36 @@ tastyBatch :: TestBatch -> TestTree
 tastyBatch (name, tests) = testProperties name tests
 
 -- ==========================================
--- 1. Standard Maybe Tests
+-- Math Functions Tests
+-- ==========================================
+
+prop_calcCommutative :: Int -> Int -> Property
+prop_calcCommutative l r = calc l r === calc r l
+
+prop_calcCorrect :: Int -> Int -> Property
+prop_calcCorrect l r =
+  let expected = case (myDiv l r, myDiv r l) of
+        (Just v1, Just v2) -> Just (v1 + v2)
+        _ -> Nothing
+   in calc l r === expected
+
+mathFunctionsTests :: TestTree
+mathFunctionsTests =
+  testGroup
+    "Math Functions"
+    [ testCase "myDiv 4 3" $ myDiv (4 :: Int) 3 @?= Just 1,
+      testCase "myDiv 6 3" $ myDiv (6 :: Int) 3 @?= Just 2,
+      testCase "myDiv 9 3 (The if-clause)" $ myDiv (9 :: Int) 3 @?= Nothing,
+      testProperty "calc is commutative" prop_calcCommutative,
+      testProperty "calc matches manual calculation" prop_calcCorrect,
+      testCase "calc 4 2 (2 + 0)" $ calc (4 :: Int) 2 @?= Just 2,
+      testCase "calc 1 1 (1 + 1)" $ calc (1 :: Int) 1 @?= Just 2,
+      testCase "calc 6 2 (myDiv 6 2 is 3 -> Nothing)" $ calc (6 :: Int) 2 @?= Nothing,
+      testCase "calc 4 0 (Nothing)" $ calc (4 :: Int) 0 @?= Nothing
+    ]
+
+-- ==========================================
+-- Standard Maybe Tests
 -- ==========================================
 
 functorMaybeTests :: TestTree
@@ -37,7 +67,7 @@ functorMaybeTests =
     ]
 
 -- ==========================================
--- 2. Custom MyMaybe Tests
+-- Custom MyMaybe Tests
 -- ==========================================
 
 -- Generate all functor tests automatically
@@ -45,7 +75,7 @@ functorMyMaybeTests :: TestTree
 functorMyMaybeTests = tastyBatch $ functor (undefined :: MyMaybe (Int, String, Int))
 
 -- ==========================================
--- 3. Standard Reader (Function) Tests
+-- Standard Reader (Function) Tests
 -- ==========================================
 
 prop_readerIdentity :: Fun Int String -> Int -> Property
@@ -69,7 +99,7 @@ functorReaderTests =
     ]
 
 -- ==========================================
--- 4. Custom MyReader Tests
+-- Custom MyReader Tests
 -- ==========================================
 
 prop_myReaderIdentity :: Fun Int String -> Int -> Property
@@ -93,7 +123,7 @@ functorMyReaderTests =
     ]
 
 -- ==========================================
--- 5. MaybeList Tests
+-- MaybeList Tests
 -- ==========================================
 
 functorMaybeListTests :: TestTree
@@ -114,90 +144,50 @@ monadMaybeListTests =
     "Monad MaybeList"
     [tastyBatch $ monad (undefined :: MaybeList (Int, String, Int))]
 
-mathFunctionsTests :: TestTree
-mathFunctionsTests =
-  testGroup
-    "Math Functions"
-    [ testCase "myDiv 4 3" $ myDiv (4 :: Int) 3 @?= Just 1,
-      testCase "myDiv 6 3" $ myDiv (6 :: Int) 3 @?= Just 2,
-      testCase "myDiv 9 3 (The if-clause)" $ myDiv (9 :: Int) 3 @?= Nothing,
-      testProperty "calc is commutative" prop_calcCommutative,
-      testProperty "calc matches manual calculation" prop_calcCorrect,
-      testCase "calc 4 2 (2 + 0)" $ calc (4 :: Int) 2 @?= Just 2,
-      testCase "calc 1 1 (1 + 1)" $ calc (1 :: Int) 1 @?= Just 2,
-      testCase "calc 6 2 (myDiv 6 2 is 3 -> Nothing)" $ calc (6 :: Int) 2 @?= Nothing,
-      testCase "calc 4 0 (Nothing)" $ calc (4 :: Int) 0 @?= Nothing
-    ]
+-- ==========================================
+-- takeWhileM (Utility) Tests
+-- ==========================================
 
-functorTests :: TestTree
-functorTests =
+-- Helper to include failing element purely
+takeThrough :: (a -> Bool) -> [a] -> [a]
+takeThrough _ [] = []
+takeThrough p (x : xs)
+  | p x = x : takeThrough p xs
+  | otherwise = [x]
+
+prop_takeWhileMIdentity :: (Int -> Bool) -> [Int] -> Property
+prop_takeWhileMIdentity p xs =
+  runIdentity (takeWhileM (Identity . p) xs) === takeThrough p xs
+
+takeWhileMTests :: TestTree
+takeWhileMTests =
   testGroup
-    "Functor Suite"
-    [ functorMaybeTests,
-      functorMyMaybeTests,
-      functorReaderTests,
-      functorMyReaderTests,
-      functorMaybeListTests,
-      applicativeMaybeListTests,
-      monadMaybeListTests,
-      mathFunctionsTests,
-      kleisliTests,
-      takeWhileMTests,
-      testSqrtInvAddOne,
-      testSqrtInvAddOneKleisli,
-      waterSimulationTests
+    "takeWhileM Utility"
+    [ testProperty "Behaves like takeThrough (inclusive takeWhile)" prop_takeWhileMIdentity
     ]
 
 -- ==========================================
--- 7. Water Simulation Tests
+-- Writer Monad Tests
 -- ==========================================
 
-safeSubdist :: [(DamState, Double)] -> Subdist DamState
-safeSubdist = fromMaybe (error "Invalid probability distribution in test expected value") . makeSubdist
+prop_writerLogMatchesResult :: Int -> Property
+prop_writerLogMatchesResult x =
+  let (result, MyLog ops) = runWriter $ writerComputation x
+      lastOpResult = snd $ last ops
+   in lastOpResult === result
 
--- | Helper function to reduce boilerplate in test definitions.
---
--- Arguments:
--- 1. name     - Name of the testcase.
--- 2. sim      - The simulation function (or monadic chain) to evaluate.
--- 3. start    - The initial state to pass into the simulation.
--- 4. expected - The expected Subdist outcome to match against.
-testSim :: String -> (a -> Subdist DamState) -> a -> Subdist DamState -> TestTree
-testSim name sim start expected = testCase name $ sim start @?= expected
-
-waterSimulationCases :: [(String, () -> Subdist DamState, Subdist DamState)]
-waterSimulationCases =
-  [ ( "empty returns 0 and 1",
-      empty,
-      certainly (OK 0)
-    ),
-    ( "checkOverflow handles values above capacity",
-      const (checkOverflow (OK (capacity + 5))),
-      certainly Overflowed
-    ),
-    ( "oneDay 0 matches expectedWater",
-      empty >=> oneDay,
-      safeSubdist [(OK 5, 0.8), (OK 0, 0.2)]
-    ),
-    ( "oneDay check overflow",
-      empty >=> oneDay >=> checkOverflow,
-      safeSubdist [(OK 5, 0.8), (OK 0, 0.2)]
-    ),
-    ( "twoDays matches consolidated expected",
-      empty >=> oneDay >=> oneDay,
-      safeSubdist [(OK 10, 0.64), (OK 5, 0.16), (OK 0, 0.20)]
-    ),
-    ( "four days check overflow consolidated expected",
-      empty >=> oneDay >=> oneDay >=> oneDay >=> oneDay >=> checkOverflow,
-      safeSubdist [(Overflowed, 0.4096), (OK 15, 0.1024), (OK 10, 0.3328), (OK 5, 0.0832), (OK 0, 0.072)]
-    )
-  ]
-
-waterSimulationTests :: TestTree
-waterSimulationTests =
+writerMonadTests :: TestTree
+writerMonadTests =
   testGroup
-    "Water Simulation"
-    $ map (\(n, s, e) -> testSim n s () e) waterSimulationCases
+    "Writer Monad Utilities"
+    [ testCase "writerComputation evaluates correctly" $
+        runWriter (writerComputation 4) @?= (False, MyLog [(EVEN, True), (NOT, False)]),
+      testProperty "Last operation in log matches returned result" prop_writerLogMatchesResult
+    ]
+
+-- ==========================================
+-- Kleisli Tests
+-- ==========================================
 
 testSqrtInvAddOne :: TestTree
 testSqrtInvAddOne =
@@ -225,37 +215,13 @@ testSqrtInvAddOneKleisli =
         assertBool "-1.0 should be Nothing" (isNothing (sqrtInvAddOneKleisli (-1.0)))
     ]
 
--- ==========================================
--- 6. takeWhileM (Utility) Tests
--- ==========================================
+prop_fishBEquivalentToKleisli :: forall m a b c. (Monad m, Eq (m c), Show (m c)) => Fun a (m b) -> Fun b (m c) -> a -> Property
+prop_fishBEquivalentToKleisli (Fn f) (Fn g) x =
+  fishB f g x === (f >=> g) x
 
--- Helper to include failing element purely
-takeThrough :: (a -> Bool) -> [a] -> [a]
-takeThrough _ [] = []
-takeThrough p (x : xs)
-  | p x = x : takeThrough p xs
-  | otherwise = [x]
-
-prop_takeWhileMIdentity :: (Int -> Bool) -> [Int] -> Property
-prop_takeWhileMIdentity p xs =
-  runIdentity (takeWhileM (Identity . p) xs) === takeThrough p xs
-
-prop_calcCommutative :: Int -> Int -> Property
-prop_calcCommutative l r = calc l r === calc r l
-
-prop_calcCorrect :: Int -> Int -> Property
-prop_calcCorrect l r =
-  let expected = case (myDiv l r, myDiv r l) of
-        (Just v1, Just v2) -> Just (v1 + v2)
-        _ -> Nothing
-   in calc l r === expected
-
-takeWhileMTests :: TestTree
-takeWhileMTests =
-  testGroup
-    "takeWhileM Utility"
-    [ testProperty "Behaves like takeThrough (inclusive takeWhile)" prop_takeWhileMIdentity
-    ]
+prop_sqrtInvAddOneEquivalentToKleisli :: Float -> Property
+prop_sqrtInvAddOneEquivalentToKleisli x =
+  sqrtInvAddOne x === sqrtInvAddOneKleisli x
 
 kleisliTests :: TestTree
 kleisliTests =
@@ -266,10 +232,77 @@ kleisliTests =
       testProperty "sqrtInvAddOne is equivalent to sqrtInvAddOneKleisli" prop_sqrtInvAddOneEquivalentToKleisli
     ]
 
-prop_fishBEquivalentToKleisli :: forall m a b c. (Monad m, Eq (m c), Show (m c)) => Fun a (m b) -> Fun b (m c) -> a -> Property
-prop_fishBEquivalentToKleisli (Fn f) (Fn g) x =
-  fishB f g x === (f >=> g) x
+-- ==========================================
+-- Water Simulation Tests
+-- ==========================================
 
-prop_sqrtInvAddOneEquivalentToKleisli :: Float -> Property
-prop_sqrtInvAddOneEquivalentToKleisli x =
-  sqrtInvAddOne x === sqrtInvAddOneKleisli x
+safeSubdist :: [(DamState, Double)] -> Subdist DamState
+safeSubdist = fromMaybe (error "Invalid probability distribution in test expected value") . makeSubdist
+
+-- | Helper function to reduce boilerplate in test definitions.
+--
+-- Arguments:
+-- 1. name     - Name of the testcase.
+-- 2. sim      - The simulation function (or monadic chain) to evaluate.
+-- 3. start    - The initial state to pass into the simulation.
+-- 4. expected - The expected Subdist outcome to match against.
+testSim :: String -> (a -> Subdist DamState) -> a -> Subdist DamState -> TestTree
+testSim name sim start expected = testCase name $ sim start @?= expected
+
+waterSimulationCases :: [(String, () -> Subdist DamState, Subdist DamState)]
+waterSimulationCases =
+  [ ( "empty returns 0 and 1",
+      const emptyDam,
+      certainly (OK 0)
+    ),
+    ( "checkOverflow handles values above capacity",
+      const (checkOverflow (OK (capacity + 5))),
+      certainly Overflowed
+    ),
+    ( "oneDay 0 matches expectedWater",
+      const emptyDam >=> oneDay,
+      safeSubdist [(OK 5, 0.8), (OK 0, 0.2)]
+    ),
+    ( "oneDay check overflow",
+      const emptyDam >=> oneDay >=> checkOverflow,
+      safeSubdist [(OK 5, 0.8), (OK 0, 0.2)]
+    ),
+    ( "twoDays matches consolidated expected",
+      const emptyDam >=> oneDay >=> oneDay,
+      safeSubdist [(OK 10, 0.64), (OK 5, 0.16), (OK 0, 0.20)]
+    ),
+    ( "four days check overflow consolidated expected",
+      const emptyDam >=> oneDay >=> oneDay >=> oneDay >=> oneDay >=> checkOverflow,
+      safeSubdist [(Overflowed, 0.4096), (OK 15, 0.1024), (OK 10, 0.3328), (OK 5, 0.0832), (OK 0, 0.072)]
+    )
+  ]
+
+waterSimulationTests :: TestTree
+waterSimulationTests =
+  testGroup
+    "Water Simulation"
+    $ map (\(n, s, e) -> testSim n s () e) waterSimulationCases
+
+-- ==========================================
+-- Main Test Tree Compilation
+-- ==========================================
+
+functorTests :: TestTree
+functorTests =
+  testGroup
+    "Functor Suite"
+    [ mathFunctionsTests,
+      functorMaybeTests,
+      functorMyMaybeTests,
+      functorReaderTests,
+      functorMyReaderTests,
+      functorMaybeListTests,
+      applicativeMaybeListTests,
+      monadMaybeListTests,
+      takeWhileMTests,
+      writerMonadTests,
+      testSqrtInvAddOne,
+      testSqrtInvAddOneKleisli,
+      kleisliTests,
+      waterSimulationTests
+    ]
