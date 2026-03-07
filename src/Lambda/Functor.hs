@@ -15,6 +15,7 @@ module Lambda.Functor
     sqrtInvAddOneKleisli,
     fishB,
     Water,
+    DamState (..),
     rainStep,
     evapStep,
     oneDay,
@@ -28,7 +29,7 @@ import Control.Monad (guard, join, (>=>))
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Functor.Const (Const (..))
 import Data.Maybe (fromMaybe)
-import Lambda.Subdist (Subdist, certainly, impossible, makeSubdist)
+import Lambda.Subdist (Subdist, certainly, makeSubdist)
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
 myDiv :: (Integral a) => a -> a -> Maybe a
@@ -206,22 +207,29 @@ fishB f g = join . fmap g . f
 
 type Water = Int
 
-empty :: () -> Subdist Water
-empty () = certainly 0
+data DamState = OK Water | Overflowed deriving (Show, Eq, Ord)
+
+empty :: () -> Subdist DamState
+empty () = certainly (OK 0)
 
 -- Rain adds 10L (80% chance) or 0L (20% chance)
-rainStep :: Water -> Subdist Water
-rainStep current = fromMaybe (certainly current) $ makeSubdist [(current + 10, 0.8), (current, 0.2)]
+rainStep :: DamState -> Subdist DamState
+rainStep (OK current) = fromMaybe (certainly (OK current)) $ makeSubdist [(OK (current + 10), 0.8), (OK current, 0.2)]
+rainStep Overflowed = certainly Overflowed
 
 -- Evaporation removes 5L (always)
-evapStep :: Water -> Subdist Water
-evapStep current = certainly (max 0 (current - 5))
+evapStep :: DamState -> Subdist DamState
+evapStep (OK current) = certainly (OK (max 0 (current - 5)))
+evapStep Overflowed = certainly Overflowed
 
-oneDay :: Water -> Subdist Water
+oneDay :: DamState -> Subdist DamState
 oneDay = rainStep >=> evapStep
 
 capacity :: Water
 capacity = 15
 
-checkOverflow :: Water -> Subdist Water
-checkOverflow current = fromMaybe (certainly current) $ makeSubdist [(min capacity current, 1)]
+checkOverflow :: DamState -> Subdist DamState
+checkOverflow (OK current)
+  | current <= capacity = certainly (OK current)
+  | otherwise = certainly Overflowed
+checkOverflow Overflowed = certainly Overflowed
