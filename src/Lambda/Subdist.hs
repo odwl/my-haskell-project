@@ -12,12 +12,6 @@ module Lambda.Subdist
     impossible,
     weighted,
     simplify,
-    myDist,
-    g,
-    expected,
-    testSubdist,
-    testSubdist2,
-    testSubdist3,
   )
 where
 
@@ -81,30 +75,3 @@ consolidate = Map.toList . Map.fromListWith (+) . filter ((> 1e-12) . snd)
 simplify :: (Ord a) => Subdist a -> Subdist a
 simplify = Subdist . fromList . map (\(x, p) -> (x, Exp (log p))) . consolidate . runSubdist
 
-myDist :: Subdist Bool
-myDist = fromMaybe impossible $ makeSubdist [(True, 0.8), (False, 0.2)]
-
-exp1 :: Subdist Char
-exp1 = fromMaybe impossible $ makeSubdist [('H', 0.6), ('L', 0.4)]
-
-exp2 :: Subdist Char
-exp2 = certainly 'L'
-
-g :: Bool -> Subdist Char
-g True = exp1
-g False = exp2
-
-f :: () -> Subdist Bool
-f () = myDist
-
-testSubdist :: Bool
-testSubdist = (g <$> myDist) == (fromMaybe impossible $ makeSubdist [(exp1, 0.8), (exp2, 0.2)])
-
-testSubdist2 :: Bool
-testSubdist2 = join (g <$> myDist) == expected
-
-testSubdist3 :: Bool
-testSubdist3 = (f >=> g) () == expected
-
-expected :: Subdist Char
-expected = fromMaybe impossible $ makeSubdist [('H', 0.48), ('L', 0.52)]
