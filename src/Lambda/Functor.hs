@@ -170,11 +170,12 @@ testIdentity =
 --   deriving (Show, Eq)
 --   deriving (Functor, Applicative, Monad) via ((,) String)
 
+-- A very simple monad to illustrate the concept of writer monad.
 tell :: String -> (String, ())
 tell s = (s, ())
 
-testZob2 :: Bool
-testZob2 =
+testWriterMonad :: Bool
+testWriterMonad =
   let (logg, res) = do
         let x = 3 :: Int
         let y = even x
