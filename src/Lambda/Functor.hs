@@ -30,11 +30,10 @@ module Lambda.Functor
 where
 
 import Control.Monad (guard, join, (>=>))
-import Control.Monad.Writer (Writer, writer)
 import Control.Monad.Trans.Maybe (MaybeT (..))
+import Control.Monad.Writer (Writer, writer)
 import Data.Functor.Const (Const (..))
 import Data.Maybe (fromMaybe)
-import Data.Monoid (Sum (..))
 import Lambda.Subdist (Subdist, certainly, makeSubdist)
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
@@ -180,7 +179,7 @@ testIdentity =
 data Op = EVEN | NOT
   deriving (Show, Eq)
 
--- | The MyLog newtype tracks the sequence of operations 
+-- | The MyLog newtype tracks the sequence of operations
 newtype MyLog = MyLog [(Op, Bool)]
   deriving (Show, Eq)
   deriving (Semigroup, Monoid) via [(Op, Bool)]

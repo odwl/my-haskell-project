@@ -9,12 +9,12 @@ module Lambda.FunctorTest where
 
 import Control.Monad ((>=>))
 import Control.Monad.Reader (reader)
-import Data.Functor.Identity (Identity (..), runIdentity)
 import Control.Monad.Writer (runWriter)
+import Data.Functor.Identity (Identity (..), runIdentity)
 import Data.Maybe (fromMaybe, isNothing)
-import Lambda.Functor (DamState (..), MaybeList (..), MyLog (..), Logger, MyMaybe (..), MyReader (..), Op (..), calc, capacity, checkOverflow, emptyDam, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM, writerComputation)
+import Lambda.Functor (DamState (..), MaybeList (..), MyLog (..), MyMaybe (..), MyReader (..), Op (..), Water, calc, capacity, checkOverflow, emptyDam, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM, writerComputation)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
-import Lambda.Subdist (Subdist, certainly, makeSubdist)
+import Lambda.Subdist (Subdist, certainly, makeSubdist, runSubdist)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -277,11 +277,24 @@ waterSimulationCases =
     )
   ]
 
+prop_simulationInvariant :: Int -> Water -> Property
+prop_simulationInvariant n start =
+  let n' = abs n `mod` 10
+      start' = OK (max 0 start)
+      simulation = foldr (>=>) certainly (replicate n' oneDay) >=> checkOverflow
+      results = map fst (runSubdist (simulation start'))
+   in property (all isValid results)
+  where
+    isValid (OK w) = w >= 0 && w <= capacity
+    isValid Overflowed = True
+
 waterSimulationTests :: TestTree
 waterSimulationTests =
   testGroup
     "Water Simulation"
-    $ map (\(n, s, e) -> testSim n s () e) waterSimulationCases
+    [ testGroup "Deterministic Cases" $ map (\(n, s, e) -> testSim n s () e) waterSimulationCases,
+      testProperty "n-day simulation followed by checkOverflow respects capacity" prop_simulationInvariant
+    ]
 
 -- ==========================================
 -- Main Test Tree Compilation
