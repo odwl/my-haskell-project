@@ -37,6 +37,7 @@ library
     Exercism.Clock
     Exercism.Pangram
     Exercism.ReverseString
+    Exercism.Zipper
     Lambda
     Lambda.Functor
     Lambda.HoverDam
@@ -95,6 +96,7 @@ test-suite exercism-test
     Exercism.ClockTest
     Exercism.PangramTest
     Exercism.ReverseStringTest
+    Exercism.ZipperTest
     ExercismTest
 
   hs-source-dirs:
@@ -118,6 +120,7 @@ test-suite all-tests
     Exercism.ClockTest
     Exercism.PangramTest
     Exercism.ReverseStringTest
+    Exercism.ZipperTest
     ExercismTest
     Lambda.FunctorTest
     Lambda.FunctorTestUtils

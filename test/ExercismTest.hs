@@ -5,6 +5,7 @@ import Exercism.BobTest (bobTests)
 import Exercism.ClockTest (clockTests)
 import Exercism.PangramTest (pangramTests)
 import Exercism.ReverseStringTest (reverseStringTests)
+import Exercism.ZipperTest (zipperTests)
 import Test.Tasty (TestTree, testGroup)
 
 exercismSuite :: TestTree
@@ -15,5 +16,6 @@ exercismSuite =
       reverseStringTests,
       pangramTests,
       bobTests,
-      clockTests
+      clockTests,
+      zipperTests
     ]

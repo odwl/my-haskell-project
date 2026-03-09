@@ -4,4 +4,4 @@ import Data.Word
 import Lambda.State
 
 -- Custom reload command that also re-imports essential modules
-:def r \_ -> return ":reload\nimport Control.Monad (replicateM, replicateM_)\nimport Data.Word\nimport Lambda.State"
+:def! r \_ -> return ":reload\nimport Control.Monad (replicateM, replicateM_)\nimport Data.Word"

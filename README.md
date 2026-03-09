@@ -22,6 +22,7 @@ This project is a comprehensive collection of Haskell exercises focused on core 
     - [Bob](https://exercism.org/tracks/haskell/exercises/bob)
     - [Pangram](https://exercism.org/tracks/haskell/exercises/pangram)
     - [Reverse String](https://exercism.org/tracks/haskell/exercises/reverse-string)
+    - [Zipper](https://exercism.org/tracks/haskell/exercises/zipper)
 - **test/Lambda/**
     - `FunctorTest.hs`: Law-based tests for `MaybeList` and other functors, and unit tests for `Maybe` arithmetic.
     - `HoverDamTest.hs`: Strategy-based property tests for the Hover Dam simulation, supporting multiple entry probabilities (`Linear`, `Step`, `TwoStep`).
@@ -56,6 +57,13 @@ We've added a set of arithmetic functions that operate within the `Maybe` monad 
 
 - **`myDiv`**: Safely divides numbers with a custom "limit" condition where a result of `3` is considered invalid (returns `Nothing`).
 - **`mySum` / `myMult`**: Standard arithmetic wrapped in `Maybe`.
+
+## 🪢 Tuple Functors & Bifunctors
+
+We've implemented explicit structural utilities for manipulating tuples as both `Functor`s and `Bifunctor`s:
+
+- **`myFirst` / `mySecond`**: Demonstrates categorical mapping for `(,)` using explicit pattern matching and `fmap`.
+- **`myBimap`**: Manual implementation of mapping over both sides of a Tuple simultaneously.
 
 ## 🛠 How to Run
 
