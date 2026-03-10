@@ -17,8 +17,6 @@ module Lambda.Parser
     CmpOp (..),
     reservedWords,
     isReservedWord,
-    isAsciiAlpha,
-    isAsciiAlphaNum,
     Value (..),
   )
 where
@@ -29,8 +27,8 @@ import Control.Monad (guard)
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Char (isAlpha, isAlphaNum, isAscii)
 import Data.Void (Void)
-import Text.Megaparsec (Parsec, choice, many, optional, satisfy, sepBy1, try, (<|>), notFollowedBy)
-import Text.Megaparsec.Char (space1, string)
+import Text.Megaparsec (Parsec, choice, many, notFollowedBy, optional, satisfy, sepBy1, try, (<|>))
+import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, string)
 import qualified Text.Megaparsec.Char.Lexer as L
 
 -- ==========================================
@@ -48,17 +46,10 @@ isReservedWord = (`elem` reservedWords)
 data Id = Id Char String
   deriving (Show, Eq, Ord)
 
--- | Predicates for identifier characters.
-isAsciiAlpha :: Char -> Bool
-isAsciiAlpha c = isAscii c && isAlpha c
-
-isAsciiAlphaNum :: Char -> Bool
-isAsciiAlphaNum c = isAscii c && isAlphaNum c
-
 -- | Smart constructor that explicitly takes the starting Char and the rest of the String.
 mkId :: Char -> String -> Maybe Id
 mkId c cs
-  | isAsciiAlpha c && all isAsciiAlphaNum cs = Just (Id c cs)
+  | isAlpha c && all isAlphaNum cs = Just (Id c cs)
   | otherwise = Nothing
 
 data CmpOp = Le | Gt | Eq | Neq deriving (Show, Eq)
@@ -104,8 +95,8 @@ symbol = L.symbol sc
 
 identifier :: Parser Id
 identifier = lexeme $ try $ do
-  c <- satisfy isAsciiAlpha
-  cs <- many (satisfy isAsciiAlphaNum)
+  c <- letterChar
+  cs <- many alphaNumChar
   let name = c : cs
   guard (not (isReservedWord name))
   pure (Id c cs)

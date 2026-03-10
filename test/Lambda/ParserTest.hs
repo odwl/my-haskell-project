@@ -5,9 +5,9 @@ module Lambda.ParserTest (parserTests) where
 
 import Control.Applicative (Alternative (..))
 import Data.Bifunctor (second)
-import Data.Char (isDigit, isPunctuation, isSpace, isSymbol)
+import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
-import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, Parser, Stmt (..), Value (..), aexp, binop, cmpop, expr, identifier, isAsciiAlpha, isAsciiAlphaNum, isReservedWord, mkId, num, stmt, stmts)
+import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, Parser, Stmt (..), Value (..), aexp, binop, cmpop, expr, identifier, isReservedWord, mkId, num, stmt, stmts)
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes (applicative, functor, monad)
 import Test.Tasty
@@ -140,6 +140,12 @@ prop_alternative_left_bias s =
 -- ==========================================
 --  Generators
 -- ==========================================
+
+isAsciiAlpha :: Char -> Bool
+isAsciiAlpha = isAlpha
+
+isAsciiAlphaNum :: Char -> Bool
+isAsciiAlphaNum = isAlphaNum
 
 genSpaces :: Gen String
 genSpaces = elements $ "" : map pure " \t\n\r\f\v"
