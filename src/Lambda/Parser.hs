@@ -29,7 +29,7 @@ import Control.Monad (guard)
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Char (isAlpha, isAlphaNum, isAscii)
 import Data.Void (Void)
-import Text.Megaparsec (Parsec, choice, many, optional, satisfy, sepBy1, try, (<|>))
+import Text.Megaparsec (Parsec, choice, many, optional, satisfy, sepBy1, try, (<|>), notFollowedBy)
 import Text.Megaparsec.Char (space1, string)
 import qualified Text.Megaparsec.Char.Lexer as L
 
@@ -206,10 +206,10 @@ stmts = sepBy1 stmt (symbol ";")
 keyword :: String -> Parser String
 keyword k = lexeme (string k <* notFollowedBy (satisfy (liftA2 (&&) isAscii isAlphaNum)))
 
--- Helper from Text.Megaparsec
-notFollowedBy :: Parser a -> Parser ()
-notFollowedBy p = do
-  res <- optional (try p)
-  case res of
-    Nothing -> pure ()
-    Just _ -> fail "keyword followed by alphanumeric character"
+-- -- Helper from Text.Megaparsec
+-- notFollowedBy :: Parser a -> Parser ()
+-- notFollowedBy p = do
+--   res <- optional (try p)
+--   case res of
+--     Nothing -> pure ()
+--     Just _ -> fail "keyword followed by alphanumeric character"
