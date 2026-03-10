@@ -34,6 +34,7 @@ library
   exposed-modules:
     Exercism.Anagram
     Exercism.Bob
+    Exercism.Clock
     Exercism.Pangram
     Exercism.ReverseString
     Lambda
@@ -91,6 +92,7 @@ test-suite exercism-test
   other-modules:
     Exercism.AnagramTest
     Exercism.BobTest
+    Exercism.ClockTest
     Exercism.PangramTest
     Exercism.ReverseStringTest
     ExercismTest
@@ -113,6 +115,7 @@ test-suite all-tests
   other-modules:
     Exercism.AnagramTest
     Exercism.BobTest
+    Exercism.ClockTest
     Exercism.PangramTest
     Exercism.ReverseStringTest
     ExercismTest

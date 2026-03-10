@@ -2,6 +2,7 @@ module ExercismTest (exercismSuite) where
 
 import Exercism.AnagramTest (anagramTests)
 import Exercism.BobTest (bobTests)
+import Exercism.ClockTest (clockTests)
 import Exercism.PangramTest (pangramTests)
 import Exercism.ReverseStringTest (reverseStringTests)
 import Test.Tasty (TestTree, testGroup)
@@ -13,5 +14,6 @@ exercismSuite =
     [ anagramTests,
       reverseStringTests,
       pangramTests,
-      bobTests
+      bobTests,
+      clockTests
     ]
