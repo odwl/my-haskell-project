@@ -94,11 +94,22 @@ instance Functor MyList where
 instance Applicative MyList where
   pure x = Cons x Nil
   Nil <*> _ = Nil
-
   Cons f fs <*> xs = fmap f xs `append` (fs <*> xs)
     where
       append Nil ys = ys
       append (Cons z zs) ys = Cons z (append zs ys)
+
+------------------------
+-- Functor Bifunctor ---
+------------------------
+myBimap :: (a -> b) -> (c -> d) -> (a, c) -> (b, d)
+myBimap f g (x, y) = (f x, g y)
+
+myFirst :: (a -> b) -> (a, c) -> (b, c)
+myFirst f (x, y) = (f x, y)
+
+mySecond :: (a -> b) -> (c, a) -> (c, b)
+mySecond = fmap
 
 ------------------------
 -- Functor Utilities ---
