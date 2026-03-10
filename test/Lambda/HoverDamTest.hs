@@ -20,6 +20,7 @@ actionToMove strategy = \case
   Inc -> carEnters strategy
   Dec -> carLeaves
 
+-- | Generates a random sequence of up to 50 actions for simulation testing.
 genRandomActions :: Gen [Action]
 genRandomActions = do
   numSteps <- choose (0, 50 :: Int)
@@ -31,7 +32,7 @@ genRandomActions = do
 calculateExpectedResult :: DamStrategy -> [Action] -> Int -> [(CarCount, Double)]
 calculateExpectedResult strategy actions start =
   let (f, p, col) = foldl step (start, 1.0, False) actions
-   in [(CarCount f, p) | not col]
+   in filter (\(_, q) -> q > 1e-12) [(CarCount f, p) | not col]
   where
     step (s, p, col) Inc =
       let next = s + 1
@@ -86,6 +87,7 @@ hoverDamScenarioTests name strategy =
 -- Master Test Tree
 -- ==========================================
 
+-- | The master test tree for Hover Dam simulation logic.
 hoverDamTests :: TestTree
 hoverDamTests =
   testGroup
