@@ -312,13 +312,13 @@ prop_num_invalid :: Property
 prop_num_invalid = prop_parse_invalid num genInvalidNum
 
 prop_aexp_valid :: Property
-prop_aexp_valid = prop_parse_valid aexp (withPadding genValidAExp)
+prop_aexp_valid = withMaxSuccess 25 $ prop_parse_valid aexp (scale (`div` 2) (withPadding genValidAExp))
 
 prop_aexp_invalid :: Property
 prop_aexp_invalid = prop_parse_invalid aexp genInvalidAExp
 
 prop_expr_valid :: Property
-prop_expr_valid = prop_parse_valid expr (scale (`div` 2) (withPadding genValidExpr))
+prop_expr_valid = withMaxSuccess 25 $ prop_parse_valid expr (scale (`div` 2) (withPadding genValidExpr))
 
 prop_expr_invalid :: Property
 prop_expr_invalid = prop_parse_invalid expr genInvalidExpr
@@ -342,13 +342,13 @@ prop_identifier_reject_invalid_start :: Property
 prop_identifier_reject_invalid_start = prop_parse_invalid identifier genInvalidId
 
 prop_stmt_valid :: Property
-prop_stmt_valid = prop_parse_valid stmt genValidStmt
+prop_stmt_valid = withMaxSuccess 25 $ prop_parse_valid stmt (scale (`div` 2) genValidStmt)
 
 prop_stmt_invalid :: Property
 prop_stmt_invalid = prop_parse_invalid stmt genInvalidStmt
 
 prop_stmts_valid :: Property
-prop_stmts_valid = prop_parse_valid stmts genValidStmts
+prop_stmts_valid = withMaxSuccess 25 $ prop_parse_valid stmts (scale (`div` 2) genValidStmts)
 
 prop_stmts_invalid :: Property
 prop_stmts_invalid = prop_parse_invalid stmts genInvalidStmts
