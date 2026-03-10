@@ -35,6 +35,7 @@ import Control.Monad.Writer (Writer, writer)
 import Data.Functor.Const (Const (..))
 import Data.Maybe (fromMaybe)
 import Lambda.Subdist (Subdist, certainly, makeSubdist)
+import Prelude
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
 myDiv :: (Integral a) => a -> a -> Maybe a
@@ -79,6 +80,25 @@ runMyReader = unwrap
 newtype MaybeList a = MaybeList {getMaybeList :: [Maybe a]}
   deriving (Show, Eq)
   deriving (Functor, Applicative, Monad) via (MaybeT [])
+
+------------------------
+-- MyList ---
+------------------------
+
+data MyList a = Nil | Cons a (MyList a)
+
+instance Functor MyList where
+  fmap _ Nil = Nil
+  fmap f (Cons x xs) = Cons (f x) (fmap (const (f x)) xs)
+
+instance Applicative MyList where
+  pure x = Cons x Nil
+  Nil <*> _ = Nil
+
+  Cons f fs <*> xs = fmap f xs `append` (fs <*> xs)
+    where
+      append Nil ys = ys
+      append (Cons z zs) ys = Cons z (append zs ys)
 
 ------------------------
 -- Functor Utilities ---
