@@ -1,0 +1,202 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+    language=Haskell,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    breaklines=true,
+    showstringspaces=false,
+    frame=single,
+    morekeywords={deriving,newtype,data,instance,where,type,kind}
+}
+
+\title{Outline: Minimal Functors, Applicatives, and Monads in Haskell}
+\author{Documentation}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+\begin{itemize}
+    \item \textbf{The Journey}: Starting with a note that walking through this exercise of constructing the ``minimal'' instances is one of the best ways to deeply understand Functors, Applicatives, and Monads in Haskell. It strips away the domain-specific noise, demystifying a lot of features that initially look like magic.
+    \item \textbf{The Narrative}: Noting that while these core concepts are foundational to modern Haskell, this specific teaching narrative---starting with absolute minimalism to ``prove'' the forced hand of parametricity---is unique, synthesizing ideas from papers like Wadler's ``Theorems for Free!'' and books like Maguire's ``Thinking with Types''.
+    \item \textbf{The Scope}: Establishing that we are focusing specifically on Endofunctors operating within the category of Haskell types (from \texttt{Hask} to \texttt{Hask}).
+    \begin{itemize}
+        \item \textbf{Note on \texttt{Hask}}: Mention that \texttt{Hask} is technically not a strict category due to non-terminating programs (bottom, \texttt{\_|\_}). Include a link to the famous paper \href{https://www.cse.chalmers.se/~nad/publications/danielsson-et-al-popl2006.pdf}{``Fast and Loose Reasoning is Morally Correct''}.
+    \end{itemize}
+    \item \textbf{The Power of Parametricity}: Noting that due to parametricity, the implementation of most functor, applicative, and monad instances is forced to be mathematically unique. This provides immense ``intellectual economy'' for Haskell developers: operations like \texttt{bind}, \texttt{pure}, \texttt{fmap}, \texttt{apply} (\texttt{<*>}), and Kleisli composition (\texttt{>=>}) generally have only one possible correct implementation for simple structural types.
+    \begin{itemize}
+        \item \textit{Counterexamples}: Add a very brief note acknowledging rare counterexamples where multiple valid implementations might exist (e.g., variations in ordering/traversal), but confirm they are atypical for minimal types.
+    \end{itemize}
+\end{itemize}
+
+\section{The Foundations of Functors, Applicatives, and Monads}
+
+\subsection{What is a Functor?}
+\begin{itemize}
+    \item \textbf{The Original Definition}: Starting with the original definition from Category Theory (referencing Saunders Mac Lane).
+    \item \textbf{Programming Ubiquity}: Noting that functors are widely used in programming languages (even non-functional ones) without developers always knowing it.
+    \item \textbf{Haskell's Category Theory Context}: Highlighting that a Haskell \texttt{Functor} is an \textit{Endofunctor} mapping from \texttt{Hask} to \texttt{Hask}.
+    \begin{itemize}
+        \item \textbf{Examples of Non-Haskell Categorical Functors}:
+        \begin{enumerate}
+            \item \textit{Non-Endofunctor}: Mapping from Sets to \texttt{Hask}.
+            \item \textit{Non-parametric Functor}: Inspects types (forbidden in Haskell).
+            \item \textit{Restricted Functor}: Applies only to a subset of types.
+        \end{enumerate}
+    \end{itemize}
+    \item \textbf{Taxonomy}: Differences between \texttt{type}, \texttt{newtype}, and \texttt{data}.
+\end{itemize}
+
+\subsection{The Constraint of Parametricity}
+\begin{itemize}
+    \item \textbf{The Concept}: How \texttt{fmap} generically handling \textit{all} types forces it to preserve structure.
+    \item \textbf{Theorems for Free}: Linking to Wadler's paper.
+\end{itemize}
+
+\subsection{\texttt{fmap} (and \texttt{<\$>}) and the Functor Laws}
+\begin{itemize}
+    \item \textbf{The Signature}: \texttt{(a -> b) - > f a -> f b}. Lifting function application into a context.
+    \item \textbf{The Laws}: Identity and Composition. 
+    \item \textbf{Enforcement}: Use of \texttt{QuickCheck} for automated verification.
+\end{itemize}
+
+\subsection{The Applicative Functor}
+\begin{itemize}
+    \item \textbf{The Context}: Functor equipped with \texttt{pure} and \texttt{apply} (\texttt{<*>}).
+    \item \textbf{The Laws}: Briefly listing Applicative laws.
+\end{itemize}
+
+\subsection{The Monad}
+\begin{itemize}
+    \item \textbf{Three Equivalent Paths}: \texttt{bind}, \texttt{join} (\texttt{mu}), and \texttt{kleisli} composition (\texttt{>=>}).
+\end{itemize}
+
+\section{The Minimal Functor/Monad (Proxy)}
+\textit{(Zero computational data, Zero contextual data)}
+
+\subsection{The Smallest Valid Candidate}
+\begin{itemize}
+    \item \textbf{The Definition}: \texttt{data MinF a = Val}.
+    \item \textbf{Haskell Equivalents}: \texttt{Proxy} or \texttt{Const ()}.
+\end{itemize}
+
+\subsection{A Singular Functor Implementation}
+\begin{itemize}
+    \item \textbf{The Code}: \texttt{fmap \_ Val = Val}.
+    \item \textbf{The ``Why''}: The type signature forces our hand.
+\end{itemize}
+
+\subsection{Upgrading to Applicative}
+\begin{itemize}
+    \item \textbf{The Code}: \texttt{pure \_ = Val} and \texttt{Val <*> Val = Val}.
+\end{itemize}
+
+\subsection{Upgrading to Monad}
+\begin{itemize}
+    \item \textbf{Via \texttt{join}}: \texttt{join Val = Val}.
+    \item \textbf{Via \texttt{bind}}: \texttt{Val >>= \_ = Val}.
+\end{itemize}
+
+\subsection{Let the Compiler Do the Work (\texttt{deriving})}
+\begin{itemize}
+    \item Using \texttt{DeriveFunctor}.
+\end{itemize}
+
+\section{The Minimal Applicative Functor (Const)}
+\textit{(Zero computational data, Some contextual data \texttt{r}). Requires \texttt{Monoid r}.}
+
+\subsection{The Definition of \texttt{Const}}
+\begin{itemize}
+    \item \texttt{newtype Const r a = Const r}.
+\end{itemize}
+
+\subsection{A Singular Functor Implementation}
+\begin{itemize}
+    \item \texttt{fmap \_ (Const r) = Const r}.
+\end{itemize}
+
+\subsection{The Applicative Twist (Necessary and Sufficient)}
+\begin{itemize}
+    \item Why \texttt{Monoid r} is strictly necessary for \texttt{pure} (identity) and \texttt{<*>} (combination).
+\end{itemize}
+
+\subsection{Why Not a Monad?}
+\begin{itemize}
+    \item Failing the Left Identity law.
+\end{itemize}
+
+\section{The Minimal Synchronous Monad (Identity)}
+\textit{(One computational data, Zero contextual data)}
+
+\subsection{The Definition}
+\begin{itemize}
+    \item \texttt{data IdF a = IdVal a}.
+\end{itemize}
+
+\subsection{A Singular Functor Implementation}
+\begin{itemize}
+    \item \texttt{fmap f (IdVal x) = IdVal (f x)}.
+\end{itemize}
+
+\subsection{Upgrading to Applicative}
+\begin{itemize}
+    \item \texttt{pure x = IdVal x} and \texttt{IdVal f <*> IdVal x = IdVal (f x)}.
+\end{itemize}
+
+\subsection{Upgrading to Monad}
+\begin{itemize}
+    \item \texttt{join (IdVal (IdVal x)) = IdVal x}.
+    \item \texttt{IdVal x >>= f = f x}.
+\end{itemize}
+
+\section{The Algebra of Functors}
+\begin{itemize}
+    \item \textbf{Foundational Blocks}: \texttt{Const r} ($c$) and \texttt{Identity} ($X$).
+    \item \textbf{Combinations}: How Sums and Products build more complex types.
+\end{itemize}
+
+\section{Functors out of Proxy and Identity}
+\begin{itemize}
+    \item \textbf{The Sum (Maybe)}: $1 + X$.
+    \item \textbf{The Product (Identity)}: $1 \times X = X$.
+    \item \textbf{Extensions}: Writer Monad ($r \times X$).
+\end{itemize}
+
+\section{Functors entirely out of Proxy}
+\begin{itemize}
+    \item \textbf{Fundamental Rule}: Proxy as the number 1.
+    \item \textbf{Proxy + Proxy}: \texttt{Const Bool} ($1 + 1 = 2$).
+    \item \textbf{Proxy * Proxy}: \texttt{Proxy} ($1 \times 1 = 1$).
+\end{itemize}
+
+\section{Recursion and Fixed Points}
+\begin{itemize}
+    \item \textbf{Recursive Sums/Products}: Building the \texttt{List}.
+    \item \textbf{Shape Equations}: $L(X) = 1 + X \times L(X)$.
+    \item \textbf{Alternative Shapes}: Binary Trees.
+\end{itemize}
+
+\section{Conclusion: The Tale of Three Minimals}
+\begin{itemize}
+    \item \textbf{Comparison}: Zero (\texttt{MinF}), Accumulation (\texttt{Const}), and One (\texttt{Identity}).
+\end{itemize}
+
+\section{Annex \& Bibliography}
+\begin{itemize}
+    \item Proofs of Monad equivalence and unique Functor identity.
+\end{itemize}
+
+\end{document}

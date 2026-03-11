@@ -29,11 +29,23 @@ This document serves as a collaborative living outline for the documentation and
 - **Transparency**: The simplest wrapper that implements all three levels.
 
 ## Chapter 5: The Algebra of Functors
-- **Sums and Products**: How all ADTs emerge from these blocks.
-- **Examples**:
-    - `Maybe = 1 + X`
-    - `List = 1 + X * L(X)`
-    - `Writer = r * X`
+- **Foundational Blocks**: `Const r` ($c$) and `Identity` ($X$).
+- **Combinations**: How Sums and Products build more complex types.
+
+## Chapter 6: Functors out of Proxy and Identity
+- **The Sum (Maybe)**: $1 + X$.
+- **The Product (Identity)**: $1 \times X = X$.
+- **Extensions**: Writer Monad (`r * X`).
+
+## Chapter 7: Functors entirely out of Proxy
+- **Fundamental Rule**: Proxy as the number 1.
+- **Proxy + Proxy**: `Const Bool` ($1 + 1 = 2$).
+- **Proxy * Proxy**: `Proxy` ($1 \times 1 = 1$).
+
+## Chapter 8: Recursion and Fixed Points
+- **Recursive Sums/Products**: Building the `List`.
+- **Shape Equations**: $L(X) = 1 + X \times L(X)$.
+- **Alternative Shapes**: Binary Trees.
 
 ## Annex: Proofs
 - Algebraic proof of Monad path equivalence.

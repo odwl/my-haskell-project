@@ -98,15 +98,25 @@
 
 ## 6. The Algebra of Functors
 
-*   **Sums (Maybe)**: $1 + X$.
-*   **Products (Writer)**: $r \times X$.
+## 6. Functors out of Proxy and Identity
+*   **The Sum (Maybe)**: $1 + X$.
+*   **The Product (Identity)**: $1 \times X = X$.
+*   **Extensions**: Writer Monad ($r \times X$).
+
+## 7. Functors entirely out of Proxy
 *   **Fundamental Rule**: `Proxy` represents the number 1.
-*   **Recursion (List)**: $L(X) = 1 + X \times L(X)$.
+*   **Proxy + Proxy**: `Const Bool` ($1 + 1 = 2$).
+*   **Proxy * Proxy**: `Proxy` ($1 \times 1 = 1$).
+
+## 8. Recursion and Fixed Points
+*   **Recursive Sums/Products**: Building the `List`.
+*   **Shape Equations**: $L(X) = 1 + X \times L(X)$.
+*   **Alternative Shapes**: Binary Trees.
 
 ---
 
-## 7. Conclusion: The Tale of Three Minimals
+## 9. Conclusion: The Tale of Three Minimals
 *   **Comparison**: Zero (`MinF`), Accumulation (`Const`), and One (`Identity`).
 
-## 8. Annex & Bibliography
+## 10. Annex & Bibliography
 *   Proofs of Monad equivalence and unique Functor identity.
