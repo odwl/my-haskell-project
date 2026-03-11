@@ -30,13 +30,13 @@
 
 \section{Introduction}
 \begin{itemize}
-    \item \textbf{The Journey}: Starting with a note that walking through this exercise of constructing the ``minimal'' instances is one of the best ways to deeply understand Functors, Applicatives, and Monads in Haskell. It strips away the domain-specific noise, demystifying a lot of features that initially look like magic.
+    \item \textbf{The Journey}: Constructing minimal instances (like \texttt{Proxy} and \texttt{Identity}) to strip away domain-specific noise and reveal the pure mechanics of Haskell's core typeclasses.
     \item \textbf{The Narrative}: Noting that while these core concepts are foundational to modern Haskell, this specific teaching narrative---starting with absolute minimalism to ``prove'' the forced hand of parametricity---is unique, synthesizing ideas from papers like Wadler's ``Theorems for Free!'' and books like Maguire's ``Thinking with Types''.
     \item \textbf{The Scope}: Establishing that we are focusing specifically on Endofunctors operating within the category of Haskell types (from \texttt{Hask} to \texttt{Hask}).
     \begin{itemize}
         \item \textbf{Note on \texttt{Hask}}: Mention that \texttt{Hask} is technically not a strict category due to non-terminating programs (bottom, \texttt{\_|\_}). Include a link to the famous paper \href{https://www.cse.chalmers.se/~nad/publications/danielsson-et-al-popl2006.pdf}{``Fast and Loose Reasoning is Morally Correct''}.
     \end{itemize}
-    \item \textbf{The Power of Parametricity}: Noting that due to parametricity, the implementation of most functor, applicative, and monad instances is forced to be mathematically unique. This provides immense ``intellectual economy'' for Haskell developers: operations like \texttt{bind}, \texttt{pure}, \texttt{fmap}, \texttt{apply} (\texttt{<*>}), and Kleisli composition (\texttt{>=>}) generally have only one possible correct implementation for simple structural types.
+    \item \textbf{The Power of Parametricity}: Exploring how the inability to inspect types at runtime forces implementations to be mathematically unique—the ``theorems for free'' philosophy.
     \begin{itemize}
         \item \textit{Counterexamples}: Add a very brief note acknowledging rare counterexamples where multiple valid implementations might exist (e.g., variations in ordering/traversal), but confirm they are atypical for minimal types.
     \end{itemize}
@@ -164,29 +164,29 @@
 
 \section{The Algebra of Functors}
 \begin{itemize}
-    \item \textbf{Foundational Blocks}: \texttt{Const r} ($c$) and \texttt{Identity} ($X$).
-    \item \textbf{Combinations}: How Sums and Products build more complex types.
+    \item \textbf{Foundational Blocks}: Treating \texttt{Proxy} as the number $1$ and \texttt{Identity} as the variable $X$ in a type-level polynomial.
+    \item \textbf{Combinations}: How the concepts of ``OR'' (Sums) and ``AND'' (Products) allow us to build complex ADTs from minimal primitives.
 \end{itemize}
 
 \section{Functors out of Proxy and Identity}
 \begin{itemize}
-    \item \textbf{The Sum (Maybe)}: $1 + X$.
-    \item \textbf{The Product (Identity)}: $1 \times X = X$.
-    \item \textbf{Extensions}: Writer Monad ($r \times X$).
+    \item \textbf{The Sum (Maybe)}: Deriving \texttt{Maybe} as the sum of Zero and One ($1 + X$), representing the minimal monad of failure.
+    \item \textbf{The Product (Identity)}: Proving that the product of Zero and One ($1 \times X$) collapses back into \texttt{Identity}, showing that \texttt{Proxy} acts as the multiplicative identity.
+    \item \textbf{Extensions}: Generalizing the product to \texttt{Writer} by replacing the unit with a Monoidal constant \texttt{r}.
 \end{itemize}
 
 \section{Functors entirely out of Proxy}
 \begin{itemize}
-    \item \textbf{Fundamental Rule}: Proxy as the number 1.
-    \item \textbf{Proxy + Proxy}: \texttt{Const Bool} ($1 + 1 = 2$).
-    \item \textbf{Proxy * Proxy}: \texttt{Proxy} ($1 \times 1 = 1$).
+    \item \textbf{Fundamental Rule}: Reinforcing that \texttt{Proxy} represents a single computational state with no attached data.
+    \item \textbf{Proxy + Proxy}: Showing how summing two empty states ($1 + 1 = 2$) creates the \texttt{Const Bool} functor.
+    \item \textbf{Proxy * Proxy}: Proving that a tuple of units ($1 \times 1 = 1$) remains isomorphic to a single unit.
 \end{itemize}
 
 \section{Recursion and Fixed Points}
 \begin{itemize}
-    \item \textbf{Recursive Sums/Products}: Building the \texttt{List}.
-    \item \textbf{Shape Equations}: $L(X) = 1 + X \times L(X)$.
-    \item \textbf{Alternative Shapes}: Binary Trees.
+    \item \textbf{Recursive Sums/Products}: Building the \texttt{List} type algebraically as $L(X) = 1 + X \times L(X)$.
+    \item \textbf{Shape Equations}: Understanding how different polynomial formulas define the physical layout of data structures like Trees and Streams.
+    \item \textbf{Alternative Shapes}: Brief comparison of shape formulas for different recursive types.
 \end{itemize}
 
 \section{Conclusion: The Tale of Three Minimals}
