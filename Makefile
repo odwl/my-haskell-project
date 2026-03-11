@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch
+.PHONY: all build test lint format check watch docs
 
 # Build the project
 build:
