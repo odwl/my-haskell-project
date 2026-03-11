@@ -23,6 +23,36 @@ instance (Arbitrary a) => Arbitrary (MyMaybe a) where
 instance (Eq a) => EqProp (MyMaybe a) where
   (=-=) = eq
 
+instance Arbitrary (MyProxy a) where
+  arbitrary = pure MyProxy
+
+instance EqProp (MyProxy a) where
+  (=-=) = eq
+
+instance (Arbitrary a) => Arbitrary (MyIdentity a) where
+  arbitrary = Id <$> arbitrary
+
+instance (Eq a) => EqProp (MyIdentity a) where
+  (=-=) = eq
+
+instance (Arbitrary a) => Arbitrary (MyConst a b) where
+  arbitrary = MyConst <$> arbitrary
+
+instance (Eq a) => EqProp (MyConst a b) where
+  (=-=) = eq
+
+instance (Arbitrary a, Arbitrary b) => Arbitrary (MyEither a b) where
+  arbitrary = oneof [MyLeft <$> arbitrary, MyRight <$> arbitrary]
+
+instance (Eq a, Eq b) => EqProp (MyEither a b) where
+  (=-=) = eq
+
+instance (Arbitrary a) => Arbitrary (MyMaybe2 a) where
+  arbitrary = MyEither <$> arbitrary <*> arbitrary
+
+instance (Eq a) => EqProp (MyMaybe2 a) where
+  (=-=) = eq
+
 instance (Arbitrary a) => Arbitrary (MaybeList a) where -- 0 length strings handled by list of non-empty strings
   arbitrary = fmap MaybeList (scale (`min` 5) arbitrary)
 

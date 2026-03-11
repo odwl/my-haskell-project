@@ -12,7 +12,7 @@ import Control.Monad.Reader (reader)
 import Control.Monad.Writer (runWriter)
 import Data.Functor.Identity (Identity (..), runIdentity)
 import Data.Maybe (fromMaybe, isNothing)
-import Lambda.Functor (DamState (..), MaybeList (..), MyLog (..), MyMaybe (..), MyReader (..), Op (..), Water, calc, capacity, checkOverflow, emptyDam, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM, writerComputation)
+import Lambda.Functor (DamState (..), MaybeList (..), MyConst (..), MyEither (..), MyIdentity (..), MyLog (..), MyMaybe (..), MyMaybe2 (..), MyProxy (..), MyReader (..), Op (..), Water, calc, capacity, checkOverflow, emptyDam, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM, writerComputation)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Lambda.Subdist (Subdist, certainly, makeSubdist, runSubdist)
 import Test.QuickCheck.Checkers
@@ -70,9 +70,17 @@ functorMaybeTests =
 -- Custom MyMaybe Tests
 -- ==========================================
 
--- Generate all functor tests automatically
-functorMyMaybeTests :: TestTree
-functorMyMaybeTests = tastyBatch $ functor (undefined :: MyMaybe (Int, String, Int))
+functorCustomTests :: TestTree
+functorCustomTests =
+  testGroup
+    "Custom Functors from Scratch"
+    [ tastyBatch $ functor (undefined :: MyProxy (Int, String, Int)),
+      tastyBatch $ functor (undefined :: MyIdentity (Int, String, Int)),
+      tastyBatch $ functor (undefined :: MyConst String (Int, String, Int)),
+      tastyBatch $ functor (undefined :: MyEither String (Int, String, Int)),
+      tastyBatch $ functor (undefined :: MyMaybe2 (Int, String, Int)),
+      tastyBatch $ functor (undefined :: MyMaybe (Int, String, Int))
+    ]
 
 -- ==========================================
 -- Standard Reader (Function) Tests
@@ -306,7 +314,7 @@ functorTests =
     "Functor Suite"
     [ mathFunctionsTests,
       functorMaybeTests,
-      functorMyMaybeTests,
+      functorCustomTests,
       functorReaderTests,
       functorMyReaderTests,
       functorMaybeListTests,

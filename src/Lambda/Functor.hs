@@ -2,7 +2,12 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Lambda.Functor
-  ( MyMaybe (..),
+  ( MyProxy (..),
+    MyIdentity (..),
+    MyConst (..),
+    MyEither (..),
+    MyMaybe2 (..),
+    MyMaybe (..),
     MyReader (..),
     runMyReader,
     MaybeList (..),
@@ -32,10 +37,52 @@ where
 import Control.Monad (guard, join, (>=>))
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.Writer (Writer, writer)
+import Data.Bifunctor (Bifunctor (..))
 import Data.Functor.Const (Const (..))
 import Data.Maybe (fromMaybe)
 import Lambda.Subdist (Subdist, certainly, makeSubdist)
 import Prelude
+
+---------------------------
+-- Functor from Scratch ---
+---------------------------
+
+data MyProxy a = MyProxy deriving (Eq, Show)
+
+instance Functor MyProxy where
+  fmap _ MyProxy = MyProxy
+
+newtype MyIdentity a = Id a deriving (Eq, Show)
+
+instance Functor MyIdentity where
+  fmap f (Id x) = Id (f x)
+
+newtype MyConst a b = MyConst a deriving (Eq, Show)
+
+instance Functor (MyConst a) where
+  fmap _ (MyConst cons) = MyConst cons
+
+data MyEither a b = MyLeft a | MyRight b deriving (Eq, Show)
+
+instance Functor (MyEither a) where
+  fmap _ (MyLeft a) = MyLeft a
+  fmap f (MyRight b) = MyRight (f b)
+
+instance Bifunctor MyEither where
+  first f (MyLeft a) = MyLeft (f a)
+  first _ (MyRight b) = MyRight b
+
+  second _ (MyLeft a) = MyLeft a
+  second g (MyRight b) = MyRight (g b)
+
+data MyMaybe2 a = MyEither (MyProxy a) (MyIdentity a) deriving (Eq, Show)
+
+instance Functor MyMaybe2 where
+  fmap f (MyEither a b) = MyEither (fmap f a) (fmap f b)
+
+---------------------------
+-- A little exercise on the Maybe Monad ---
+---------------------------
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
 myDiv :: (Integral a) => a -> a -> Maybe a
