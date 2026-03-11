@@ -1,5 +1,7 @@
 # Minimal Functors, Applicatives, and Monads in Haskell
 
+**Author:** Olivier De Wolf
+
 ## 1. Introduction
 
 Walking through the exercise of constructing "minimal" instances is one of the best ways to deeply understand Functors, Applicatives, and Monads in Haskell. By stripping away domain-specific noise (like state management, I/O, or failure), we demystify a lot of features that initially look like magic. It reveals the underlying mechanics at play.
