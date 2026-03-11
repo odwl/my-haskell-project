@@ -20,9 +20,13 @@ The true protagonist of this journey is **Parametricity**. Due to parametric pol
 
 ### Section 1.1: What is a Functor?
 
+If you ask a mathematician, they will point you to Saunders Mac Lane, one of the founders of Category Theory. In Category Theory, a functor is a structure-preserving mapping between two categories. It is a ubiquitous concept in mathematics; for instance, you have *Forgetful functors* (which strip algebraic structure) and *Free functors* (which automatically build algebraic structure).
+
+In the software realm, functors are widely used in almost every modern programming language, though developers often don't realize it when using map functions over arrays or options in non-functional languages. However, in strictly functional languages like Haskell, PureScript, Idris, Scala, and OCaml, they are elevated to first-class citizens with explicit interfaces. 
+
 In Haskell, a functor is represented as a type constructor that maps from one type to another type; it has the kind `* -> *`. 
 
-Before we look at Haskell, let's briefly touch on Category Theory. In Category Theory, a functor is a mapping between categories. A Haskell `Functor` is actually an *Endofunctor* because it maps from the category `Hask` back to the category `Hask`. However, Haskell functors are just a finite subset of all possible categorical functors. For example:
+Technically, a Haskell `Functor` is actually an *Endofunctor* because it maps from the category `Hask` back to the category `Hask`. However, Haskell functors are just a finite subset of all possible categorical functors. For example:
 1.  **Non-Endofunctor**: A functor mapping from a completely different category (e.g., the category of Sets) to `Hask`.
 2.  **Non-parametric Functor**: A categorical functor that inspects types (e.g., mapping `Int` to `String` and `Bool` to `Double`). This is strictly forbidden in Haskell due to parametricity.
 3.  **Restricted Functor**: A generic categorical functor might only apply to a *subset* of objects (types). A Haskell `Functor` mathematically must unconditionally apply to *all* types.
@@ -84,7 +88,9 @@ Often, `join` (called `mu` in Category Theory) is considered the most foundation
 
 ---
 
-## Chapter 2: The Minimal Endofunctor (and its Applicative/Monad)
+## Chapter 2: The Minimal Functor/Monad (Proxy)
+
+*(Zero computational data, Zero contextual data).*
 
 Let's begin the exercise. What is the smallest possible Functor we can build in Haskell?
 
@@ -165,9 +171,66 @@ The compiler mechanically generates the correct code for us because its constrai
 
 ---
 
-## Chapter 3: The Second Minimal Endofunctor (Identity)
+## Chapter 3: The Minimal Applicative Functor (Const)
 
-### Section 3.1: The Next Smallest Candidate
+*(Zero computational data, Some contextual data `r`). Requires `Monoid r`.*
+
+### Section 3.1: The Definition of `Const`
+
+If `MinF` is the minimal structure with *no* contextual value, what if we had a structure that still had no computational data `a`, but held an orthogonal contextual value `r`?
+```haskell
+newtype Const r a = Const r
+```
+It looks very similar to `MinF`, because it *ignores* the type `a` at the value level. However, it actually stores a completely distinct value of type `r`. 
+
+Notice that `Const ()` is structurally identical to `MinF` (which acts as `Proxy`). Therefore, `Const r` is simply a generalization of `Proxy` to hold some non-trivial "shadow" type `r`.
+
+### Section 3.2: A Singular Functor Implementation
+
+```haskell
+instance Functor (Const r) where
+    fmap _ (Const r) = Const r
+```
+**The "Why"**: Just like `MinF`, because we have no `a` to apply the function to, parametricity forces us to ignore the function entirely. Notice that for the `Functor` instance, `r` does not need to be a `Monoid`. We are fully capable of mapping over `Const r` without inspecting or combining the `r` value. We just pass it along unchanged.
+
+### Section 3.3: The Applicative Twist (Necessary and Sufficient)
+
+This is where `Const` requires an upgrade. Before we do, we must briefly define a Monoid. In abstract algebra, a Monoid is simply a set equipped with two things:
+1.  **An associative binary operation** (in Haskell, we call this `mappend` or `<>`).
+2.  **An identity element** (in Haskell, we call this `mempty`).
+
+In categorical terms, a Monoid is just a category with a single object. 
+
+With this in mind, let's look at the Applicative instance:
+```haskell
+instance Monoid r => Applicative (Const r) where
+    pure _ = Const mempty
+    Const r1 <*> Const r2 = Const (r1 `mappend` r2)
+```
+
+Why is `Monoid r` **necessary** here? 
+*   To write `pure :: a -> Const r a`, we must produce a `Const r`. To do this, we must conjure a value of type `r` out of thin air. We absolutely *must* have a guaranteed identity element to fall back on. Abstract algebra defines this as `mempty`.
+*   For the apply operator `<*>`, we have two isolated `r` values (`r1` and `r2`), and we need to return exactly one. We absolutely *must* have an associative mathematical operation to combine them. Abstract algebra defines this as `mappend`.
+
+Because `mempty` and `mappend` precisely encompass the entire definition of a Monoid, requiring `Monoid r` is perfectly **necessary and sufficient** to upgrade `Const r` to an `Applicative`. 
+
+Because it discards the computational aspect (`a -> b`) and focuses *only* on combining "side-channel" data (`r`), `Const` serves as the foundational basis for **Logging, Accumulation, and Monoidal Analysis**.
+
+### Section 3.4: Why Not a Monad?
+
+You generally cannot write a lawful `Monad` instance for `Const r`. Look at `bind` (`>>=`):
+```haskell
+(>>=) :: Const r a -> (a -> Const r b) -> Const r b
+```
+We do not have an `a`. We cannot execute the function `(a -> Const r b)`. Therefore, we completely lose whatever `r` value the function *would* have produced. Because we forcefully drop the function's potential `r`, we mathematically fail the Monad Left Identity law (`pure a >>= f == f a`).
+
+---
+
+## Chapter 4: The Minimal Synchronous Monad (Identity)
+
+*(One computational data, Zero contextual data).*
+
+### Section 4.1: The Next Smallest Candidate
 
 If `MinF` is the minimal structure with *no* value, what is the minimal structure with exactly *one* value?
 ```haskell
@@ -175,7 +238,7 @@ data IdF a = IdVal a
 ```
 Unlike `MinF`, `IdF` actually possesses the `a` at the term level. It is a completely transparent wrapper.
 
-### Section 3.2: A Singular Functor Implementation
+### Section 4.2: A Singular Functor Implementation
 
 ```haskell
 instance Functor IdF where
@@ -184,7 +247,7 @@ instance Functor IdF where
 
 **The "Why"**: The type signature demands we produce an `IdF b`. Due to parametricity, we cannot inspect the type or summon a `b` from the æther. The *only* mathematical way to obtain a `b` is to take the `x` (which is of type `a`) that we possess inside `IdVal`, and apply our given function `f :: (a -> b)` to it.
 
-### Section 3.3: Upgrading to Applicative
+### Section 4.3: Upgrading to Applicative
 
 ```haskell
 instance Applicative IdF where
@@ -193,7 +256,7 @@ instance Applicative IdF where
 ```
 To implement `pure`, we are given an `x` and must wrap it. To implement `<*>`, we unwrap the function `f`, unwrap the value `x`, physically apply them, and rewrap the result. Parametricity allows no alternative.
 
-### Section 3.4: Upgrading to Monad
+### Section 4.4: Upgrading to Monad
 
 Let's witness the three equivalent paths for `IdF`.
 
@@ -216,17 +279,6 @@ We take the `x` out of the wrapper and pass it to `f` (which returns an already-
 ```
 
 **Haskell Equivalents**: In the standard Haskell library, this completely transparent wrapper is known exactly as the `Identity` functor/monad.
-
----
-
-## Chapter 4: Conclusion: The Tale of Two Minimals
-
-These two minimal structures—`IdF` and `MinF`—perfectly illustrate how Haskell's type system dictates physical behavior at the value level.
-
-*   **With `MinF` (Proxy/Const ())**: You *do not have* an `a`. Because you have no `a` to feed to the function `(a -> b)`, parametricity **forces** you to completely ignore the function.
-*   **With `IdF` (Identity)**: You *have* an `a`. Because you must produce a `b`, and you have a function `(a -> b)`, parametricity **forces** you to apply the function to the value.
-
-By starting from the absolute minimal examples, the "magic" of Functors and Monads evaporates. All that remains is the elegant, inescapable logic of types.
 
 ---
 
@@ -285,7 +337,7 @@ What if we sum two Proxies together?
 An `Either () ()` type has exactly two possible values (`Left ()` or `Right ()`). That is exactly a Boolean! So summing two Proxies creates the **`Const Bool`** functor.
 Mathematically: $1 + 1 = 2$
 
-### Section 7.2: Proxy * Proxy = Proxy
+### Section 7.3: Proxy * Proxy = Proxy
 
 What if we take the product of two Proxies?
 
@@ -316,6 +368,18 @@ Looking at the list equation, you might ask: "is it always the case that `Sum Pr
 The answer is no! The formula $1 + X \times W$ describes the "shape" of a single layer of a List. When we say $L(X) = 1 + X \times L(X)$, we are saying that `List` is exactly the type that satisfies this equation (it is the *Fixed Point* of that functor). If `Whatever` was a Binary Tree, its shape equation would look entirely different, such as $T(X) = 1 + X \times T(X) \times T(X)$. 
 
 Different mathematical formulas create different data structures!
+
+---
+
+## Chapter 9: Conclusion: The Tale of Three Minimals
+
+These three minimal structures—`MinF`, `Const r`, and `IdF`—perfectly illustrate how Haskell's type system dictates physical behavior at the value level.
+
+*   **With `MinF` (Proxy / Zero)**: You *do not have* an `a` nor contextual data. Because you have no `a` to feed to the function `(a -> b)`, parametricity **forces** you to completely ignore the function.
+*   **With `Const r` (Accumulation)**: You *do not have* an `a`, but you do have contextual data `r`. You are again forced to ignore the function, but you can leverage a `Monoid` to combine the side-channel data.
+*   **With `IdF` (Identity / One)**: You *have* an `a`. Because you must produce a `b`, and you have a function `(a -> b)`, parametricity **forces** you to apply the function to the value.
+
+By starting from the absolute minimal examples, the "magic" of Functors, Applicatives, and Monads evaporates, leaving the elegant, inescapable logic of types. From these, as we see above, all Algebraic Data Types emerge.
 
 ---
 
