@@ -48,7 +48,7 @@ instance (Eq a, Eq b) => EqProp (MyEither a b) where
   (=-=) = eq
 
 instance (Arbitrary a) => Arbitrary (MyMaybe2 a) where
-  arbitrary = MyEither <$> arbitrary <*> arbitrary
+  arbitrary = MyMaybe2 <$> arbitrary
 
 instance (Eq a) => EqProp (MyMaybe2 a) where
   (=-=) = eq

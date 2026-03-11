@@ -75,10 +75,16 @@ instance Bifunctor MyEither where
   second _ (MyLeft a) = MyLeft a
   second g (MyRight b) = MyRight (g b)
 
-data MyMaybe2 a = MyEither (MyProxy a) (MyIdentity a) deriving (Eq, Show)
+newtype MyMaybe2 a = MyMaybe2 (MyEither (MyProxy a) (MyIdentity a)) deriving (Eq, Show)
 
 instance Functor MyMaybe2 where
-  fmap f (MyEither a b) = MyEither (fmap f a) (fmap f b)
+  fmap f (MyMaybe2 inner) = MyMaybe2 (bimap (fmap f) (fmap f) inner)
+
+data MyMaybe a = MyNothing | MyJust a deriving (Show, Eq)
+
+instance Functor MyMaybe where
+  fmap _ MyNothing = MyNothing
+  fmap f (MyJust x) = MyJust (f x)
 
 ---------------------------
 -- A little exercise on the Maybe Monad ---
@@ -109,12 +115,6 @@ calc l r = do
 -- structures are deeply aligned with the categorical foundations detailed in
 -- "Category Theory for Programmers" by Bartosz Milewski:
 -- https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf
-
-data MyMaybe a = MyNothing | MyJust a deriving (Show, Eq)
-
-instance Functor MyMaybe where
-  fmap _ MyNothing = MyNothing
-  fmap f (MyJust x) = MyJust (f x)
 
 newtype MyReader a b = MyReader {unwrap :: a -> b}
 
