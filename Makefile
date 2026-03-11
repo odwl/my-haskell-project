@@ -35,3 +35,9 @@ watch-test:
 # Clean build artifacts
 clean:
 	cabal clean
+	rm -f docs/*.aux docs/*.log docs/*.out docs/*.toc docs/*.synctex.gz
+
+# Build documentation
+docs:
+	@which pdflatex > /dev/null || (echo "pdflatex not found. Please install a LaTeX distribution." && exit 1)
+	for f in docs/*.tex; do pdflatex -output-directory=docs $$f; done

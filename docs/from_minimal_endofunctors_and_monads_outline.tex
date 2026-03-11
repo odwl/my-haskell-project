@@ -1,0 +1,241 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+\title{Outline: Minimal Functors, Applicatives, and Monads in Haskell}
+% \author{Documentation}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+\begin{itemize}
+    \item \textbf{The Journey}: Starting with a note that walking through this exercise of constructing the "minimal" instances is one of the best ways to deeply understand Functors, Applicatives, and Monads in Haskell. It strips away the domain-specific noise, demystifying a lot of features that initially look like magic.
+    \item \textbf{The Narrative}: Noting that while these core concepts are foundational to modern Haskell, this specific teaching narrative—starting with absolute minimalism to "prove" the forced hand of parametricity—is unique, synthesizing ideas from papers like Wadler's "Theorems for Free!" and books like Maguire's "Thinking with Types".
+    \item \textbf{The Scope}: Establishing that we are focusing specifically on Endofunctors operating within the category of Haskell types (from \texttt{Hask} to \texttt{Hask}).
+    \begin{itemize}
+        \item \textbf{Note on \texttt{Hask}}: Mention that \texttt{Hask} is technically not a strict category due to non-terminating programs (bottom, \texttt{\_|\_}). Include a link to the famous paper \href{https://www.cse.chalmers.se/~nad/publications/danielsson-et-al-popl2006.pdf}{"Fast and Loose Reasoning is Morally Correct"}.
+    \end{itemize}
+    \item \textbf{The Power of Parametricity}: Noting that due to parametricity, the implementation of most functor, applicative, and monad instances is forced to be mathematically unique. This provides immense "intellectual economy" for Haskell developers: operations like \texttt{bind}, \texttt{pure}, \texttt{fmap}, \texttt{apply} (\texttt{<*>}), and Kleisli composition (\texttt{>=>}) generally have only one possible correct implementation for simple structural types.
+    \begin{itemize}
+        \item \textit{Counterexamples}: Add a very brief note acknowledging rare counterexamples where multiple valid implementations might exist (e.g., variations in ordering/traversal), but confirm they are atypical for minimal types.
+    \end{itemize}
+\end{itemize}
+
+\section{The Foundations of Functors, Applicatives, and Monads}
+
+\subsection{What is a Functor?}
+\begin{itemize}
+    \item \textbf{The Original Definition}: Starting with the original definition from Category Theory (referencing Saunders Mac Lane). A functor is fundamentally a structure-preserving mapping between categories. It is ubiquitous in mathematics (e.g., Free, Forgetful, and Product functors).
+    \item \textbf{Programming Ubiquity}: Noting that functors are widely used in programming languages (even non-functional ones) without developers always knowing it. However, they are treated as first-class citizens with explicit interfaces in languages like Haskell, PureScript, Idris, Scala, and OCaml.
+    \item \textbf{Haskell's Category Theory Context}: Highlighting that a Haskell \texttt{Functor} is defined as a type constructor that maps from type to type (\texttt{* -> *}). It is actually an \textit{Endofunctor} because it maps from the category \texttt{Hask} back to the category \texttt{Hask}.
+    \begin{itemize}
+        \item \textbf{Subset due to Constraints}: Explaining that Haskell functors are a finite subset of all possible categorical functors.
+        \item \textbf{Examples of Non-Haskell Categorical Functors}:
+        \begin{enumerate}
+            \item \textit{Non-Endofunctor}: A functor mapping from a Completely Different Category (e.g., the category of sets) to \texttt{Hask}.
+            \item \textit{Non-parametric Functor}: A categorical functor that inspects types (e.g., mapping \texttt{Int} to \texttt{String} and \texttt{Bool} to \texttt{Double}), which is forbidden in Haskell due to parametricity.
+            \item \textit{Restricted Functor}: A functor in category theory that only applies to a \textit{subset} of objects (types), unlike Haskell's \texttt{Functor} which must unconditionally apply to \textit{all} types.
+        \end{enumerate}
+    \end{itemize}
+    \item \textbf{Candidates}: Focusing strictly on type signatures to demonstrate what makes a valid or invalid candidate. Providing abstract examples of types that fit the expected kind \texttt{* -> *} versus those that don't (like a concrete type having kind \texttt{*}).
+    \item \textbf{Haskell Taxonomy}: Clarifying the often confusing differences between \texttt{type} (type synonyms), \texttt{newtype} (single-constructor wrappers), and \texttt{data} (algebraic data types), and how they relate to defining valid functor candidates.
+\end{itemize}
+
+\subsection{The Constraint of Parametricity}
+\begin{itemize}
+    \item \textbf{The Concept}: Explaining how the requirement that \texttt{fmap} must handle \textit{all} types \texttt{a} and \texttt{b} generically drastically restricts what the implementation can actually do, essentially forcing it to preserve structure.
+    \item \textbf{Theorems for Free}: Linking to Philip Wadler's famous paper \href{https://people.mpi-sws.org/~dreyer/tor/papers/wadler.pdf}{"Theorems for free!"} to ground this concept logically.
+\end{itemize}
+
+\subsection{\texttt{fmap} (and \texttt{<\$>}) and the Functor Laws}
+\begin{itemize}
+    \item \textbf{The Signature}: Breaking down the specific signature of \texttt{fmap :: (a -> b) -> f a -> f b}. Comparing it to standard function application \texttt{(\$) :: (a -> b) -> a -> b} to show that \texttt{fmap} (often used as the infix operator \texttt{<\$>}) is simply function application lifted into a context.
+    \item \textbf{The Laws}: Explaining the Identity Law (\texttt{fmap id == id}) and the Composition Law (\texttt{fmap (f . g) == fmap f . fmap g}). Mentioning that due to parametricity ("theorems for free"), verifying the Identity law usually naturally implies the Composition law.
+    \item \textbf{Enforcement (Or Lack Thereof)}: Adding a crucial note that in Haskell, these mathematical laws are \textit{not} enforced by the compiler. It is entirely the developer's responsibility to ensure their instances are lawful.
+    \begin{itemize}
+        \item \textbf{Automated Verification}: Mentioning that property-based testing libraries (like \texttt{QuickCheck} integrated via \texttt{tasty}) provide an extremely easy and robust way to mathematically guarantee that your data structures fulfill these laws.
+    \end{itemize}
+\end{itemize}
+
+\subsection{The Applicative Functor}
+\begin{itemize}
+    \item \textbf{The Context}: Introducing \texttt{Applicative} as a Functor equipped with \texttt{pure} and \texttt{apply} (\texttt{<*>}).
+    \item \textbf{The Signatures}: Discussing \texttt{pure :: a -> f a} (bringing a value into the functor context) and \texttt{<*> :: f (a -> b) -> f a -> f b} (applying a function within context).
+    \item \textbf{The Laws}: Briefly listing the Applicative laws.
+\end{itemize}
+
+\subsection{The Monad}
+\begin{itemize}
+    \item \textbf{The Context}: Introducing the Monad, which adds the ability to sequence context-dependent computations.
+    \item \textbf{Three Equivalent Paths}: Explaining the mathematical equivalence of \texttt{bind}, \texttt{join} (\texttt{mu}), and \texttt{kleisli} composition (\texttt{>=>}). Because they are mathematically equivalent, providing a valid implementation for \textit{any single one} of them (along with \texttt{fmap} and \texttt{pure}) allows the other two to be derived automatically. Provide a link to Eugenio Moggi's foundational paper \href{https://core.ac.uk/download/pdf/82121775.pdf}{"Notions of computation and monads"} or the Typeclassopedia, noting that we'll prove this in the Annex.
+    \item \textbf{Bind vs Join}: Showcasing signatures for \texttt{bind} and \texttt{mu}, and showing the exact implementations to pass from one to the other.
+\end{itemize}
+
+\section{The Minimal Functor/Monad (Proxy)}
+\textit{(Zero computational data, Zero contextual data)}.
+
+\subsection{The Smallest Valid Candidate}
+\begin{itemize}
+    \item \textbf{The Definition}: Introducing the minimal possible signature: \texttt{data MinF a = Val}.
+    \item \textbf{Explanation}: Detailing how this type constructor maps any type \texttt{a} to a constructor that contains no real term-level data. Explaining that this exact structure already exists and is frequently used in the standard Haskell library as \texttt{Proxy} or \texttt{Const ()}.
+\end{itemize}
+
+\subsection{A Singular Functor Implementation}
+\begin{itemize}
+    \item \textbf{The Code}: Presenting the only valid implementation, starting abstractly with \texttt{fmap f val = val} and applying it: \texttt{fmap \_ Val = Val}.
+    \item \textbf{The "Why"}: Discussing how, due to parametricity, there is actually only a single possible implementation of \texttt{fmap} that compiles for this data structure. Note that Sandy Maguire formally calls this phenomenon the type signature "forcing your hand". The compiler effectively writes it for you.
+\end{itemize}
+
+\subsection{Upgrading to Applicative}
+\begin{itemize}
+    \item \textbf{The Signatures for the Minimal Type}: Looking at what \texttt{pure} and \texttt{<*>} must look like for \texttt{MinF}.
+    \item \textbf{A Singular Implementation}: Presenting \texttt{pure \_ = Val} and \texttt{Val <*> Val = Val}.
+    \item \textbf{The "Why"}: Showing that, similar to \texttt{fmap}, the lack of actual values inside \texttt{Val} leaves exactly one valid structural implementation.
+\end{itemize}
+
+\subsection{Upgrading to Monad}
+\begin{itemize}
+    \item \textbf{Via \texttt{join} (\texttt{mu})}: Analyzing the signature \texttt{join :: MinF (MinF a) -> MinF a}.
+    \begin{itemize}
+        \item \textbf{Visualizing \texttt{mu}}: Walking through the value-level representation. The input type is "A \texttt{MinF} whose phantom type is another \texttt{MinF}". But at the value level, it is still exactly just \texttt{Val}. Showing that \texttt{join Val = Val} demonstrates that "flattening" an empty box just results in an empty box.
+    \end{itemize}
+    \item \textbf{Via \texttt{bind}}: Deriving \texttt{Val >>= \_ = Val}.
+    \item \textbf{Haskell Equivalents}: Concluding the chapter by noting that in the standard Haskell library, this minimal behavior is equivalently represented as \texttt{Proxy} or \texttt{Const ()}.
+\end{itemize}
+
+\subsection{Let the Compiler Do the Work (\texttt{deriving})}
+\begin{itemize}
+    \item \textbf{Automated Generation}: Showing that because there is mathematically only \textit{exactly one} valid unique implementation due to parametricity, we don't even need to write it ourselves. Using GHC extensions like \texttt{DeriveFunctor} (or \texttt{deriving (Functor)}), the compiler mechanically generates the correct code for us because its "hands are tied" just like ours!
+\end{itemize}
+
+\section{The Minimal Applicative Functor (Const)}
+\textit{(Zero computational data, Some contextual data \texttt{r})}. Requires \texttt{r} to be a \texttt{Monoid} for the Applicative instance (but NOT for the Functor instance).
+
+\subsection{The Definition of \texttt{Const}}
+\begin{itemize}
+    \item \textbf{The Concept}: Introducing \texttt{data Const r a = Const r}. It holds an orthogonal contextual value \texttt{r}, ignoring the type \texttt{a} at the value level.
+    \item \textbf{Generalizing Proxy}: Explaining that \texttt{Const ()} is structurally identical to \texttt{Proxy}. \texttt{Const r} is simply a generalization of \texttt{Proxy} to hold some non-trivial "shadow" type \texttt{r}.
+\end{itemize}
+
+\subsection{A Singular Functor Implementation}
+\begin{itemize}
+    \item \textbf{The Code}: Showing \texttt{fmap \_ (Const r) = Const r}.
+    \item \textbf{No Monoid Required}: Clarifying that for a simple Functor, \texttt{r} doesn't need to be a \texttt{Monoid}. We just pass the existing \texttt{r} through unmodified.
+\end{itemize}
+
+\subsection{The Applicative Twist (Necessary and Sufficient)}
+\begin{itemize}
+    \item \textbf{A Prerequisite}: Briefly detailing the \texttt{Monoid} from abstract algebra (and specifically in categorical terms as a one-object category). It requires an associative binary operation (\texttt{mappend} or \texttt{<>}) and an identity element (\texttt{mempty}).
+    \item \textbf{Upgrading to Applicative}: To write \texttt{pure :: a -> Const r a}, we must conjure an \texttt{r} out of thin air. This makes \texttt{mempty} (an identity element) \textbf{strictly necessary}.
+    \item \textbf{Combining Contexts}: For \texttt{<*>}, we have two \texttt{r} values and need to return one. This makes \texttt{mappend} (an associative binary operation) \textbf{strictly necessary}.
+    \item \textbf{The Conclusion}: Because \texttt{mempty} and \texttt{mappend} are exactly what define a Monoid from abstract algebra, establishing \texttt{Monoid r} is perfectly \textbf{necessary and sufficient} to upgrade \texttt{Const r} to an Applicative Functor.
+\end{itemize}
+
+\subsection{Why Not a Monad?}
+\begin{itemize}
+    \item \textbf{Failing the Laws}: Explaining that \texttt{Const} cannot generally be a Monad. \texttt{bind} would require us to ignore the function \texttt{(a -> Const r b)}, which entirely discards the potential \texttt{r} that the function would have produced, mathematically failing the Left Identity law.
+\end{itemize}
+
+\section{The Minimal Synchronous Monad (Identity)}
+\textit{(One computational data, Zero contextual data)}.
+
+\subsection{The Next Smallest Candidate}
+\begin{itemize}
+    \item \textbf{The Definition}: Introducing the signature for the next minimal structure that actually holds a value: \texttt{data IdF a = IdVal a}.
+    \item \textbf{Explanation}: Contrasting this with \texttt{MinF} (which holds no \texttt{a}). \texttt{IdF} holds exactly one \texttt{a} and \textit{only} one \texttt{a}.
+\end{itemize}
+
+\subsection{A Singular Functor Implementation}
+\begin{itemize}
+    \item \textbf{The Code}: Presenting the only valid implementation: \texttt{fmap f (IdVal x) = IdVal (f x)}.
+    \item \textbf{The "Why"}: The structure demands we produce an \texttt{IdF b}, and since we cannot inspect the type or conjure values from thin air (due to parametricity), the \textit{only} way to get a \texttt{b} is to apply \texttt{f} to the \texttt{x} we possess.
+\end{itemize}
+
+\subsection{Upgrading to Applicative}
+\begin{itemize}
+    \item \textbf{A Singular Implementation}: Discussing \texttt{pure x = IdVal x} and \texttt{IdVal f <*> IdVal x = IdVal (f x)}.
+\end{itemize}
+
+\subsection{Upgrading to Monad}
+\begin{itemize}
+    \item \textbf{Via \texttt{join} (\texttt{mu})}: Analyzing \texttt{join :: IdF (IdF a) -> IdF a}. The only possible structurally preserving implementation is \texttt{join (IdVal (IdVal x)) = IdVal x}.
+    \item \textbf{Via \texttt{bind}}: Deriving \texttt{IdVal x >>= f = f x}.
+    \item \textbf{Via \texttt{kleisli} (\texttt{>=>})}: Deriving \texttt{(f >=> g) x = f x >>= g}.
+    \item \textbf{Haskell Equivalents}: Mentioning that this represents the \texttt{Identity} functor/monad in Haskell.
+\end{itemize}
+
+\section{The Algebra of Functors (Sums and Products)}
+\begin{itemize}
+    \item \textbf{The Two Atomic Blocks}: Explain that \texttt{Const} (constant) and \texttt{Identity} (variable) are the two fundamental polynomial functors from which algebraic data types are built.
+    \begin{itemize}
+        \item \textit{Real-World Note}: Briefly mention \texttt{Proxy} as a practical example of \texttt{Const ()} used for type-level guidance (e.g., in Servant or \texttt{Storable}).
+    \end{itemize}
+\end{itemize}
+
+\section{Functors out of Proxy and Identity}
+\begin{itemize}
+    \item \textbf{The Sum (Maybe)}: Combining \texttt{Proxy} and \texttt{Identity} via a Sum type (\texttt{+}) yields \texttt{Either (Proxy a) (Identity a)}, which is fundamentally \texttt{Maybe a}.
+    Mathematically: $1 + X$
+
+    \item \textbf{The Product (Identity)}: Multiplying \texttt{Proxy} and \texttt{Identity} yields \texttt{(Proxy a, Identity a) \cong ((), a) \cong Identity a}.
+    Mathematically: $1 \times X = X$
+    \begin{itemize}
+        \item \textit{Generalizing to Writer}: Multiplying an arbitrary \texttt{Const r} with \texttt{Identity} yields \texttt{Writer r a}.
+    \end{itemize}
+\end{itemize}
+
+\section{Functors entirely out of Proxy}
+\begin{itemize}
+    \item \textbf{The Fundamental Rule}: Explain that because \texttt{Proxy} holds exactly zero values of type \texttt{a}, it perfectly represents the number 1. Anytime you want to introduce an "empty" case (like \texttt{Nothing} or \texttt{[]}), you are fundamentally using \texttt{Proxy} or \texttt{Const ()}.
+
+    \item \textbf{Proxy + Proxy (Const Bool)}: Summing two Proxies yields \texttt{Either () ()}, which has exactly two states, identically \texttt{Const Bool}.
+    Mathematically: $1 + 1 = 2$
+
+    \item \textbf{Proxy * Proxy (Proxy)}: Multiplying two Proxies yields \texttt{((), ())}, which holds just one uninteresting value, collapsing back to \texttt{Proxy}.
+    Mathematically: $1 \times 1 = 1$
+\end{itemize}
+
+\section{Recursion and Fixed Points}
+\begin{itemize}
+    \item \textbf{List (Recursive Sums \& Products)}: Defined recursively as \texttt{Sum Proxy (Product Identity List)}.
+    Algebraically: $L(X) = 1 + X \times L(X)$
+
+    \item \textbf{Shape Equations vs Fixed Points}: Explain that the algebraic formula defines the "shape" of a single layer, and \texttt{List} is the fixed point. Address why $1 + X \times W = W$ describes a specific structure rather than being universally reductive.
+\end{itemize}
+
+\section{Conclusion: The Tale of Three Minimals}
+\begin{itemize}
+    \item \textbf{The Contrast}: Summarizing the core difference that perfectly illustrates parametricity across the three structures:
+    \begin{itemize}
+        \item \textbf{With \texttt{MinF} (Proxy / Zero)}: You \textit{do not have} an \texttt{a}. Because you have no \texttt{a} to feed to the function \texttt{(a -> b)}, parametricity \textbf{forces} you to completely ignore the function.
+        \item \textbf{With \texttt{Const r} (Accumulation)}: You \textit{do not have} an \texttt{a}, but you do have contextual data \texttt{r}. You are again forced to ignore the function, but you can leverage a \texttt{Monoid} to combine the side-channel data.
+        \item \textbf{With \texttt{IdF} (Identity / One)}: You \textit{have} an \texttt{a}. Because you must produce a \texttt{b}, and you have a function \texttt{(a -> b)}, parametricity \textbf{forces} you to apply the function to the value.
+    \end{itemize}
+    \item \textbf{Final Thoughts}: Concluding that these extremes provide the clearest possible demonstration of how Haskell's type system dictates behavior at the value level, and how from these basic blocks all Algebraic Data Types emerge.
+\end{itemize}
+
+\section{Annex: Proofs and Derivations}
+\begin{itemize}
+    \item \textbf{Proof of Monad Equivalence}: Step-by-step algebraic proof showing how to derive \texttt{join} from \texttt{bind}, \texttt{bind} from \texttt{join} and \texttt{fmap}, and how \texttt{kleisli} composition ties them all together.
+    \item \textbf{Proof of Unique Functor Identity}: Given \texttt{MinF a = Val}, proof that any total function structurally preserving the type must be \texttt{id}.
+\end{itemize}
+
+\section{Bibliography}
+\begin{itemize}
+    \item \textbf{"Theorems for free!"} by Philip Wadler (1989).
+    \item \textbf{"Notions of computation and monads"} by Eugenio Moggi (1991).
+    \item \textbf{"Fast and Loose Reasoning is Morally Correct"} by Nils Anders Danielsson, John Hughes, Patrik Jansson, and Jeremy Gibbons (2006).
+    \item \textbf{"The Typeclassopedia"} by Brent Yorgey (The Monad Reader Issue 13, 2009).
+    \item \textit{(Recommended Reading)} \textbf{"Thinking with Types"} by Sandy Maguire.
+    \item \textit{(Recommended Reading)} \textbf{"Functors, Applicatives, And Monads In Pictures"} by Aditya Bhargava.
+    \item \textbf{"Category Theory for Programmers"} (Introductory Notes) by Bartosz Milewski (\href{https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf}{PDF Link}).
+\end{itemize}
+
+\end{document}

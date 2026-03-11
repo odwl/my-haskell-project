@@ -17,4 +17,15 @@ stack.yaml.lock
 
 ### OS Generated ###
 .DS_Store
-Thumbs.dbTASKS.tmp.md
+Thumbs.db
+TASKS.tmp.md
+
+### Documents & LaTeX ###
+*.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
