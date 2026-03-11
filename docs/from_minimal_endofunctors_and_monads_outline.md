@@ -11,13 +11,15 @@
 ## 2. The Foundations of Functors, Applicatives, and Monads
 
 ### 2.1. What is a Functor?
-*   **The Original Definition**: Starting with the original definition from Category Theory (referencing Saunders Mac Lane).
+*   **The Original Definition**: Formalizing Functors in Category Theory (citing Saunders Mac Lane) as a mapping $F: C \to D$ consisting of:
+    *   **Object Mapping**: For every object $X$ in $C$, an object $F(X)$ in $D$.
+    *   **Morphism Mapping**: For every morphism $f: X \to Y$ in $C$, a morphism $F(f): F(X) \to F(Y)$ in $D$, preserving identities and composition.
 *   **Programming Ubiquity**: Noting that functors are widely used in programming languages (even non-functional ones) without developers always knowing it.
 *   **Haskell's Category Theory Context**: Highlighting that a Haskell `Functor` is an *Endofunctor* mapping from `Hask` to `Hask`.
     *   **Examples of Non-Haskell Categorical Functors**:
-        1.  *Non-Endofunctor*: Mapping from Sets to `Hask`.
-        2.  *Non-parametric Functor*: Inspects types (forbidden in Haskell).
-        3.  *Restricted Functor*: Applies only to a subset of types.
+        *   **Non-Endofunctor**: A functor mapping from a completely different category (e.g., the category of Sets) to `Hask`.
+        *   **Non-parametric Functor**: A categorical functor that inspects types (e.g., mapping `Int` to `String` and `Bool` to `Double`). This is strictly forbidden in Haskell due to parametricity.
+        *   **Restricted Functor**: A generic categorical functor might only apply to a *subset* of objects (types). A Haskell `Functor` mathematically must unconditionally apply to *all* types.
 *   **Taxonomy**: Differences between `type`, `newtype`, and `data`.
 
 ### 2.2. The Constraint of Parametricity

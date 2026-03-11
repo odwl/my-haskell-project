@@ -46,16 +46,20 @@
 
 \subsection{What is a Functor?}
 \begin{itemize}
-    \item \textbf{The Original Definition}: Starting with the original definition from Category Theory (referencing Saunders Mac Lane).
+    \item \textbf{The Original Definition}: Formalizing Functors in Category Theory (citing Saunders Mac Lane) as a mapping $F: C \to D$ consisting of:
+    \begin{itemize}
+        \item \textbf{Object Mapping}: For every object $X$ in $C$, an object $F(X)$ in $D$.
+        \item \textbf{Morphism Mapping}: For every morphism $f: X \to Y$ in $C$, a morphism $F(f): F(X) \to F(Y)$ in $D$, preserving identities and composition.
+    \end{itemize}
     \item \textbf{Programming Ubiquity}: Noting that functors are widely used in programming languages (even non-functional ones) without developers always knowing it.
     \item \textbf{Haskell's Category Theory Context}: Highlighting that a Haskell \texttt{Functor} is an \textit{Endofunctor} mapping from \texttt{Hask} to \texttt{Hask}.
     \begin{itemize}
         \item \textbf{Examples of Non-Haskell Categorical Functors}:
-        \begin{enumerate}
-            \item \textit{Non-Endofunctor}: Mapping from Sets to \texttt{Hask}.
-            \item \textit{Non-parametric Functor}: Inspects types (forbidden in Haskell).
-            \item \textit{Restricted Functor}: Applies only to a subset of types.
-        \end{enumerate}
+        \begin{itemize}
+            \item \textbf{Non-Endofunctor}: A functor mapping from a completely different category (e.g., the category of Sets) to \texttt{Hask}.
+            \item \textbf{Non-parametric Functor}: A categorical functor that inspects types (e.g., mapping \texttt{Int} to \texttt{String} and \texttt{Bool} to \texttt{Double}). This is strictly forbidden in Haskell due to parametricity.
+            \item \textbf{Restricted Functor}: A generic categorical functor might only apply to a \textit{subset} of objects (types). A Haskell \texttt{Functor} mathematically must unconditionally apply to \textit{all} types.
+        \end{itemize}
     \end{itemize}
     \item \textbf{Taxonomy}: Differences between \texttt{type}, \texttt{newtype}, and \texttt{data}.
 \end{itemize}
