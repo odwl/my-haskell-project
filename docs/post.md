@@ -92,7 +92,30 @@ The Identity Law guarantees that mapping the identity function over a structure 
 > ```
 > Here, `fakeFmap id (Counter 0 "x")` yields `Counter 1 "x"`, which is **not** equal to the original. This breaks the **Identity Law** (`fmap id == id`).
 
-**A Crucial Note on Enforcement**: Haskell, the language compiler, does *not* enforce these mathematical laws. It is code; it only checks type signatures. It is entirely the developer's responsibility to ensure their instances are lawful. Fortunately, automated property-based testing libraries like `QuickCheck` (often alongside `tasty`) provide an extremely easy and robust way to mathematically test and guarantee that your data structures fulfill these laws across thousands of generated inputs.
+**A Crucial Note on Enforcement**: Haskell, the language compiler, does *not* enforce these mathematical laws. It is code; it only checks type signatures. It is entirely the developer's responsibility to ensure their instances are lawful. Fortunately, automated property-based testing libraries like `QuickCheck` (often alongside `tasty`) provide an extremely easy and robust way to mathematically test and guarantee that your data structures fulfill these laws across thousands of generated inputs:
+
+```haskell
+import Test.Tasty
+import Test.Tasty.QuickCheck
+
+-- 1. Identity Law Propery
+prop_FunctorIdentity :: (Functor f, Eq (f a), Arbitrary (f a)) => f a -> Bool
+prop_FunctorIdentity x = fmap id x == x
+
+-- 2. Composition Law Property
+prop_FunctorComposition :: (Functor f, Eq (f c), Arbitrary (f a)) => 
+                           Fun (b, c) -> Fun (a, b) -> f a -> Bool
+prop_FunctorComposition (Fn f) (Fn g) x = fmap (f . g) x == (fmap f . fmap g) x
+
+-- Test Suite Setup
+main :: IO ()
+main = defaultMain $ testGroup "Functor Laws"
+  [ testProperty "Maybe Identity" (prop_FunctorIdentity :: Maybe Int -> Bool)
+  , testProperty "Maybe Composition" (prop_FunctorComposition :: 
+                                       Fun (Int, Int) -> Fun (Int, Int) -> Maybe Int -> Bool)
+  ]
+```
+*(Note: We use `Fun` from QuickCheck to generate random, shrinkable functions for the composition test).*
 
 #### Type Bundle Taxonomy
 In Haskell, we have three ways to bundle types, each with its own niche where the others wouldn't suffice:
