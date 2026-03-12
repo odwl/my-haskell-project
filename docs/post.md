@@ -1014,8 +1014,9 @@ Before moving to Applicatives, remember the three tools Haskell gives us to bund
 ## Chapter 6: Other Minimals
 
 ### Section 6.1: Minimal Monoid
+ could possibly be a monoid. 
 
-While functors and applicatives define the shape of computations, *Monoids* give us a fundamental way to aggregate concrete values. A Monoid is defined by two simple things:
+While functors and applicatives define the shape of computations, A type is a monoid if it has two operations an 0-ary and a 2-ary. As we will see *Monoids* give us a fundamental way to aggregate concrete values. A Monoid is defined by two simple things:
 1. `mempty`: An identity "empty" value.
 2. `mappend` (or `<>`): A binary associative operation to combine two values.
 
@@ -1027,13 +1028,34 @@ What are the top minimal implementations of a Monoid? Of course, because we math
 #### 2. Types with 2 Inhabitants (`Bool`)
 A type with exactly 2 values (like `Bool` with `True` and `False`) has $2 \times 2 = 4$ possible input combinations for a binary function. For each input, it must choose one of 2 outputs, yielding $2^4 = 16$ mathematically possible binary operations.
 
-However, how many of those 16 functions possess a valid identity element to form a Monoid? Exactly 4!
+Here is the exhaustive list of all 16 possible logical operations for a Boolean type:
+1. **Contradiction**: Always returns `False` (ignores both inputs).
+2. **NOR (Not OR)**: Returns `True` only if both are `False`.
+3. **Converse Nonimplication ($B \not\rightarrow A$)**: Returns `True` only if $B$ is True and $A$ is False.
+4. **Negation A**: Always returns `Not A` (ignores the second argument).
+5. **Material Nonimplication ($A \not\rightarrow B$)**: Returns `True` only if $A$ is True and $B$ is False.
+6. **Negation B**: Always returns `Not B` (ignores the first argument).
+7. **XOR (Exclusive OR)**: Returns `True` if inputs are different.
+8. **NAND (Not AND)**: Returns `False` only if both are `True`.
+9. **AND (`All`)**: Returns `True` only if both are `True`.
+10. **Equivalence (XNOR)**: Returns `True` if inputs are the same.
+11. **Projection B**: Always returns $B$ (ignores the first argument).
+12. **Material Implication ($A \rightarrow B$)**: Returns `False` only if $A$ is True and $B$ is False.
+13. **Projection A**: Always returns $A$ (ignores the second argument).
+14. **Converse Implication ($B \rightarrow A$)**: Returns `False` only if $B$ is True and $A$ is False.
+15. **OR (`Any`)**: Returns `True` if at least one is `True`.
+16. **Tautology**: Always returns `True` (ignores both inputs).
+
+However, out of this exhaustive list of 16 logical gates, how many possess a valid identity element to form a Monoid? Exactly 4!
+
 *   If `True` is the identity (`mempty = True`), exactly 2 functions exist:
     *   **Boolean `All` (AND)**: `True` and `&&`.
     *   **Boolean Equivalence (XNOR)**: `True` and `==`.
 *   If `False` is the identity (`mempty = False`), exactly 2 functions exist:
     *   **Boolean `Any` (OR)**: `False` and `||`.
     *   **Boolean Exclusive OR (XOR)**: `False` and `/=`.
+
+The other 12 operations either fundamentally lack an identity element (like Projection or Identity) or break the laws of associativity (like NAND or Implication).
 
 **The Monoid Laws and Testing**
 Just like Functors and Applicatives, instances of `Monoid` must rigidly obey mathematical laws:

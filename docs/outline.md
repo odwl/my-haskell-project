@@ -141,7 +141,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
   - **Developer Responsibility & Testing**: Using `testBatch` to automate equality testing (unlike Bifunctor natural identities which use isomorphism).
 - **The Top Minimal Implementations**:
   - **1 Inhabitant (`()`)**: The absolute minimum. `mempty = ()` and `() <> () = ()`.
-  - **2 Inhabitants (`Bool`)**: Breaking down the 4 mathematically possible monoids (`All`, `Any`, `Equivalence`, `Xor`).
+  - **2 Inhabitants (`Bool`)**: Breaking down the 16 mathematically possible binary operations and why exactly 4 of them (`All`, `Any`, `Equivalence`, `Xor`) form Monoids.
 - **The Limits of Parametricity**: Unlike Functors (`* -> *`), Monoids (`*`) operate on concrete values, meaning parametricity doesn't force a single unique implementation (e.g., `Double` can be `Sum` or `Product`).
 - **The Sum Monoid**: A practical numeric monoid (`mempty = 0`, `<> = +`).
 - **Aggregation with `foldMap`**: How to map elements to a Monoid and fold them securely without requiring the full Monad machinery.
