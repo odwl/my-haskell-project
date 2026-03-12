@@ -1026,10 +1026,23 @@ Just like Functors and Applicatives, instances of `Monoid` must rigidly obey mat
 2. **Right Identity**: `x <> mempty == x`
 3. **Associativity**: `(x <> y) <> z == x <> (y <> z)`
 
+> [!NOTE]
+> **Wait, what about Commutativity?** 
+> Notice that commutativity (`x <> y == y <> x`) is strictly **NOT** one of the Monoid laws! If a Monoid *happens* to also be commutative (like numeric `Sum` or `Product`), it is given a special name: an **Abelian Monoid**. However, the vast majority of useful structural monoids in programming are strictly non-commutative. For example, `List` (`"A" <> "B" /= "B" <> "A"`), `First` (keeps the first `Just` value), and `Endo` (function composition $f \circ g \neq g \circ f$) rigidly obey associativity but deliberately break commutativity!
+
+**Developer Responsibility**: 
+The Haskell compiler will perfectly compile a `Monoid` instance even if it violently breaks these laws! It is solely the developer's responsibility to ensure algebraic correctness. 
+
+However, notice that these laws rely on strict `==` equality (unlike the natural Left/Right identities of Bifunctors from Chapter 1, which strictly relied on structural isomorphism $\cong$). Because they rely on simple equality, we can trivially automate their validation using `tasty-quickcheck` and `testBatch`:
+```haskell
+-- Automatically tests Associativity and Left/Right Identity!
+testBatch (monoid (undefined :: All))
+```
+
 What are the top minimal implementations of a Monoid? Of course, because we mathematically require an identity value, a monoid cannot be `Void` (a type with 0 inhabitants).
 
 #### 1. The Absolute Minimum (1 Inhabitant)
-**The Unit `()`**: There is only one value, so `mempty = ()` and `() <> () = ()`. This is the absolute minimum implementation of a Monoid and it is very easy to verify that it satisfies the Monoid laws.
+**The Unit `()`**: There is only one value, so `mempty = ()` and `() <> () = ()`. This is the absolute minimum implementation of a Monoid, and the identity and associativity laws are trivially fulfilled because `()` is the only possible value.
 
 #### 2. Types with 2 Inhabitants (`Bool`)
 A type with exactly 2 values (like `Bool` with `True` and `False`) has $2 \times 2 = 4$ possible input combinations for a binary function. For each input, it must choose one of 2 outputs, yielding $2^4 = 16$ mathematically possible binary operations.
@@ -1052,6 +1065,8 @@ Here is the exhaustive list of all 16 possible logical operations for a Boolean 
 15. **OR** (∨): Returns `True` if at least one is `True`.
 16. **Tautology** (⊤): Always returns `True` (ignores both inputs).
 
+In fact, any 2-inhabitant operation that possesses a valid two-sided identity is mathematically *guaranteed* to be associative! (See the mathematical proof of this anomaly in **Annex A**).
+
 To find our Monoids, we can mathematically filter these down by rigorously testing the identity laws!
 
 **1. Which ones fail the Left Identity requirement? ($e \diamond x = x$)**
@@ -1065,9 +1080,13 @@ Of the 7 surviving operations, 3 of them fail to have a corresponding right iden
 *   **Material Implication** (→): `T → x = x` (Left Identity is `T`), but `x → T = True` (Fails Right Identity).
 *   **Converse Nonimplication** (↚): `F ↚ x = x` (Left Identity is `F`), but `x ↚ F = False` (Fails Right Identity).
 
-Discarding those 3 leaves us with exactly 4 operations that possess a complete, **two-sided** identity element. At parameter size 2, proving that these surviving 4 operations also satisfy the final Monoid Law (Associativity) becomes trivial. In fact, any 2-inhabitant operation that possesses a valid two-sided identity is mathematically *guaranteed* to be associative! (See the mathematical proof of this anomaly in **Annex A**).
+Discarding those 3 leaves us with exactly 4 operations that possess a complete, **two-sided** identity element. At parameter size 2, proving that these surviving 4 operations also satisfy the final Monoid Law (Associativity) becomes trivial.
 
-These remaining 4 operations perfectly form our 4 Boolean Monoids!
+These remaining 4 operations perfectly form our 4 Boolean Monoids:
+*   **Boolean `All` (AND)** (`&&`)
+*   **Boolean `Any` (OR)** (`||`)
+*   **Boolean Equivalence (XNOR)** (`==`)
+*   **Boolean Exclusive OR (XOR)** (`/=`)
 
 #### 3. Types with 3 Inhabitants (e.g., `Ordering`)
 What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`)? We witness a massive combinatorial explosion, but it is still small enough to mathematically map out!
@@ -1083,20 +1102,6 @@ What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`
 > However, the moment you jump up to 3 inhabitants, this mathematical freebie violently vanishes. Out of the 243 operations that possessed a perfect identity element, a massive **210 operations** (243 - 33) had to be discarded *specifically* because they broke the Law of Association!
 
 Therefore, for a type with 3 values, out of 19,683 possible operations, exactly **33 form perfectly valid Monoids**!
-
-
-> [!NOTE]
-> **Wait, what about Commutativity?** 
-> Notice that commutativity (`x <> y == y <> x`) is strictly **NOT** one of the Monoid laws! If a Monoid *happens* to also be commutative (like numeric `Sum` or `Product`), it is given a special name: an **Abelian Monoid**. However, the vast majority of useful structural monoids in programming are strictly non-commutative. For example, `List` (`"A" <> "B" /= "B" <> "A"`), `First` (keeps the first `Just` value), and `Endo` (function composition $f \circ g \neq g \circ f$) rigidly obey associativity but deliberately break commutativity!
-
-**Developer Responsibility**: 
-The Haskell compiler will perfectly compile a `Monoid` instance even if it violently breaks these laws! It is solely the developer's responsibility to ensure algebraic correctness. 
-
-However, notice that these laws rely on strict `==` equality (unlike the natural Left/Right identities of Bifunctors from Chapter 1, which strictly relied on structural isomorphism $\cong$). Because they rely on simple equality, we can trivially automate their validation using `tasty-quickcheck` and `testBatch`:
-```haskell
--- Automatically tests Associativity and Left/Right Identity!
-testBatch (monoid (undefined :: All))
-```
 
 **Is Parametricity Helping Here?**
 Unlike Functors (`* -> *`), which are parameterized over *any* type, Monoids operate on concrete types (`*`). This means parametricity *does not* force a single, unique implementation. For example, the type `Double` could form a monoid under addition (`0` and `+`) or under multiplication (`1` and `*`). Haskell uses `newtype` wrappers like `Sum` and `Product` to explicitly choose the monoidal behavior.
