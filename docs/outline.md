@@ -47,6 +47,8 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
   - $0 \times 1 = 0$: `(Zero a, Proxy a)` isomorphic to `Zero`.
   - $1 + 1 = 2$: `Either (Proxy a) (Proxy a)` isomorphic to `Const Bool`.
   - $1 \times 1 = 1$: `(Proxy a, Proxy a)` isomorphic to `Proxy`.
+  - $1 + X$: `Either (Proxy a) (Identity a)` isomorphic to `Maybe`.
+  - $1 \times X = X$: `(Proxy a, Identity a)` isomorphic to `Identity`.
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
 - **1. What is an Identity?**: Defining an identity via Tensor Products (mathematical neutrality: $B(A, I) \cong A$).

@@ -433,6 +433,16 @@ Since `Proxy` on both sides is an empty box, this structure holds absolutely no 
 **Haskell**: `(Proxy a, Proxy a)`.
 We must provide an empty box for the left side and an empty box for the right side. The state `(Proxy, Proxy)` is the *only* possible state this structure can ever be in. Since it has only one state, it yields zero bits of contextual information and holds zero data, bringing us right back to 1. It is isomorphic to `Proxy`.
 
+#### 5. Proxy + Identity = Maybe
+**Math**: $1 + X$.
+**Haskell**: `Either (Proxy a) (Identity a)`.
+If it's `Left`, we have an empty box (no data). If it's `Right`, we have exactly one `a`. This perfectly encodes the structure of optional data, making it isomorphic to `Maybe a`.
+
+#### 6. Proxy * Identity = Identity
+**Math**: $1 \times X = X$.
+**Haskell**: `(Proxy a, Identity a)`.
+A tuple containing an empty box and a single `a`. The left side adds no data and has no alternative states. The entire structure simply holds precisely one `a`, making it perfectly isomorphic to `Identity a`.
+
 By treating Bifunctors as binary operators running on simple atomic Functors, we observe the foundation of Algebraic Data Types emerging exactly like fundamental school arithmetic.
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
