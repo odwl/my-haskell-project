@@ -30,7 +30,7 @@ watch:
 
 # Run tests on file change (fast TDD loop)
 watch-test:
-	ghcid --command="cabal repl lambda-test" --test=":main"
+	ghcid --command="cabal repl lambda-test" --test=":main" --restart=src
 
 # Clean build artifacts
 clean:

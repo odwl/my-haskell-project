@@ -42,6 +42,7 @@ library
     Lambda.Functor
     Lambda.HoverDam
     Lambda.Interpreter
+    Lambda.ListAverage
     Lambda.Parser
     Lambda.RandomWalk
     Lambda.State
@@ -73,6 +74,7 @@ test-suite lambda-test
     Lambda.FunctorTestUtils
     Lambda.HoverDamTest
     Lambda.InterpreterTest
+    Lambda.ListAverageTest
     Lambda.MonadTest
     Lambda.ParserTest
     Lambda.RandomWalkTest
@@ -126,6 +128,7 @@ test-suite all-tests
     Lambda.FunctorTestUtils
     Lambda.HoverDamTest
     Lambda.InterpreterTest
+    Lambda.ListAverageTest
     Lambda.MonadTest
     Lambda.ParserTest
     Lambda.RandomWalkTest

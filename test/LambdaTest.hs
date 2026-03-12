@@ -4,6 +4,7 @@ import Lambda
 import Lambda.FunctorTest (functorTests)
 import Lambda.HoverDamTest (hoverDamTests)
 import Lambda.InterpreterTest (interpreterTests)
+import Lambda.ListAverageTest (listAverageTests)
 import Lambda.MonadTest (monadTests)
 import Lambda.ParserTest (parserTests)
 import Lambda.RandomWalkTest (randomWalkTests)
@@ -73,5 +74,6 @@ lambdaSuite =
       interpreterTests,
       randomWalkTests,
       subdistTests,
-      hoverDamTests
+      hoverDamTests,
+      listAverageTests
     ]
