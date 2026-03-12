@@ -433,6 +433,13 @@ Since `Proxy` on both sides is an empty box, this structure holds absolutely no 
 **Haskell**: `(Proxy a, Proxy a)`.
 We must provide an empty box for the left side and an empty box for the right side. The state `(Proxy, Proxy)` is the *only* possible state this structure can ever be in. Since it has only one state, it yields zero bits of contextual information and holds zero data, bringing us right back to 1. It is isomorphic to `Proxy`.
 
+#### 5. Proxy * Identity = Identity
+**Math**: $1 \times X = X$.
+**Haskell**: `(Proxy a, Identity a)`.
+A tuple containing an empty box and a single `a`. The left side adds no data and has no alternative states. The entire structure simply holds precisely one `a`, making it perfectly isomorphic to `Identity a`.
+
+*(Notice that all the examples in this section were specifically chosen to demonstrate mathematical relations between the exact minimal Functors we have already defined. We haven't built any "new" ADTs yet!)*
+
 By treating Bifunctors as binary operators running on simple atomic Functors, we observe the foundation of Algebraic Data Types emerging exactly like fundamental school arithmetic.
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
@@ -474,7 +481,6 @@ However, to form the full "Polynomial" category that exactly matches the power o
 #### 6. Examples of Deriving Compounds
 By leveraging combinations of our extracted identities (`Zero`, `Proxy`) and fundamental functors (`Identity`), we systematically generate powerful structures using the Bifunctor operations.
 *   **Optional Data**: $1 + X$. Using Sum: `Either (Proxy a) (Identity a)` is isomorphic to `Maybe a`.
-*   **Trivial Product**: $1 \times X = X$. Using Product: `(Proxy a, Identity a)` perfectly yields `Identity a`.
 *   **Error Context**: $E + X$. `Either (Const e a) (Identity a)` gives us a computation that succeeds with an `a` or fails with an error `e`.
 *   **Logging Context**: $E \times X$. `(Const e a, Identity a)` perfectly mirrors a `Writer` log context bundled with an `a`.
 
