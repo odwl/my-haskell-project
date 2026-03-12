@@ -5,13 +5,27 @@ import Control.Monad.State
 
 -- import Data.Bifunctor (bimap)
 
--- | Returns the sum of all elements
-func1 :: [Double] -> Double
-func1 = foldl (+) 0  
+-- | Returns the sum of all elements using pattern matching
+sumCase :: [Double] -> Double
+sumCase [] = 0
+sumCase (x:xs) = x + sumCase xs
 
--- | Placeholder for the second function
-func2 :: [Double] -> Double
-func2 = foldl (\acc _ -> acc + 1) 0
+-- | Returns the sum of all elements using fold
+sumFold :: [Double] -> Double
+sumFold = foldl (+) 0  
+
+
+
+
+-- | Returns the length of the list using fold
+lenFold :: [Double] -> Double
+lenFold = foldl (\acc _ -> acc + 1) 0
+
+-- | Returns the length of the list using pattern matching
+lenCase :: [Double] -> Double
+lenCase [] = 0
+lenCase (_:xs) = 1 + lenCase xs
+
 
 -- -- | Computes sum and count in a single traversal
 sumAndCount :: [Double] -> (Double, Double)

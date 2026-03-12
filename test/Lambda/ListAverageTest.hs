@@ -11,17 +11,23 @@ listAverageTests =
     "ListAverage Tests"
     [ testGroup
         "Unit Tests"
-        [ testCase "func1 calculates the sum of elements" $
-            func1 [1.0, 2.0, 3.0, 4.0] @?= 10.0,
-          testCase "func2 calculates the length of the list" $
-            func2 [1.0, 2.0, 3.0, 4.0] @?= 4.0
+        [ testCase "sumCase calculates the sum of elements" $
+            sumCase [1.0, 2.0, 3.0, 4.0] @?= 10.0,
+          testCase "lenFold calculates the length of the list" $
+            lenFold [1.0, 2.0, 3.0, 4.0] @?= 4.0
         ],
       testGroup
         "QuickCheck"
-        [ testProperty "func1 equals sum" $ \xs ->
-            func1 xs === sum (xs :: [Double]),
-          testProperty "func2 equals length" $ \xs ->
-            func2 xs === fromIntegral (length (xs :: [Double])),
+        [ testProperty "sumCase equals sumFold" $ \xs ->
+            let diff = abs (sumCase (xs :: [Double]) - sumFold xs)
+            in diff < 1e-9,
+          testProperty "sumCase equals sum" $ \xs ->
+            let diff = abs (sumCase (xs :: [Double]) - sum xs)
+            in diff < 1e-9,
+          testProperty "lenFold equals lenCase" $ \xs ->
+            lenFold (xs :: [Double]) === lenCase xs,
+          testProperty "lenFold equals length" $ \xs ->
+            lenFold xs === fromIntegral (length (xs :: [Double])),
           testProperty "sumAndCount equals (sum, length)" $ \xs ->
             sumAndCount xs === (sum (xs :: [Double]), fromIntegral (length xs)),
           testProperty "average equals sum / length" $ \xs ->
