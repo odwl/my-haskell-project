@@ -13,6 +13,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Parametricity**: Theorems for free!
 - **Mathematical Laws**: Identity and Composition.
 - **Automated Law Testing**: Professional verification with `tasty-checkers`.
+- **Caveat: Testing vs. Proof**: The probabilistic nature of property-based testing.
 - **Categorical Functors that are not Haskell Functors**: Verifying identity on subcategories.
 - **Law-Breaking Functors (Non-Valid)**: Breaking identity with parametric side-effects.
 
