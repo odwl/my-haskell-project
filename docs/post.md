@@ -484,6 +484,8 @@ When you use the identity $I$ to perform your partial application, the choice is
 
 By taking that uniquely canonical identity $I$ and turning it into a constant mapping, we establish the fundamental "Atomic" Functor for that operation naturally. We create a Constant Functor $C(A) = I$.
 
+*(Technical Note: In Haskell, a "Natural Transformation" between two Functors `f` and `g` is exactly the type signature `forall a. f a -> g a`. When we say $B(I, A)$ naturally resolves to $A$, it means we can write a perfect Natural Transformation mapping without losing or inventing data. For example, for the Product `(,)` with identity `()`, the natural transformation to `Identity` is literally just `snd :: forall a. ((), a) -> a`! For Sum `Either` with identity `Void`, it is `extract :: forall a. Either Void a -> a` via absurd. It is a mathematical guarantee encoded seamlessly into the language.)*
+
 Let's classify the "zoo" of Bifunctors we have seen so far based on this profound property:
 *   **No Identity**: Bifunctors like `BiProxy` or `ConstContext` have neither a left nor a right identity. To extract a Functor from them, you are forced to make an arbitrary, non-natural choice!
 *   **Left Identity Only**: The function arrow `(->)` is a profound binary operation. It only possesses a left identity `()` (since `() -> a` is isomorphic to exactly one `a`, but `a -> ()` is not `a`). 
