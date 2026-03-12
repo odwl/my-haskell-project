@@ -461,7 +461,15 @@ However, things get deeply interesting when we take a *set* of two orthogonal in
 #### 5. Is an Identity strictly required?
 Must every Bifunctor in our set have an identity? Not necessarily! It is mathematically perfectly valid to consider a set of Bifunctors where only some (or none) have identities (this essentially forms a non-unital algebraic structure). 
 
-However, to form the full "Polynomial" category that exactly matches the power of computer science ADTs, *both* of our fundamental operations ($+$ and $\times$) require their natural identities ($0$ and $1$) to terminate data structures (like using $1$ as the empty `Nil` constructor ending a `List`). 
+But does this restricted set generate an *interesting* subcategory of functors? Absolutely! Let's say we have our two fundamental bifunctors ($+$ and $\times$). Let's assume we possess the Sum Identity $0$ (the `Void` type) but we **do not possess** the Product Identity $1$ (the `()` type/`Proxy`). 
+
+By missing $1$, we can never create a "Nil" or an "Empty" constructor to terminate our recursive shapes. As a profound result, the closure of our variables with merely $\{+, \times, 0\}$ mathematically generates the incredibly restrictive *Subcategory of Non-Empty Data Structures*:
+*   **The Non-Empty List**: $NEL(A) = A + A \times NEL(A)$. (Haskell's `Data.List.NonEmpty`).
+*   **The Un-emptyable Tree**: $Tree(A) = A + Tree(A) \times Tree(A)$. (A tree where every leaf must have a value).
+
+This subcategory guarantees—at the compiler level—that every single structure geometrically contains at least one $A$. The absence of the mathematical $1$ identity is exactly what powers this profound property!
+
+However, to form the full "Polynomial" category that exactly matches the power of general computer science ADTs, *both* of our fundamental operations ($+$ and $\times$) require their natural identities ($0$ and $1$) to terminate data structures (like using $1$ as the empty `Nil` constructor ending a `List`). 
 
 #### The Ultimate Closure: Bicartesian Closed Categories (BCC)
 So, we have established our two algebraic bifunctors (Sum and Product) and derived their natural identity atoms ($0$ and $1$). What happens if we take exactly these, and add our third non-algebraic bifunctor: the **Exponential** (`->`)?

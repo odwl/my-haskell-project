@@ -53,7 +53,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **2. Extracting Functors**: Creating constant Functors (`Zero`, `Proxy`) naturally from Bifunctor identities (`Void`, `()`).
 - **3. Sub-Category Closures**: Why applying a single bifunctor and its identity leads to a trivial, flat lineage.
 - **4. Polynomial Functors**: The magic of combining multiple interacting bifunctors (+ and $\times$) to generate infinitely rich families (ADTs).
-- **5. Is Identity Required?**: Validating non-unital bifunctor sets vs. the necessity of 0 and 1 closures for terminating computational data structures.
+- **5. Is Identity Required?**: Validating non-unital bifunctor sets. A profound example: generating the strictly **Non-Empty** subcategory of data structures (`Data.List.NonEmpty`) by possessing Sum ($+$) and Product ($\times$) but explicitly missing the Product identity $1$.
 - **The Ultimate Closure**: Sum (+), Product (*), and Exponential (`->`) perfectly close to form a **Bicartesian Closed Category (BCC)**, creating the mathematical foundation of typed programming.
 
 ### Section 1.5: Generating Functor Subcategories (The Algebra as a Special Case)
