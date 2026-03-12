@@ -25,6 +25,8 @@ listAverageTests =
           testProperty "sumAndCount equals (sum, length)" $ \xs ->
             sumAndCount xs === (sum (xs :: [Double]), fromIntegral (length xs)),
           testProperty "average equals sum / length" $ \xs ->
-            not (null xs) ==> average (xs :: [Double]) === sum xs / fromIntegral (length xs)
+            not (null xs) ==> average (xs :: [Double]) === sum xs / fromIntegral (length xs),
+          testProperty "sumAndCount variants are equivalent" $ \xs ->
+            sumAndCount (xs :: [Double]) === sumAndCountMonadic xs
         ]
     ]
