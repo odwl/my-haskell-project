@@ -1,7 +1,8 @@
 module Lambda.ListAverage where
 
 import Control.Monad.State
-
+import Data.Monoid (Sum(..), getSum)
+import Data.Functor.Const (Const(..), getConst)
 
 -- import Data.Bifunctor (bimap)
 
@@ -14,8 +15,13 @@ sumCase (x:xs) = x + sumCase xs
 sumFold :: [Double] -> Double
 sumFold = foldl (+) 0  
 
+-- | Returns the sum of all elements using monoid map
+sumMonoid :: [Double] -> Double
+sumMonoid = getSum . foldMap Sum
 
-
+-- | Returns the sum using Applicative '<*>' on Const (Sum Double)
+sumApplicative :: [Double] -> Double
+sumApplicative = getSum . getConst . traverse (Const . Sum)
 
 -- | Returns the length of the list using fold
 lenFold :: [Double] -> Double
