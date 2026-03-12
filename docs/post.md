@@ -469,9 +469,15 @@ In mathematical systems, we often don't just invent the "atomic" elements out of
 Let's break down exactly how this natural extraction works.
 #### 1. Extracting a Functor from a Bifunctor
 
-How do we extract a standard Functor out of a generic Bifunctor? Technically, we can *always* extract a Functor simply by fixing one side to an arbitrary type $T$ (so $F(A) = B(T, A)$). This is mathematically just partial application.
+How do we extract a standard Functor out of a generic Bifunctor? Technically, we can *always* extract a Functor simply by fixing one of the two type arguments to an arbitrary type $T$ (so $F(A) = B(T, A)$). This is mathematically just partial application!
 
-However, making a random, arbitrary choice of $T$ is not a "natural" mathematical progression. When you arbitrarily choose a type $T$ to partially apply, you are making an ad-hoc, manual decision. There are infinite possible choices, and none of them are mathematically "more correct" than the others. 
+For example:
+*   Instead of $A + B$, we fix the left side to `String`: `Either String a`. This yields a Functor representing a computation that either succeeds with an `a` or fails with a `String` error.
+*   Instead of $A \times B$, we fix the left side to `Int`: `(Int, a)`. This yields a Functor that simply packages an arbitrary integer alongside an `a`.
+
+*(Note: Because a true Bifunctor is mathematically covariant in both arguments, fixing either the left side $B(T, A)$ or the right side $B(A, T)$ yields a perfectly valid Functor! However, in Haskell, type lambdas are partially applied left-to-right, making fixing the left side the native default syntax).*
+
+However, making a random, arbitrary choice of $T$ (like picking `String` or `Int` out of millions of possible types) is not a "natural" mathematical progression. When you arbitrarily choose a type $T$ to partially apply, you are making an ad-hoc, manual decision. There are infinite possible choices, and none of them are mathematically "more correct" than the others.
 
 For a completely generic Bifunctor with no special algebraic properties, making an arbitrary choice like this might be the only way to extract a Functor.
 
