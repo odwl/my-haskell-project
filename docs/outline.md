@@ -51,8 +51,8 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **The Ordinals**: Showing how `Const r` mathematically maps to $0$, $1$, and $2$ based on inhabited states now that $+$ and $\times$ are defined.
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
-- **1. What is an Identity?**: Defining an identity via simple binary neutrality ($B(A, I) \cong A$). (A precursor to true Tensor Products).
-- **2. Extracting Functors**: Creating constant Functors (`Zero`, `Proxy`) naturally from Bifunctor identities (`Void`, `()`).
+- **1. Extracting a Functor from a Bifunctor**: Explaining partial application and why picking an arbitrary type $T$ is not mathematically "natural".
+- **2. Bifunctors with Identity ("Naturality")**: How possessing a left or right identity forces a unique canonical choice. Classifying our zoo of bifunctors (`BiProxy`, `->`, `Either`, `(,)`).
 - **3. Sub-Category Closures**: Why applying a single bifunctor and its identity leads to a trivial, flat lineage.
 - **4. Polynomial Functors**: The magic of combining multiple interacting bifunctors (+ and $\times$) to generate infinitely rich families (ADTs).
 - **5. Is Identity Required?**: Validating non-unital bifunctor sets. A profound example: generating the strictly **Non-Empty** subcategory of data structures (`Data.List.NonEmpty`) by possessing Sum ($+$) and Product ($\times$) but explicitly missing the Product identity $1$.

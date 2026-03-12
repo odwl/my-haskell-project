@@ -464,22 +464,32 @@ By treating Bifunctors as binary operators running on simple atomic Functors, we
 
 In mathematical systems, we often don't just invent the "atomic" elements out of thin air. We derive them from the operations themselves. 
 
-#### 1. What does it mean for a Bifunctor to have an Identity?
-For a Bifunctor $B(-, -)$ to have a natural "identity", it must act as a combining operation that leaves elements unchanged when paired with a specific type $I$. At its absolute bare minimum, we just need a **left identity** or a **right identity**: does there exist a type $I$ such that plugging in any type $A$ yields $B(I, A) \cong A$ (left identity) or $B(A, I) \cong A$ (right identity)?
+#### 1. Extracting a Functor from a Bifunctor
 
-*(Note: If a binary operation has both, math dictates they must be the identical type. If this operation is also associative—which `Either` and `(,)` are—mathematicians formally call this operation a **Tensor Product**. But right now, we don't need strict associativity laws; we just need the simple identity property! The function arrow `(->)` is a great example: it is entirely non-associative and only possesses a left identity `()`, yet it is a perfectly profound binary operation!)*
+How do we extract a standard Functor out of a generic Bifunctor? Technically, we can *always* extract a Functor simply by fixing one side to an arbitrary type $T$ (so $F(A) = B(T, A)$). This is mathematically just partial application.
 
-If the answer is yes, then $I$ is the atomic identity type for that Bifunctor. 
+However, making a random, arbitrary choice of $T$ is not a "natural" mathematical progression. When you arbitrarily choose a type $T$ to partially apply, you are making an ad-hoc, manual decision. There are infinite possible choices, and none of them are mathematically "more correct" than the others. 
 
-#### 2. Extracting a Functor from an Identity ("Naturality")
-What if a Bifunctor doesn't have an identity? Technically, you can *always* extract a standard Functor out of *any* Bifunctor simply by fixing one side to an arbitrary type $T$ (e.g., $F(A) = B(T, A)$). This is mathematically just partial application. 
+For a completely generic Bifunctor with no special algebraic properties, making an arbitrary choice like this might be the only way to extract a Functor.
 
-However, making a random, arbitrary choice of $T$ is not a "natural" mathematical progression. There are as many of these arbitrary Functors as there are types in the universe.
+#### 2. Bifunctors with Identity ("Naturality")
 
-But when a Bifunctor *does* possess a true identity $I$, we don't have to make a random choice. The structure uniquely dictates exactly what type to use! By taking that uniquely canonical identity $I$ and turning it into a constant mapping, we establish the fundamental "Atomic" Functor for that operation naturally. We create a Constant Functor $C(A) = I$.
-For example:
-*   The **Sum Bifunctor** (`Either` or $+$) has the mathematical identity $0$ (the `Void` type, since $A + 0 \cong A$). From this, we extract the constant functor `Const Void` (or `Zero`).
-*   The **Product Bifunctor** (`(,)` or $\times$) has the mathematical identity $1$ (the `()` type, since $A \times 1 \cong A$). From this, we extract the constant functor `Const ()` (or `Proxy`).
+But if the Bifunctor has a special structural property—such as possessing a left and/or right identity element—then it is better to find a more natural way to extract a Functor! 
+
+At its absolute bare minimum, we just need a **left identity** or a **right identity**: does there exist a type $I$ such that plugging in any type $A$ yields $B(I, A) \cong A$ (left identity) or $B(A, I) \cong A$ (right identity)?
+
+*(Note: If a binary operation has both, math dictates they must be the identical type $I$!)*
+
+When you use the identity $I$ to perform your partial application, the choice is no longer yours—the inherent structure of the Bifunctor *forces* its own unique canonical choice onto you! That uniqueness is exactly what "naturality" refers to in this context: it arises purely from the structure itself, independent of arbitrary external choices.
+
+By taking that uniquely canonical identity $I$ and turning it into a constant mapping, we establish the fundamental "Atomic" Functor for that operation naturally. We create a Constant Functor $C(A) = I$.
+
+Let's classify the "zoo" of Bifunctors we have seen so far based on this profound property:
+*   **No Identity**: Bifunctors like `BiProxy` or `ConstContext` have neither a left nor a right identity. To extract a Functor from them, you are forced to make an arbitrary, non-natural choice!
+*   **Left Identity Only**: The function arrow `(->)` is a profound binary operation. It only possesses a left identity `()` (since `() -> a` is isomorphic to exactly one `a`, but `a -> ()` is not `a`). 
+*   **Full Identity**:
+    *   The **Sum Bifunctor** (`Either` or $+$) has the two-sided mathematical identity $0$ (the `Void` type, since $A + 0 \cong A$). From this, we gracefully extract the constant functor `Const Void` (or `Zero`).
+    *   The **Product Bifunctor** (`(,)` or $\times$) has the two-sided mathematical identity $1$ (the `()` type, since $A \times 1 \cong A$). From this, we extract the constant functor `Const ()` (or `Proxy`).
 
 *(Note: This means mathematically, `Proxy` is not truly the "simplest"—it is simply $1$. `Const Void` is strictly smaller as it is exactly $0$!)*
 
