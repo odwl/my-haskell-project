@@ -465,14 +465,16 @@ By treating Bifunctors as binary operators running on simple atomic Functors, we
 In mathematical systems, we often don't just invent the "atomic" elements out of thin air. We derive them from the operations themselves. 
 
 #### 1. What does it mean for a Bifunctor to have an Identity?
-For a Bifunctor $B(-, -)$ to have a natural "identity", it must act as a combining operation that leaves elements unchanged when paired with a specific type $I$. At its core, we are just asking if this binary operation has a neutral element: does there exist a type $I$ such that plugging in any type $A$ yields $B(A, I) \cong A$ and $B(I, A) \cong A$? 
+For a Bifunctor $B(-, -)$ to have a natural "identity", it must act as a combining operation that leaves elements unchanged when paired with a specific type $I$. At its absolute bare minimum, we just need a **left identity** or a **right identity**: does there exist a type $I$ such that plugging in any type $A$ yields $B(I, A) \cong A$ (left identity) or $B(A, I) \cong A$ (right identity)?
 
-*(Note: If this operation is also associative—which `Either` and `(,)` are—mathematicians formally call this operation a **Tensor Product** and the identity type its unit, completely forming a Monoidal Category. But right now, we don't need the strict associativity laws (the pentagon and triangle equations); we just need the simple identity property!)*
+*(Note: If a binary operation has both, math dictates they must be the identical type. If this operation is also associative—which `Either` and `(,)` are—mathematicians formally call this operation a **Tensor Product**. But right now, we don't need strict associativity laws; we just need the simple identity property! The function arrow `(->)` is a great example: it is entirely non-associative and only possesses a left identity `()`, yet it is a perfectly profound binary operation!)*
 
-If the answer is yes, then $I$ is the identity type for that Bifunctor. 
+If the answer is yes, then $I$ is the atomic identity type for that Bifunctor. 
 
 #### 2. Extracting a Functor from an Identity
-Once we discover this identity type $I$, there is a natural way to extract a completely independent Functor from it: by "partially applying" the type $I$ into a constant mapping. We create a Constant Functor $C(A) = I$.
+What if a Bifunctor doesn't have an identity? Technically, you can *always* extract a standard Functor out of *any* Bifunctor simply by fixing one side to an arbitrary type $T$ (e.g., $F(A) = B(T, A)$). This is mathematically just partial application. 
+
+But when a Bifunctor *does* possess a true identity $I$, we get something much more profound: the fundamental "Atomic" Functor for that operation! By taking that identity $I$ and turning it into a constant mapping, we create a Constant Functor $C(A) = I$.
 For example:
 *   The **Sum Bifunctor** (`Either` or $+$) has the mathematical identity $0$ (the `Void` type, since $A + 0 \cong A$). From this, we extract the constant functor `Const Void` (or `Zero`).
 *   The **Product Bifunctor** (`(,)` or $\times$) has the mathematical identity $1$ (the `()` type, since $A \times 1 \cong A$). From this, we extract the constant functor `Const ()` (or `Proxy`).
