@@ -493,6 +493,8 @@ At its absolute bare minimum, we just need a **left identity** or a **right iden
 
 When you use the identity $I$ to perform your partial application, the choice is no longer yours—the inherent structure of the Bifunctor *forces* its own unique canonical choice onto you! That uniqueness is exactly what "naturality" refers to in this context: it arises purely from the structure itself, independent of arbitrary external choices.
 
+This **"forced hand"** is exactly what we are aiming for. In functional programming, we are deeply interested in this kind of **intellectual economy**: we want to identify and produce foundational Functors that have exactly *one* mathematically unique implementation. By relying on naturality, we eliminate arbitrary decisions and derive primitive structures that are completely "correct by construction."
+
 By taking that uniquely canonical identity $I$ and turning it into a constant mapping, we establish the fundamental "Atomic" Functor for that operation naturally. We create a Constant Functor $C(A) = I$.
 
 *(Technical Note: In Haskell, a "Natural Transformation" between two Functors `f` and `g` is exactly the type signature `forall a. f a -> g a`. When we say $B(I, A)$ naturally resolves to $A$, it means we can write a perfect Natural Transformation mapping without losing or inventing data. For example, for the Product `(,)` with identity `()`, the natural transformation to `Identity` is literally just `snd :: forall a. ((), a) -> a`! For Sum `Either` with identity `Void`, it is `extract :: forall a. Either Void a -> a` via absurd. It is a mathematical guarantee encoded seamlessly into the language.)*
