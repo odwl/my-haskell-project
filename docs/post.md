@@ -163,8 +163,26 @@ These minimal structures act as the "atoms" from which the rest of the algebraic
 
 #### Minimal Functors
 
-#### 1. The Smallest Candidate: `Proxy`
-*(Zero computational data, Zero contextual data).*
+#### 1. The Absolute Bottom: `Zero`
+*(Zero constructors, Zero computational data, Zero contextual data).*
+
+The mathematically absolute smallest possible Functor has no constructors at all. It represents an uninhabited type—it's mathematically impossible to construct a value of this type. It represents total "nothingness".
+
+```haskell
+{-# LANGUAGE EmptyCase #-}
+
+data Zero a -- No constructors!
+
+instance Functor Zero where
+    fmap _ z = case z of {} 
+```
+
+**The "Why"**: Because `Zero a` has no constructors, we can never actually instantiate it at runtime. However, the type signature `(a -> b) -> Zero a -> Zero b` is perfectly valid. If we were somehow handed a value `z` of type `Zero a`, we prove to the compiler we can produce a `Zero b` by pattern matching on its non-existent constructors, leading to an empty case.
+
+*(Note: In GHC's Generic programming library, this exact structure is known as `V1` for "Void 1-parameter".)*
+
+#### 2. The Empty Box: `Proxy`
+*(One constructor, Zero computational data, Zero contextual data).*
 
 The smallest possible Functor holds absolutely the minimum amount of data: **none**.
 ```haskell
@@ -185,11 +203,14 @@ instance Functor Proxy where
 
 *(Note: As proven by Wadler's "Theorems for free!", satisfying the Identity law automatically guarantees the Composition law for any parametrically polymorphic functor. We explicitly verify both here and throughout this section purely for the sake of a complete, explicit proof).*
 
-#### 2. The Constant Context: `Const r`
+#### 3. The Constant Context: `Const r`
 *(Zero computational data, Some contextual data `r`).*
 
 If `Proxy` holds no data, `Const` holds zero *computational* data `a`, but stores an orthogonal contextual value `r`. (We will see later in Chapter 2 that this structure acts as an "Accumulator" once it is upgraded to an `Applicative`). 
-*(Note that if we specialize `r` to the unit type `()`, we get `Const ()`, which holds exactly zero term-level data. Thus, `Proxy` is mathematically isomorphic to `Const ()`. They are not literally the same type (a `type` synonym), but they encode the exact same information: nothing! You can translate back and forth between `Proxy` and `Const ()` without losing any data).*
+
+**Notes on Specializing `Const`:**
+*   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor.
+*   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data.
 ```haskell
 newtype Const r a = Const r
 ```
@@ -204,7 +225,7 @@ instance Functor (Const r) where
 *   *Identity*: `fmap id (Const r) == Const r == id (Const r)`
 *   *Composition*: `fmap (f . g) (Const r) == Const r == fmap f (Const r) == fmap f (fmap g (Const r))`
 
-#### 3. The Wrapper: `Identity`
+#### 4. The Wrapper: `Identity`
 *(One computational data, Zero contextual data).*
 
 Next is the minimal structure with exactly *one* value: a transparent wrapper.

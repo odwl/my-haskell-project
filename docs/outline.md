@@ -26,8 +26,9 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 > *Focus: Atoms at the Functor level only.*
 
 #### Minimal Functors
-- **`Proxy` (Zero)**: Empty box; `fmap` MUST ignore the function.
-- **`Const r` (Constant Context)**: Context-only; no computational data.
+- **`Zero` (Uninhabited)**: The absolute bottom; zero constructors, mathematically impossible to instantiate.
+- **`Proxy` (The Empty Box)**: One constructor; `fmap` MUST ignore the function.
+- **`Const r` (Constant Context)**: Context-only. Includes notes on `Const Void` (isomorphic to `Zero`) and `Const ()` (isomorphic to `Proxy`).
 - **`Identity` (One)**: Transparency; mapping forced by possession of `a`.
 - **`(->) r` (The Exponential)**: The Reader function; infinite delayed computational data via domain `r`.
 
