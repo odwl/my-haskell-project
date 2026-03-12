@@ -185,6 +185,14 @@ instance Functor IdF where
 
 ### Section 1.3: The Algebra of Functors
 
+So far we have looked at the building blocks:
+1.  **`Const r`**: Represents a constant value independent of `a`.
+2.  **`Identity`**: Represents the parameter itself ($X$).
+
+Every other algebraic data type in Haskell can be built by **summing** (Alternative constructors) and **multiplying** (Multiple fields) these blocks together!
+
+### Section 1.4: Polynomial Functors
+
 The relationship between Category Theory and Haskell's **Algebraic Data Types (ADTs)** is formalized through **Polynomial Functors**.
 
 If a functor is built solely from:
@@ -195,13 +203,7 @@ If a functor is built solely from:
 
 ... it is a **Polynomial Functor**. Most standard Haskell ADTs (like `Maybe`, `Either`, and non-recursive records) are polynomial. They are the "algebra" of types, where complex structures are discovered by summing and multiplying simpler ones.
 
-So far we have looked at the building blocks:
-1.  **`Const r`**: Represents a constant value independent of `a`.
-2.  **`Identity`**: Represents the parameter itself ($X$).
-
-Every other algebraic data type in Haskell can be built by **summing** (Alternative constructors) and **multiplying** (Multiple fields) these blocks together!
-
-### Section 1.4: Discovering Molecules (Compounds)
+### Section 1.5: Discovering Molecules (Compounds)
 
 Using these "atoms," let's see how we can discover the rest of the Haskell universe.
 
@@ -230,7 +232,7 @@ By using both Sums and Products with **Recursion**, we can build a list. A list 
 *   **Proxy + Proxy = Const Bool**: Summing two Proxies creates two possible empty states. `Either () ()` is isomorphic to a Boolean. Mathematically: $1 + 1 = 2$.
 *   **Proxy * Proxy = Proxy**: A product of two empty boxes remains an empty box. Mathematically: $1 \times 1 = 1$.
 
-### Section 1.5: Final Summary of Functors
+### Section 1.6: Final Summary of Functors
 
 At this level, Functors are entirely about **Shape and Preservation**. Whether we are dealing with an empty box (`Proxy`), a wrapper (`Identity`), or an infinite chain (`List`), `fmap` ensures that the structure of the data remains physically identical while the values inside are transformed.
 

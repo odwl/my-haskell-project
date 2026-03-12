@@ -23,17 +23,19 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **`Identity` (One)**: Transparency; mapping forced by possession of `a`.
 
 ### Section 1.3: The Algebra of Functors
-- **Polynomial Functors**: The relationship between Category Theory and ADTs.
 - **Atoms to Molecules**: Summing (+) and Multiplying (*) block construction.
 
-### Section 1.4: Discovering Molecules (Compounds)
+### Section 1.4: Polynomial Functors
+- **Polynomial Functors**: The relationship between Category Theory and ADTs.
+
+### Section 1.5: Discovering Molecules (Compounds)
 - **`Maybe`**: $1 + X$ (Sum of Proxy and Identity).
 - **`Writer`**: $r \times X$ (Product of Const and Identity).
 - **`List`**: $1 + X \times L(X)$ (Recursive chain).
 - **Fixed Points**: Shape equations (Lists vs. Trees).
 - **Proxy Math**: $1 + 1 = 2$ (`Const Bool`) and $1 \times 1 = 1$.
 
-### Section 1.5: Summary & Bundle Taxonomy
+### Section 1.6: Summary & Bundle Taxonomy
 - **Summary**: Shape and Preservation.
 - **Taxonomy**: When to use `type`, `newtype`, or `data`.
 
@@ -43,7 +45,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Applicative Laws**: Predictable sequencing.
 - **Section 2.2: Automated Law Testing**: Using `testBatch` for Applicatives.
 
-### Section 2.2: Upgrading the Atoms
+### Section 2.3: Upgrading the Atoms
 - **`Proxy`**: Trivial upgrade.
 - **`Const r` (The Monoid Twist)**: Why `Applicative` necessitates `mempty` and `mappend`.
 - **`Identity`**: Trivial application.
@@ -54,7 +56,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Categorical Mu**: `join` as the foundational flattening operation.
 - **Section 3.2: Automated Law Testing**: Using `testBatch` for Monads.
 
-### Section 3.2: The Final Evolution
+### Section 3.3: The Final Evolution
 - **`Proxy` & `Identity`**: Trivial upgrades.
 - **`Const r` (The Monad Barrier)**: Why the evolution stops; violating the Left Identity law.
 
