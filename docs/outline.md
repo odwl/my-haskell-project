@@ -40,7 +40,15 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Product (`(,)`)**: The fundamental product operation of two types.
 - **`BiReader r` (Dual Exponential)**: The delayed computation of a tuple.
 
-### Section 1.3: Deriving the Atoms from Bifunctors
+### Section 1.3: Bifunctors as Binary Operations on Functors
+- **Binary Operator**: Treating $H(x) = B(F(x), G(x))$ as combinatorial arithmetic of functors.
+- **Minimal Examples**:
+  - $0 + 1 = 1$: `Either (Zero a) (Proxy a)` isomorphic to `Proxy`.
+  - $0 \times 1 = 0$: `(Zero a, Proxy a)` isomorphic to `Zero`.
+  - $1 + 1 = 2$: `Either (Proxy a) (Proxy a)` isomorphic to `Const Bool`.
+  - $1 \times 1 = 1$: `(Proxy a, Proxy a)` isomorphic to `Proxy`.
+
+### Section 1.4: Deriving the Atoms from Bifunctors
 - **1. What is an Identity?**: Defining an identity via Tensor Products (mathematical neutrality: $B(A, I) \cong A$).
 - **2. Extracting Functors**: Creating constant Functors (`Zero`, `Proxy`) naturally from Bifunctor identities (`Void`, `()`).
 - **3. Sub-Category Closures**: Why applying a single bifunctor and its identity leads to a trivial, flat lineage.
@@ -48,7 +56,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **5. Is Identity Required?**: Validating non-unital bifunctor sets vs. the necessity of 0 and 1 closures for terminating computational data structures.
 - **The Ultimate Closure**: Sum (+), Product (*), and Exponential (`->`) perfectly close to form a **Bicartesian Closed Category (BCC)**, creating the mathematical foundation of typed programming.
 
-### Section 1.4: Generating Functor Subcategories (The Algebra as a Special Case)
+### Section 1.5: Generating Functor Subcategories (The Algebra as a Special Case)
 - **Closure of Bifunctors**: Generating a subcategory of functors from a starting set of bifunctors.
 - **What "Algebraic" means**: A specialized subcategory generated strictly by adding (Sum) and multiplying (Product) atoms, excluding Exponentials.
 - **The Algebra of Functors (1D)**: Summing (+) and Multiplying (*) single-variable building blocks.
@@ -57,17 +65,17 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Proxy Math**: $1 + 1 = 2$ (`Const Bool`) and $1 \times 1 = 1$.
 - **The Algebra of Bifunctors (2D)**: Extending the exact same algebra to two-variable polynomials (`ConstLeft`, `ConstRight`).
 
-### Section 1.5: Polynomial Functors
+### Section 1.6: Polynomial Functors
 - **Polynomial Functors**: The relationship between Category Theory and ADTs.
 - **Why the Name "Polynomial"?**: Exploring the $1 + X + X^2$ shape equations mapping directly to types.
 
-### Section 1.6: The Parallel Functor Ecosystem
+### Section 1.7: The Parallel Functor Ecosystem
 - **Bifunctors**: Product category ($* \to * \to *$).
 - **Contravariant**: Opposite category ($Hask^{op} \to Hask$).
 - **Profunctors**: Mixed variance mapping.
 - **MonoFunctor (`mono-traversable`)**: Mapping monomorphic or constrained structures (`Data.Set`).
 
-### Section 1.7: Discovering Molecules (Compounds)
+### Section 1.8: Discovering Molecules (Compounds)
 - **`Maybe`**: $1 + X$ (Sum of Proxy and Identity).
 - **`Writer`**: $r \times X$ (Product of Const and Identity).
 - **`List`**: $1 + X \times L(X)$ (Recursive chain).
