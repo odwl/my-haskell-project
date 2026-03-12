@@ -211,7 +211,7 @@ Before moving to Applicatives, remember the three tools Haskell gives us to bund
 
 Now we step up in power. An `Applicative` is a Functor equipped with two new powers: `pure` (to lift values) and `<*>` (to lift application).
 
-### Section 5.1: The Applicative Atoms
+### Section 2.1: The Applicative Atoms
 
 Let's see how our atomic structures "upgrade" to this new level.
 
@@ -243,13 +243,22 @@ instance Applicative IdF where
 ```
 **The "Why"**: Trivial application. We unwrap, apply, and rewrap.
 
+### Section 2.2: Automated Law Testing
+
+Just as with Functors, we can verify our Applicative instances using `tasty-checkers`. This is where the library truly shines, as the number of Applicative laws (Identity, Homomorphism, Interchange, and Composition) is significantly higher:
+
+```haskell
+  -- Automatically tests all Applicative laws
+  testBatch (applicative (undefined :: Maybe (Int, String, Int)))
+```
+
 ---
 
 ## Chapter 3: The Monadic Conclusion
 
 The `Monad` adds the power of **Context-Dependent Sequencing** via `bind` (`>>=`) or `join`.
 
-### Section 6.1: The Final Upgrades
+### Section 3.1: The Final Upgrades
 
 #### 1. `MinF` (`Proxy`)
 ```haskell
@@ -271,6 +280,15 @@ Pure function application.
 (>>=) :: Const r a -> (a -> Const r b) -> Const r b
 ```
 Because `Const` contains no `a`, we can never execute the function `(a -> Const r b)`. We completely lose whatever `r` value the function *would* have produced, violating the **Left Identity law** (`pure a >>= f == f a`). The evolution stops here.
+
+### Section 3.2: Automated Law Testing
+
+Finally, we can verify our Monad instances (Left Identity, Right Identity, and Associativity) with a single check:
+
+```haskell
+  -- Automatically tests all Monad laws
+  testBatch (monad (undefined :: Maybe (Int, String, Int)))
+```
 
 ---
 

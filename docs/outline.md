@@ -39,6 +39,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 ### Section 2.1: Foundations
 - **Powers**: `pure` (lifting values) and `<*>` (lifting application).
 - **Applicative Laws**: Predictable sequencing.
+- **Section 2.2: Automated Law Testing**: Using `testBatch` for Applicatives.
 
 ### Section 2.2: Upgrading the Atoms
 - **`Proxy`**: Trivial upgrade.
@@ -49,6 +50,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 ### Section 3.1: Foundations
 - **The Monadic Triad**: Bind, Join, Kleisli.
 - **Categorical Mu**: `join` as the foundational flattening operation.
+- **Section 3.2: Automated Law Testing**: Using `testBatch` for Monads.
 
 ### Section 3.2: The Final Evolution
 - **`Proxy` & `Identity`**: Trivial upgrades.
