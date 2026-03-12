@@ -1,19 +1,22 @@
 module Lambda.ListAverage where
 
 import Control.Monad.State
-import Data.Monoid (Sum(..), getSum)
-import Data.Functor.Const (Const(..), getConst)
+import Data.Functor.Const (Const (..), getConst)
+import Data.Monoid (Sum (..), getSum)
 
 -- import Data.Bifunctor (bimap)
 
 -- | Returns the sum of all elements using pattern matching
+{-# ANN sumCase "HLint: ignore Use foldr" #-}
+{-# ANN sumCase "HLint: ignore Use sum" #-}
 sumCase :: [Double] -> Double
 sumCase [] = 0
-sumCase (x:xs) = x + sumCase xs
+sumCase (x : xs) = x + sumCase xs
 
 -- | Returns the sum of all elements using fold
+{-# ANN sumFold "HLint: ignore Use sum" #-}
 sumFold :: [Double] -> Double
-sumFold = foldl (+) 0  
+sumFold = foldl (+) 0
 
 -- | Returns the sum of all elements using monoid map
 sumMonoid :: [Double] -> Double
@@ -30,7 +33,7 @@ lenFold = foldl (\acc _ -> acc + 1) 0
 -- | Returns the length of the list using pattern matching
 lenCase :: [Double] -> Double
 lenCase [] = 0
-lenCase (_:xs) = 1 + lenCase xs
+lenCase (_ : xs) = 1 + lenCase xs
 
 -- | Returns the sum of all elements
 mySum :: [Double] -> Double
