@@ -471,10 +471,12 @@ For a Bifunctor $B(-, -)$ to have a natural "identity", it must act as a combini
 
 If the answer is yes, then $I$ is the atomic identity type for that Bifunctor. 
 
-#### 2. Extracting a Functor from an Identity
+#### 2. Extracting a Functor from an Identity ("Naturality")
 What if a Bifunctor doesn't have an identity? Technically, you can *always* extract a standard Functor out of *any* Bifunctor simply by fixing one side to an arbitrary type $T$ (e.g., $F(A) = B(T, A)$). This is mathematically just partial application. 
 
-But when a Bifunctor *does* possess a true identity $I$, we get something much more profound: the fundamental "Atomic" Functor for that operation! By taking that identity $I$ and turning it into a constant mapping, we create a Constant Functor $C(A) = I$.
+However, making a random, arbitrary choice of $T$ is not a "natural" mathematical progression. There are as many of these arbitrary Functors as there are types in the universe.
+
+But when a Bifunctor *does* possess a true identity $I$, we don't have to make a random choice. The structure uniquely dictates exactly what type to use! By taking that uniquely canonical identity $I$ and turning it into a constant mapping, we establish the fundamental "Atomic" Functor for that operation naturally. We create a Constant Functor $C(A) = I$.
 For example:
 *   The **Sum Bifunctor** (`Either` or $+$) has the mathematical identity $0$ (the `Void` type, since $A + 0 \cong A$). From this, we extract the constant functor `Const Void` (or `Zero`).
 *   The **Product Bifunctor** (`(,)` or $\times$) has the mathematical identity $1$ (the `()` type, since $A \times 1 \cong A$). From this, we extract the constant functor `Const ()` (or `Proxy`).
