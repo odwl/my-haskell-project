@@ -4,7 +4,7 @@
 
 ## Table of Contents
 * [1. Introduction](#1-introduction)
-* [Chapter 1: The Foundations of Functors, Applicatives, and Monads](#chapter-1-the-foundations-of-functors-applicatives-and-monads)
+* [Chapter 1: The Foundations of Functors and Bifunctors](#chapter-1-the-foundations-of-functors-and-bifunctors)
   * [Section 1.1: What is a Functor?](#section-11-what-is-a-functor)
   * [Section 1.2: Minimal Functors and Bifunctors](#section-12-minimal-functors-and-bifunctors)
   * [Section 1.4: Deriving the Atoms from Bifunctors](#section-13-deriving-the-atoms-from-bifunctors)
@@ -49,7 +49,7 @@ The true protagonist of this journey is **Parametricity**. Due to parametric pol
 
 ---
 
-## Chapter 1: The Foundations of Functors, Applicatives, and Monads
+## Chapter 1: The Foundations of Functors and Bifunctors
 
 ### Section 1.1: What is a Functor?
 
@@ -176,9 +176,11 @@ instance Functor Zero where
     fmap _ z = case z of {} 
 ```
 
-**The "Why"**: Because `Zero a` has no constructors, we can never actually instantiate it at runtime. However, the type signature `(a -> b) -> Zero a -> Zero b` is perfectly valid. If we were somehow handed a value `z` of type `Zero a`, we prove to the compiler we can produce a `Zero b` by pattern matching on its non-existent constructors, leading to an empty case.
+**The "Why"**: Because `Zero a` has no constructors, we can never actually instantiate it at runtime. However, the type signature `(a -> b) -> Zero a -> Zero b` is perfectly valid. If we were somehow handed a value `z` of type `Zero a`, we prove to the compiler we can produce a `Zero b` by pattern matching on its non-existent constructors, leading to an empty case. Parametricity holds because the transformation is forced by the absolute absence of data.
 
-*(Note: In GHC's Generic programming library, this exact structure is known as `V1` for "Void 1-parameter".)*
+**Law Verification**:
+*   *Identity*: `fmap id z` where `z :: Zero a`. Pattern matching on `z` (empty case) immediately satisfies the law as no value exists to violate it.
+*   *Composition*: `fmap (f . g) z` similarly satisfies the law through the empty case logic.
 
 #### 2. The Empty Box: `Proxy`
 *(One constructor, Zero computational data, Zero contextual data).*
@@ -422,7 +424,23 @@ instance Bifunctor (BiReader r) where
 ```
 **The "Why"**: We are returning a delayed computation of a tuple. We possess a function `h :: r -> (a, b)`. We are given two mapping functions `f :: a -> c` and `g :: b -> d`. The only legal mathematical move is to intercept the environment `r` the moment it arrives, feed it to `h` to obtain our `a` and `b`, apply `f` to `a`, apply `g` to `b`, and return the newly bundled tuple. The entire pipeline is rigidly defined by the types involved.
 
-*(Note: We could also define the Sum representation $(A + B)^R$ as `r -> Either a b`, which acts via pattern matching but is constrained by the exact same strict algebraic flow).*
+**Law Verification**:
+*   *Identity*:
+    ```haskell
+    bimap id id (BiReader h) 
+    == BiReader (\r -> let (a, b) = h r in (id a, id b))
+    == BiReader (\r -> h r)
+    == BiReader h
+    ```
+*   *Composition*:
+    ```haskell
+    bimap (f . j) (g . k) (BiReader h)
+    == BiReader (\r -> let (a, b) = h r in ((f . j) a, (g . k) b))
+    == BiReader (\r -> let (a, b) = h r in (f (j a), g (k b)))
+    -- Which is equivalent to:
+    == bimap f g (BiReader (\r -> let (a, b) = h r in (j a, k b)))
+    == bimap f g (bimap j k (BiReader h))
+    ```
 
 ### Section 1.3: Bifunctors as Binary Operations on Functors
 

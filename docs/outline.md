@@ -8,13 +8,13 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Scope**: Focusing on Endofunctors within the `Hask` category.
 - **Parametricity**: The protagonist; how polymorphism forces unique implementations of `fmap`, `pure`, and `bind`.
 
-## Chapter 1: The Foundations of Functors
+## Chapter 1: The Foundations of Functors and Bifunctors
 ### Section 1.1: What is a Functor?
 - **Foundations**: Well-kindedness (`* -> *`), Unconstrained Morphism Mapping (`fmap`).
 - **Parametricity**: Theorems for free!
 - **Mathematical Laws**: Identity and Composition.
-- **Automated Law Testing**: Professional verification with `tasty-checkers`.
-- **Caveat: Testing vs. Proof**: The probabilistic nature of property-based testing.
+  - **Automated Law Testing**: Professional verification with `tasty-checkers`.
+  - **Caveat: Testing vs. Proof**: The probabilistic nature of property-based testing.
 - **Categorical Functors that are not Haskell Functors**:
   - **Bifunctors**: Wrong kind (`* -> * -> *`).
   - **Restricted Functors**: Requires constraints (e.g., `Data.Set` with `Ord`).
