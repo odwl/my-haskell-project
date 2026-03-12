@@ -1,9 +1,9 @@
 module Lambda.ListAverageTest (listAverageTests) where
 
+import Lambda.ListAverage
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Lambda.ListAverage
 
 listAverageTests :: TestTree
 listAverageTests =
@@ -11,17 +11,21 @@ listAverageTests =
     "ListAverage Tests"
     [ testGroup
         "Unit Tests"
-        [ testCase "func1 calculates the sum of elements" $
-            func1 [1.0, 2.0, 3.0, 4.0] @?= 10.0,
-          testCase "func2 calculates the length of the list" $
-            func2 [1.0, 2.0, 3.0, 4.0] @?= 4.0
+        [ testCase "mySum calculates the sum of elements" $
+            mySum [1.0, 2.0, 3.0, 4.0] @?= 10.0,
+          testCase "myCount calculates the length of the list" $
+            myCount [1.0, 2.0, 3.0, 4.0] @?= 4.0
         ],
       testGroup
         "QuickCheck"
-        [ testProperty "func1 equals sum" $ \xs ->
-            func1 xs === sum (xs :: [Double]),
-          testProperty "func2 equals length" $ \xs ->
-            func2 xs === fromIntegral (length (xs :: [Double])),
+        [ testProperty "mySum equals sum" $ \xs ->
+            mySum xs === sum (xs :: [Double]),
+          testProperty "myCount equals length" $ \xs ->
+            myCount xs === fromIntegral (length (xs :: [Double])),
+          testProperty "myCountMonoid equals myCount" $ \xs ->
+            myCountMonoid (xs :: [Double]) === myCount xs,
+          testProperty "myCountApplicative equals myCount" $ \xs ->
+            myCountApplicative (xs :: [Double]) === myCount xs,
           testProperty "sumAndCount equals (sum, length)" $ \xs ->
             sumAndCount xs === (sum (xs :: [Double]), fromIntegral (length xs)),
           testProperty "average equals sum / length" $ \xs ->
