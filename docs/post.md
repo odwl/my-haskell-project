@@ -502,6 +502,9 @@ But if the Bifunctor has a special structural property—such as possessing a le
 At its absolute bare minimum, we just need a **left identity** or a **right identity**. What does this actually mean mathematically? It means there must exist a specific type $I$ along with a perfect two-way mapping—a structural isomorphism—that proves combining $I$ with any type $A$ leaves $A$ completely unchanged (neither losing nor inventing any data):
 *   **A Left Identity** requires a structural isomorphism known as the **Left Unitor** (often denoted $\lambda$): proving $B(I, A) \cong A$.
 *   **A Right Identity** requires a structural isomorphism known as the **Right Unitor** (often denoted $\rho$): proving $B(A, I) \cong A$.
+
+**Crucial Distinction**: Do not confuse these properties with the `Bifunctor` laws! The Functor/Bifunctor laws (Identity and Composition) govern the *behavior of mapping functions* and must hold via **strict equality** (e.g., `fmap id == id`). In contrast, possessing a Left or Right Identity type is a property of the *data structure itself*, proven via **structural isomorphism** ($\cong$, meaning the shapes can losslessly map to each other even if they aren't strictly identical types).
+
 *(Note: If a binary operation has both, math dictates they must be the identical type $I$!)*
 
 When you use the identity $I$ to perform your partial application, the choice is no longer yours—the inherent structure of the Bifunctor *forces* its own unique canonical choice onto you! That uniqueness is exactly what "naturality" refers to in this context: it arises purely from the structure itself, independent of arbitrary external choices.
