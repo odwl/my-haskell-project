@@ -1074,6 +1074,12 @@ What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`
 2. **Operations with an Identity**: To be a Monoid, we must possess an identity element. We have 3 choices for our identity (let's pick `EQ`). By setting `EQ` as the identity, we instantly lock in the required answers for 5 of our 9 input pairs (e.g., `(LT, EQ) -> LT`). This leaves only 4 remaining input pairs where we still have the freedom to choose any of the 3 outputs. Therefore, there are exactly $3^4 = 81$ operations where `EQ` is the identity. Since any of the 3 elements could have been chosen, there are exactly $3 \times 81 = \mathbf{243}$ total operations that possess a valid Identity Element (these are known mathematically as *Unital Magmas*).
 3. **Operations that are Associative**: Out of those 243 Unital Magmas, we must filter out any that break the Law of Associativity `(x <> y) <> z == x <> (y <> z)`. If we explicitly calculate this for all 27 possible combinations of `(x, y, z)`, the math reveals that exactly **33** of them survive.
 
+> [!TIP]
+> **The Loss of the Mathematical Freebie**
+> Notice a fascinating anomaly here! In the 2-inhabitant (`Bool`) case, every single one of the 4 operations that possessed an identity *automatically* passed associativity. You get associativity completely "for free". 
+> 
+> However, the moment you jump up to 3 inhabitants, this mathematical freebie violently vanishes. Out of the 243 operations that possessed a perfect identity element, a massive **210 operations** (243 - 33) had to be discarded *specifically* because they broke the Law of Association!
+
 Therefore, for a type with 3 values, out of 19,683 possible operations, exactly **33 form perfectly valid Monoids**!
 
 
