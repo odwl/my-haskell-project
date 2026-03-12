@@ -370,6 +370,24 @@ instance Bifunctor Either where
 **The "Why"**: `Either` encapsulates a choice. If the constructor contains an `a` (`Left`), we are forced to apply `f` to obtain a `c`. If it contains a `b` (`Right`), we are forced to apply `g` to obtain a `d`.
 
 **Law Verification**:
+
+While we can easily prove these properties mathematically by hand (as shown below), in Haskell we can actually automate this verification! Using property testing libraries like `tasty-quickcheck` (and typeclass rule validators like `quickcheck-classes`), we can generate thousands of random instances to guarantee our Bifunctor behaves correctly. 
+
+A test suite verifying `Either` would simply look like:
+```haskell
+import Test.Tasty
+import Test.Tasty.QuickCheck
+import Test.QuickCheck.Classes
+
+tests :: TestTree
+tests = testGroup "Testing Bifunctor Laws"
+  [ -- Validates: bimap id id == id
+    -- Validates: bimap (f . g) (h . i) == bimap f h . bimap g i
+    testProperties "Either Bifunctor" $ bifunctor (Proxy :: Proxy Either)
+  ]
+```
+
+This ensures we never break the two fundamental rules:
 *   *Identity*:
     ```haskell
     bimap id id (Left a) == Left (id a) == Left a == id (Left a)
