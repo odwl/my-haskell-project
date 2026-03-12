@@ -369,9 +369,11 @@ instance Bifunctor Either where
 ```
 **The "Why"**: `Either` encapsulates a choice. If the constructor contains an `a` (`Left`), we are forced to apply `f` to obtain a `c`. If it contains a `b` (`Right`), we are forced to apply `g` to obtain a `d`.
 
-**Law Verification**:
+**Law Verification** (The Developer's Responsibility!):
 
-While we can easily prove these properties mathematically by hand (as shown below), in Haskell we can actually automate this verification! Using property testing libraries like `tasty-quickcheck` (and typeclass rule validators like `quickcheck-classes`), we can generate thousands of random instances to guarantee our Bifunctor behaves correctly. 
+It is crucial to remember that the Haskell compiler **only checks types, not math**. It will perfectly compile a `Bifunctor` instance as long as the type signatures align, even if it completely violates the Identity and Composition laws! You, the developer, are solely responsible for ensuring your instance mathematically preserves the shape of your data.
+
+While we can easily prove these properties mathematically by hand for simple types (as shown below), in Haskell we can actually automate this verification! Using property testing libraries like `tasty-quickcheck` (and typeclass rule validators like `quickcheck-classes`), we can generate thousands of random instances to guarantee our Bifunctor truly behaves correctly. 
 
 A test suite verifying `Either` would simply look like:
 ```haskell
