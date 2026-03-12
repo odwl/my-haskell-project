@@ -464,6 +464,9 @@ By treating Bifunctors as binary operators running on simple atomic Functors, we
 
 In mathematical systems, we often don't just invent the "atomic" elements out of thin air. We derive them from the operations themselves. Here, we are deeply interested in extracting "natural" atomic Functors directly out of our foundational Bifunctors.
 
+**The Big Picture**: Our grand architectural goal is to select a minimal set of fundamental Bifunctor binary operations (like `+` and `*`). From this selected set of Bifunctors, we want to "naturally" extract simple, atomic Functors (like $0$ and $1$). Once we have derived these foundational atoms, we can combine them iteratively with our Bifunctors to form their mathematical *closure*. This exact generative process—using Bifunctor operations to compose simple extracted atoms—is the traditional mathematical mechanism for defining entire sub-categories of Functors. This is exactly how we generate the infinitely rich families of everyday Algebraic Data Types we use in programming!
+
+Let's break down exactly how this natural extraction works.
 #### 1. Extracting a Functor from a Bifunctor
 
 How do we extract a standard Functor out of a generic Bifunctor? Technically, we can *always* extract a Functor simply by fixing one side to an arbitrary type $T$ (so $F(A) = B(T, A)$). This is mathematically just partial application.
