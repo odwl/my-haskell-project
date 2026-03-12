@@ -208,13 +208,9 @@ instance Functor Proxy where
 
 If `Proxy` holds no data, `Const` holds zero *computational* data `a`, but stores an orthogonal contextual value `r`. (We will see later in Chapter 2 that this structure acts as an "Accumulator" once it is upgraded to an `Applicative`). 
 
-**Notes on Specializing `Const` (The Ordinals):**
-By changing the embedded type `r`, the `Const` functor perfectly mimics the mathematical numbers (Ordinals) based purely on the number of inhabited states:
-*   **The Number $0$ (`Const Void`)**: If we specialize `r` to `Void` (zero inhabitants), `Const Void` becomes impossible to instantiate. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor ($0$).
-*   **The Number $1$ (`Const ()`)**: If we specialize `r` to the unit type `()` (exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy` ($1$).
-*   **The Number $2$ (`Const Bool`)**: If we specialize `r` to `Bool` (exactly two inhabitants), we get a functor that carries exactly one bit of information (True/False). 
-
-This pattern fundamentally demonstrates that constant functors act as the simple discrete numbers of our type algebra!
+**Notes on Specializing `Const`:**
+*   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor.
+*   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data.
 
 ```haskell
 newtype Const r a = Const r
@@ -444,6 +440,15 @@ We must provide an empty box for the left side and an empty box for the right si
 A tuple containing an empty box and a single `a`. The left side adds no data and has no alternative states. The entire structure simply holds precisely one `a`, making it perfectly isomorphic to `Identity a`.
 
 *(Notice that all the examples in this section were specifically chosen to demonstrate mathematical relations between the exact minimal Functors we have already defined. We haven't built any "new" ADTs yet!)*
+
+#### 6. Constant Functors as The Ordinals
+Now that we have seen how `+` and `\times` interact with our minimal atoms, we can finally understand a profound property of the `Const r a` functor. By changing the embedded type `r`, `Const` mathematically represents the discrete numbers (Ordinals) based solely on the number of inhabited states of `r`:
+*   **$0$**: `Const Void` (zero inhabitants, isomorphic to `Zero`)
+*   **$1$**: `Const ()` (one inhabitant, isomorphic to `Proxy`)
+*   **$2$**: `Const Bool` (two inhabitants, exactly as derived by $1 + 1$)
+*   **$n$**: Any `Const r` where `r` has $n$ states...
+
+This conceptually proves why `Const Void` acts as the true algebraic identity for Sum ($0$), and `Const ()` acts as the true algebraic identity for Product ($1$) when subjected to actual Bifunctor addition and multiplication!
 
 By treating Bifunctors as binary operators running on simple atomic Functors, we observe the foundation of Algebraic Data Types emerging exactly like fundamental school arithmetic.
 

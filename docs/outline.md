@@ -28,7 +28,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 #### Minimal Functors
 - **`Zero` (Uninhabited)**: The absolute bottom; zero constructors, mathematically impossible to instantiate.
 - **`Proxy` (The Empty Box)**: One constructor; `fmap` MUST ignore the function.
-- **`Const r` (Constant Context)**: Context-only. Includes notes on specializing `Const` to represent mathematical Ordinals: $0$ (`Const Void`), $1$ (`Const ()`), and $2$ (`Const Bool`).
+- **`Const r` (Constant Context)**: Context-only. Includes notes on `Const Void` (isomorphic to `Zero`) and `Const ()` (isomorphic to `Proxy`).
 - **`Identity` (One)**: Transparency; mapping forced by possession of `a`.
 - **`(->) r` (The Exponential)**: The Reader function; infinite delayed computational data via domain `r`.
 
@@ -48,6 +48,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
   - $1 + 1 = 2$: `Either (Proxy a) (Proxy a)` isomorphic to `Const Bool`.
   - $1 \times 1 = 1$: `(Proxy a, Proxy a)` isomorphic to `Proxy`.
   - $1 \times X = X$: `(Proxy a, Identity a)` isomorphic to `Identity`.
+- **The Ordinals**: Showing how `Const r` mathematically maps to $0$, $1$, and $2$ based on inhabited states now that $+$ and $\times$ are defined.
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
 - **1. What is an Identity?**: Defining an identity via Tensor Products (mathematical neutrality: $B(A, I) \cong A$).
