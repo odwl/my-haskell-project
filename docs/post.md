@@ -116,15 +116,13 @@ You must satisfy the Identity and Composition laws:
 >
 > This stems from the fact that `fmap` is a parametrically polymorphic function. Its behavior is so constrained by its type signature that it cannot "sneak in" extra logic that would specifically target composed functions differently than identity. This is a core result of Philip Wadler's famous paper: [**"Theorems for free!"**](https://people.mpi-sws.org/~dreyer/tor/papers/wadler.pdf). A formal proof of this is provided in the [Annex](#proof-of-identity-implies-composition).
 
-```haskell
-import Test.Tasty
-import Test.Tasty.Checkers
+While parametricity gives us elegant mathematical proofs, we can also automate verification empirically. Using property testing libraries like `quickcheck-classes`, verifying `Maybe` is reduced to one simple line:
 
-main :: IO ()
-main = defaultMain $ testGroup "Functor Laws"
-  [ -- Automatically tests all Functor laws
-    testBatch (functor (undefined :: Maybe Int))
-  ]
+```haskell
+import Test.QuickCheck.Classes
+
+-- Automatically tests all Functor laws!
+testProperties "Maybe Functor" $ functor (Proxy :: Proxy Maybe)
 ```
 
 > [!WARNING]
