@@ -24,21 +24,26 @@ The true protagonist of this journey is **Parametricity**. Due to parametric pol
 
 If you ask a mathematician, they will point you to Saunders Mac Lane, one of the founders of Category Theory. In Category Theory, a functor is a structure-preserving mapping between two categories. It is a ubiquitous concept in mathematics; for instance, you have *Forgetful functors* (which strip algebraic structure) and *Free functors* (which automatically build algebraic structure).
 
-In Haskell, the `Functor` typeclass is a specific implementation of a categorical functor. To be a valid `Functor` in Haskell, you must satisfy four distinct conditions:
+In Haskell, the `Functor` typeclass is a specific implementation of a categorical functor. To be a valid `Functor` in Haskell, you must satisfy three distinct conditions:
 
-1.  **A Well-Kinded Type Constructor (`* -> *`)**: You must be an *Endofunctor* on the category `Hask`. This means you map from `Hask` back to `Hask`. 
-    *   *Invalid Kind*: `Int` (kind `*`) or `(,)` (kind `* -> * -> *`) are not functors on their own. They don't have the right "shape" to be a container/wrapper.
-2.  **A Valid Morphism Mapping (`fmap`)**: You must provide a function `fmap :: (a -> b) -> f a -> f b`. This is the implementation of how "arrows" are mapped between categories.
-3.  **No Contextual Constraints**: The mapping must work for *any* type `a` and `b`. You cannot require that `a` or `b` have certain properties (like `Eq` or `Ord`).
-4.  **Mathematical Laws**: You must satisfy the Identity and Composition laws (see Section 1.3).
+#### 1. A Well-Kinded Type Constructor (`* -> *`)
+You must be an *Endofunctor* on the category `Hask`. This means you map from `Hask` back to `Hask`. 
 
-#### Taxonomy of "Almost" Functors
-Many structures in Haskell *are* valid functors in Category Theory but fail the Haskell language conditions (usually Condition 3).
+*   *Invalid Kind*: `Int` (kind `*`) or `(,)` (kind `* -> * -> *`) are not functors on their own. They don't have the right "shape" to be a container/wrapper. A functor must be a "context" that can hold any type `a`.
+
+#### 2. Unconstrained Morphism Mapping (`fmap`)
+You must provide a function `fmap :: (a -> b) -> f a -> f b`. This is the implementation of how "arrows" are mapped between categories. Crucially, in Haskell, this mapping must be **unconstrained**: it must work for *any* type `a` and `b`. You cannot require headers or properties (like `Eq` or `Ord`).
+
+This restriction is forced by **Parametricity**. When we write a polymorphic function in Haskell, the function must be completely ignorant of the types going into it. 
+
+If we have a generic type `a` and need to produce a generic type `b`, we cannot inspect the value, switch on its type, or conjure a `b` out of thin air. This drastic restriction essentially forces our implementations to **preserve structure**. This concept is famously codified in Philip Wadler's paper ["Theorems for free!"](https://people.mpi-sws.org/~dreyer/tor/papers/wadler.pdf), which proves that simply reading the type signature of a polymorphic function tells you almost everything about what the function physically *must* do.
+
+##### Some "Almost" Functors
+Many structures in Haskell *are* valid functors in Category Theory but fail the Haskell language condition above.
 
 1.  **The Forgetful Functor (`Monoid` -> `Hask`)**:
     ```haskell
     -- In Category Theory, this is a functor between different categories.
-    -- It "forgets" the Monoid structure to return the raw type.
     forget :: Monoid a => a -> a
     forget = id
     ```
@@ -60,40 +65,20 @@ Many structures in Haskell *are* valid functors in Category Theory but fail the 
     ```
     *   *Logic*: A `Set` is implemented as a balanced **Binary Search Tree (BST)**. To maintain the invariant (ordered and unique), every map operation must rebuild the tree using comparisons of the *new* values `b`. Since this requires `Ord b`, it is a **Restricted Functor** mapping to the subcategory of ordered types.
 
-### The Great Synthesis: Everything is a Restricted Functor
+##### The Great Synthesis: Everything is a Restricted Functor
 In all three cases above, we can "fix" the problem by adding a constraint like `Monoid a =>`, `Typeable a =>`, or `Ord b =>`. 
 
 **In Haskell, almost every "non-functor" is actually just a functor on a subcategory.** 
 By adding a constraint, you are explicitly telling the compiler: "I am no longer operating on the category of all types (`Hask`); I am now operating only on a subcategory." The standard `Functor` typeclass is simply the special case where that subcategory is the entire category `Hask`.
 
-*(Note: We will discuss "Truly" Non-Functors—those that break the laws—in Section 1.3).*
-
 If we look at valid candidates in Haskell:
 *   `Maybe` is a valid functor candidate (Kind `* -> *`).
 *   `Identity` is a valid functor candidate (Kind `* -> *`).
 
-#### Type Bundle Taxonomy
-In Haskell, we have three ways to bundle types, each with a specific purpose:
-
-1.  **`type` (Synonym)**: Just an alias for an existing type. No runtime or compile-time overhead.
-    *   *Example*: `type Username = String`. Use this for readability, but it doesn't prevent you from passing a `String` where a `Username` is expected.
-2.  **`newtype` (Wrapper)**: A single-constructor wrapper around exactly one field. 
-    *   *Example*: `newtype UserId = UserId Int`. Unlike `type`, this creates a *distinct* type for the compiler, but the wrapper is erased at runtime (zero overhead). You cannot have multiple constructors or multiple fields in a `newtype`.
-3.  **`data` (ADT)**: A full algebraic data type.
-    *   *Example*: `data User = Anonymous | Registered UserId Username`. Essential for types with multiple constructors (like `Maybe`) or multiple independent fields.
-
-### Section 1.2: The Constraint of Parametricity
-
-To understand why our implementations will be mathematically forced, we must understand parametricity. When we write a polymorphic function in Haskell, the function must be completely ignorant of the types going into it. 
-
-If we have a generic type `a` and need to produce a generic type `b`, we cannot inspect the value, switch on its type, or conjure a `b` out of thin air. This drastic restriction essentially forces our implementations to **preserve structure**. This concept is famously codified in Philip Wadler's paper ["Theorems for free!"](https://people.mpi-sws.org/~dreyer/tor/papers/wadler.pdf), which proves that simply reading the type signature of a polymorphic function tells you almost everything about what the function physically *must* do.
-
-### Section 1.3: `fmap` (and `<$>`) and the Functor Laws
-
-The core of the Haskell `Functor` typeclass is `fmap`:
-```haskell
-fmap :: (a -> b) -> f a -> f b
-```
+#### 3. Mathematical Laws
+You must satisfy the Identity and Composition laws:
+1.  **Identity Law**: `fmap id == id`
+2.  **Composition Law**: `fmap (f . g) == (fmap f) . (fmap g)`
 
 The Identity Law guarantees that mapping the identity function over a structure results in the original structure.
 
@@ -107,19 +92,22 @@ The Identity Law guarantees that mapping the identity function over a structure 
 > ```
 > Here, `fakeFmap id (Counter 0 "x")` yields `Counter 1 "x"`, which is **not** equal to the original. This breaks the **Identity Law** (`fmap id == id`).
 
-Compare this to standard function application, the `($)` operator:
-```haskell
-($)  :: (a -> b) ->   a ->   b
-```
-`fmap` (often used as the infix operator `<$>`) is literally just standard function application lifted into a context `f`.
-
-To be a lawful Functor, instances must obey two mathematical laws:
-1.  **Identity Law**: `fmap id == id`
-2.  **Composition Law**: `fmap (f . g) == (fmap f) . (fmap g)`
-
-Due to parametricity ("theorems for free"), verifying the Identity Law usually naturally guarantees the Composition Law. If you preserve the structure flawlessly for `id`, you will preserve it flawlessly for any composed function.
-
 **A Crucial Note on Enforcement**: Haskell, the language compiler, does *not* enforce these mathematical laws. It is code; it only checks type signatures. It is entirely the developer's responsibility to ensure their instances are lawful. Fortunately, automated property-based testing libraries like `QuickCheck` (often alongside `tasty`) provide an extremely easy and robust way to mathematically test and guarantee that your data structures fulfill these laws across thousands of generated inputs.
+
+#### Type Bundle Taxonomy
+In Haskell, we have three ways to bundle types, each with its own niche where the others wouldn't suffice:
+
+1.  **`type` (Synonym)**: Just a nickname for an existing type. 
+    *   *Example*: `type Coordinates = (Double, Double)`. 
+    *   *Why not the others?*: You want zero friction when passing coordinates to functions and when using existing tuple methods. `newtype` or `data` would force you to wrap/unwrap every time.
+2.  **`newtype` (Strict Wrapper)**: A single-constructor wrapper erased at runtime.
+    *   *Example*: `newtype Meter = Meter Double`.
+    *   *Why not the others?*: You want the compiler to block you from adding `Meter` to `Feet`, but you don't want the performance penalty of `data`. Unlike `type`, this creates a *distinct* type.
+3.  **`data` (Full ADT)**: Flexible structure with multiple forms.
+    *   *Example*: `data Shape = Circle Double | Rectangle Double Double`.
+    *   *Why not the others?*: You need multiple constructors or multiple independent fields. `newtype` is restricted to exactly one field and one constructor.
+
+
 
 ### Section 1.4: The Applicative Functor
 
