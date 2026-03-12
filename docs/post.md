@@ -23,6 +23,8 @@
   * [Section 4.2: The Laws of Bifunctors](#section-42-the-laws-of-bifunctors)
 * [Chapter 5: Monoidal Categories](#chapter-5-monoidal-categories)
   * [Section 5.1: The Pentagon and Triangle Laws](#section-51-the-pentagon-and-triangle-laws)
+* [Chapter 6: Other Minimals](#chapter-6-other-minimals)
+  * [Section 6.1: Minimal Monoid](#section-61-minimal-monoid)
 * [Conclusion: The Tale of Three Minimals](#conclusion-the-tale-of-three-minimals)
 * [Annex: Proofs and Derivations](#annex-proofs-and-derivations)
 * [Bibliography](#bibliography)
@@ -1006,6 +1008,31 @@ Before moving to Applicatives, remember the three tools Haskell gives us to bund
 1.  **`type` (Alias)**: No new type created, zero overhead. Use for readability.
 2.  **`newtype` (Strict Wrapper)**: Distinct type, zero overhead. Use for type safety (e.g., `UserId`).
 3.  **`data` (Full ADT)**: Flexible, supports multiple constructors. Use for complex shapes.
+
+---
+
+## Chapter 6: Other Minimals
+
+### Section 6.1: Minimal Monoid
+
+While functors and applicatives define the shape of computations, *Monoids* give us a fundamental way to aggregate concrete values. A Monoid is defined by two simple things:
+1. `mempty`: An identity "empty" value.
+2. `mappend` (or `<>`): A binary associative operation to combine two values.
+
+What are the top three bare-minimum implementations of a Monoid?
+
+1. **The Unit `()`**: The absolute minimum. There is only one value, so `mempty = ()` and `() <> () = ()`.
+2. **Boolean `All` (AND)**: `mempty = True`, and the operation is logical `&&`.
+3. **Boolean `Any` (OR)**: `mempty = False`, and the operation is logical `||`.
+
+**Is Parametricity Helping Here?**
+Unlike Functors (`* -> *`), which are parameterized over *any* type, Monoids operate on concrete types (`*`). This means parametricity *does not* force a single, unique implementation. For example, the type `Double` could form a monoid under addition (`0` and `+`) or under multiplication (`1` and `*`). Haskell uses `newtype` wrappers like `Sum` and `Product` to explicitly choose the monoidal behavior.
+
+**The `Sum` Monoid**
+`Sum` is a very common monoid. For `Sum Double`, `mempty = Sum 0` and `Sum x <> Sum y = Sum (x + y)`.
+
+**Aggregation with `foldM` and `foldMap`**
+Monoids become incredibly powerful when we need to squash a structure down to a single value. Using `foldMap`, we can map elements into a Monoid (like `Sum`) and let the `<>` operator automatically aggregate them. For stateful monoidal folds in a monadic context, `foldM` allows us to sequence binary combinations.
 
 ---
 

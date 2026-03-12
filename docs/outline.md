@@ -134,5 +134,16 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Identity Implies Composition**: Formal proof of the parametricity shortcut.
 - **Parametricity**: A deep dive into Natural Transformations, Ends, and Relational Fibrations.
 
+## Chapter 6: Other Minimals
+### Section 6.1: Minimal Monoid
+- **Definition**: Unpacking `mempty` and the binary operation (`mappend` or `<>`).
+- **The Three Top Minimal Implementations**:
+  - **Unit (`()`)**: The absolute minimum. `mempty = ()` and `() <> () = ()`.
+  - **All (Boolean AND)**: `mempty = True` and `&&`.
+  - **Any (Boolean OR)**: `mempty = False` and `||`.
+- **The Limits of Parametricity**: Unlike Functors (`* -> *`), Monoids (`*`) operate on concrete values, meaning parametricity doesn't force a single unique implementation (e.g., `Double` can be `Sum` or `Product`).
+- **The Sum Monoid**: A practical numeric monoid (`mempty = 0`, `<> = +`).
+- **Aggregation with `foldMap`**: How to map elements to a Monoid and fold them securely without requiring the full Monad machinery.
+
 ## Bibliography
 - Reading list: Wadler, Moggi, Danielsson, Milewski.
