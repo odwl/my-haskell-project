@@ -41,8 +41,11 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **`BiReader r` (Dual Exponential)**: The delayed computation of a tuple.
 
 ### Section 1.3: Deriving the Atoms from Bifunctors
-- **The Sum Identity ($0$)**: The `Either` (+) bifunctor demands an empty Initial Object: `Const Void` ($0$).
-- **The Product Identity ($1$)**: The `(,)` ($\times$) bifunctor demands an empty Terminal Object: `Const ()` / `Proxy` ($1$).
+- **1. What is an Identity?**: Defining an identity via Tensor Products (mathematical neutrality: $B(A, I) \cong A$).
+- **2. Extracting Functors**: Creating constant Functors (`Zero`, `Proxy`) naturally from Bifunctor identities (`Void`, `()`).
+- **3. Sub-Category Closures**: Why applying a single bifunctor and its identity leads to a trivial, flat lineage.
+- **4. Polynomial Functors**: The magic of combining multiple interacting bifunctors (+ and $\times$) to generate infinitely rich families (ADTs).
+- **5. Is Identity Required?**: Validating non-unital bifunctor sets vs. the necessity of 0 and 1 closures for terminating computational data structures.
 - **The Ultimate Closure**: Sum (+), Product (*), and Exponential (`->`) perfectly close to form a **Bicartesian Closed Category (BCC)**, creating the mathematical foundation of typed programming.
 
 ### Section 1.4: Generating Functor Subcategories (The Algebra as a Special Case)
