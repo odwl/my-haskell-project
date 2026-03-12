@@ -211,6 +211,9 @@ If `Proxy` holds no data, `Const` holds zero *computational* data `a`, but store
 **Notes on Specializing `Const`:**
 *   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor.
 *   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data.
+*   **`Const Bool`**: If we specialize `r` to `Bool` (a type with exactly two inhabitants), we get a functor that safely exists and carries exactly one bit of information (True or False).
+
+*(We will see in Section 1.3 how these three specific specializations intimately link to the numbers $0$, $1$, and $2$ in algebraic arithmetic!)*
 
 ```haskell
 newtype Const r a = Const r
