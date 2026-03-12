@@ -465,7 +465,10 @@ By treating Bifunctors as binary operators running on simple atomic Functors, we
 In mathematical systems, we often don't just invent the "atomic" elements out of thin air. We derive them from the operations themselves. 
 
 #### 1. What does it mean for a Bifunctor to have an Identity?
-For a Bifunctor $B(-, -)$ to have a natural "identity", it must act as a combining operation that leaves elements unchanged when paired with a specific type $I$. Mathematically, this describes a **Tensor Product** within a Monoidal Category. In simpler terms: does there exist a type $I$ such that plugging in any type $A$ yields $B(A, I) \cong A$ and $B(I, A) \cong A$? 
+For a Bifunctor $B(-, -)$ to have a natural "identity", it must act as a combining operation that leaves elements unchanged when paired with a specific type $I$. At its core, we are just asking if this binary operation has a neutral element: does there exist a type $I$ such that plugging in any type $A$ yields $B(A, I) \cong A$ and $B(I, A) \cong A$? 
+
+*(Note: If this operation is also associative—which `Either` and `(,)` are—mathematicians formally call this operation a **Tensor Product** and the identity type its unit, completely forming a Monoidal Category. But right now, we don't need the strict associativity laws (the pentagon and triangle equations); we just need the simple identity property!)*
+
 If the answer is yes, then $I$ is the identity type for that Bifunctor. 
 
 #### 2. Extracting a Functor from an Identity

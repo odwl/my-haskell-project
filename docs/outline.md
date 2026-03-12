@@ -51,7 +51,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **The Ordinals**: Showing how `Const r` mathematically maps to $0$, $1$, and $2$ based on inhabited states now that $+$ and $\times$ are defined.
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
-- **1. What is an Identity?**: Defining an identity via Tensor Products (mathematical neutrality: $B(A, I) \cong A$).
+- **1. What is an Identity?**: Defining an identity via simple binary neutrality ($B(A, I) \cong A$). (A precursor to true Tensor Products).
 - **2. Extracting Functors**: Creating constant Functors (`Zero`, `Proxy`) naturally from Bifunctor identities (`Void`, `()`).
 - **3. Sub-Category Closures**: Why applying a single bifunctor and its identity leads to a trivial, flat lineage.
 - **4. Polynomial Functors**: The magic of combining multiple interacting bifunctors (+ and $\times$) to generate infinitely rich families (ADTs).
