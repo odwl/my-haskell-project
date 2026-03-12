@@ -449,7 +449,8 @@ Now that we have seen how `+` and `\times` interact with our minimal atoms, we c
 *   **$0$**: `Const Void` (zero inhabitants, isomorphic to `Zero`)
 *   **$1$**: `Const ()` (one inhabitant, isomorphic to `Proxy`)
 *   **$2$**: `Const Bool` (two inhabitants, exactly as derived by $1 + 1$)
-*   **$n$**: Any `Const r` where `r` has $n$ states...
+*   **$3$**: `Const Ordering` (three inhabitants: `LT`, `EQ`, `GT`, exactly matching $1 + 1 + 1$)
+*   **$n$**: Any `Const r` where `r` is a finite enum with $n$ states...
 
 This conceptually proves why `Const Void` acts as the true algebraic identity for Sum ($0$), and `Const ()` acts as the true algebraic identity for Product ($1$) when subjected to actual Bifunctor addition and multiplication!
 
