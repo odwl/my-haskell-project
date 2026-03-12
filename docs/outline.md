@@ -5,97 +5,62 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 ## 1. Introduction
 - **The Teaching Narrative**: Using absolute minimalism to prove the "forced hand" of parametricity.
 - **Scope**: Focusing on Endofunctors within the `Hask` category.
-- **The "Hask" Category**: Justifying reasoning despite non-termination via "Fast and Loose Reasoning is Morally Correct."
-- **Parametricity**: The protagonist of the journey; how polymorphism forces unique implementations of `fmap`, `pure`, and `bind`.
+- **Parametricity**: The protagonist; how polymorphism forces unique implementations of `fmap`, `pure`, and `bind`.
 
-## Chapter 1: The Foundations of Functors, Applicatives, and Monads
+## Chapter 1: The Foundations of Functors
 ### Section 1.1: What is a Functor?
-#### 1. A Well-Kinded Type Constructor (`* -> *`)
-- **Endofunctors on Hask**: Mapping from `Hask` back to `Hask`.
-- **Invalid Kinds**: Examples like `Int` or `(,)`.
-#### 2. Unconstrained Morphism Mapping (`fmap`)
-- **Parametricity**: How polymorphism forces unique implementations.
-- **Theorems for Free**: Wadler's formalization.
-- **Some "Almost" Functors**: 
-    - The Forgetful Functor (`Monoid` -> `Hask`).
-    - The Type Inspector (`isInt`).
-    - The Balanced Tree (`Data.Set`).
-- **The Great Synthesis**: Subcategory functors via constraints.
-- **Valid Candidates**: `Maybe`, `Identity` (Kind `* -> *`).
-#### 3. Mathematical Laws
-- **Identity and Composition**: The core preserving rules.
-- **Truly Non-Functors**: Law-breakers (e.g., `Counter` mutation).
-- **Enforcement**: Property-based testing with QuickCheck.
-#### Type Bundle Taxonomy
-- **Purpose-Driven Comparison**: When to use `type`, `newtype`, or `data` with examples.
-### Section 1.4: The Applicative Functor
+- **Foundations**: Well-kindedness (`* -> *`), Unconstrained Morphism Mapping (`fmap`).
+- **Parametricity**: Theorems for free!
+- **Some "Almost" Functors**: Subcategory functors (Forgetful, Type Inspector, Balanced Trees).
+- **Mathematical Laws**: Identity and Composition.
+- **Property-Based Testing**: QuickCheck and the **Pro Tip: Using `checkers`** for `testBatch`.
+
+### Section 1.2: The Atomic Functors
+> *Focus: Atoms at the Functor level only.*
+- **`Proxy` (Zero)**: Empty box; `fmap` MUST ignore the function.
+- **`Const r` (Accumulation)**: Context-only; no computational data.
+- **`Identity` (One)**: Transparency; mapping forced by possession of `a`.
+
+### Section 1.3: The Algebra of Functors
+- **Atoms to Molecules**: Using Sums (+) and Products (*) as algebraic operators.
+
+### Section 1.4: Discovering Molecules (Compounds)
+- **`Maybe`**: $1 + X$ (Sum of Proxy and Identity).
+- **`Writer`**: $r \times X$ (Product of Const and Identity).
+- **`List`**: $1 + X \times L(X)$ (Recursive chain).
+- **Fixed Points**: Shape equations (Lists vs. Trees).
+- **Proxy Math**: $1 + 1 = 2$ (`Const Bool`) and $1 \times 1 = 1$.
+
+### Section 1.5: Summary & Bundle Taxonomy
+- **Summary**: Shape and Preservation.
+- **Taxonomy**: When to use `type`, `newtype`, or `data`.
+
+## Chapter 2: The Applicative Evolution
+### Section 2.1: Foundations
 - **Powers**: `pure` (lifting values) and `<*>` (lifting application).
-### Section 1.5: The Monad
-- **The Monadic Triad**: Three equivalent paths (Bind, Join, Kleisli).
-- **Categorical Mu**: `join` as the foundational "flattening" operation.
+- **Applicative Laws**: Predictable sequencing.
 
-## Chapter 2: The Minimal Functor/Monad (Proxy)
-> *Theme: Zero computational data, Zero contextual data*
-### Section 2.1: The Smallest Valid Candidate
-- `data MinF a = Val`. Empty at runtime; `a` is purely phantom.
-### Section 2.2: A Singular Functor Implementation
-- `fmap _ Val = Val`. Implementation forced because no `a` is available for the function.
-### Section 2.3 & 2.4: Upgrades
-- **Applicative**: `pure` throws away the value to return `Val`.
-- **Monad**: `join` flattens an empty box trivially.
-- **Equivalence**: Identical to Haskell's `Proxy`.
-### Section 2.5: Compiler Deduction
-- Using `DeriveFunctor`—the compiler's deduction matches our mathematical proof.
+### Section 2.2: Upgrading the Atoms
+- **`Proxy`**: Trivial upgrade.
+- **`Const r` (The Monoid Twist)**: Why `Applicative` necessitates `mempty` and `mappend`.
+- **`Identity`**: Trivial application.
 
-## Chapter 3: The Minimal Applicative Functor (Const)
-> *Theme: Zero computational data, Some contextual data `r`*
-### Section 3.1: The Definition of `Const`
-- `newtype Const r a = Const r`. Stores `r` but ignores `a`.
-### Section 3.2: Functor Implementation
-- Function is ignored; `r` value is passed along.
-### Section 3.3: The Applicative Twist
-- **Monoid Requirement**: Why `Applicative` necessitates `Monoid r`.
-    - `pure` requires `mempty` to initialize.
-    - `<*>` requires `mappend` to combine contexts.
-### Section 3.4: The Monad Barrier
-- `bind` unrecoverably drops `r` values from the function, violating the Left Identity law.
+## Chapter 3: The Monadic Conclusion
+### Section 3.1: Foundations
+- **The Monadic Triad**: Bind, Join, Kleisli.
+- **Categorical Mu**: `join` as the foundational flattening operation.
 
-## Chapter 4: The Minimal Synchronous Monad (Identity)
-> *Theme: One computational data, Zero contextual data*
-### Section 4.1: The Identity Candidate
-- `data IdF a = IdVal a`. Transparent wrapper.
-### Section 4.2: Functor Implementation
-- Parametricity forces unboxing, mapping, and re-boxing.
-### Section 4.3 & 4.4: Upgrades
-- `pure` wraps; `bind` is raw function application. Identical to Haskell's `Identity`.
+### Section 3.2: The Final Evolution
+- **`Proxy` & `Identity`**: Trivial upgrades.
+- **`Const r` (The Monad Barrier)**: Why the evolution stops; violating the Left Identity law.
 
-## Chapter 5: The Algebra of Functors (Sums and Products)
-- **Algebraic Logic**: Every ADT is a combination of foundational blocks.
-- **Baselines**: `Proxy` $\cong 1$. `Identity` $\cong X$.
-- **Practical Use**: `Proxy` for guiding type inference (e.g., `Storable`).
-
-## Chapter 6: Functors out of Proxy and Identity
-- **The Sum ($1 + X$)**: Summing `Proxy` and `Identity` yields `Maybe`. The Monad of choice/failure.
-- **The Product ($1$ vs $r$)**: 
-    - `1 * X = X` (Identity).
-    - `r * X = Writer` (Logging). Constant context combined via product.
-
-## Chapter 7: Functors entirely out of Proxy
-- **Proxy Math**:
-    - $1 + 1 = 2 \cong \text{Const Bool}$.
-    - $1 * 1 = 1 \cong \text{Proxy}$.
-
-## Chapter 8: Recursion and Fixed Points
-- **Shape Equations**: Structures defined as the "Fixed Point" of an equation.
-- **List**: $L(X) = 1 + X \cdot L(X)$.
-- **Binary Tree**: $T(X) = 1 + X \cdot T(X)^2$.
-
-## Chapter 9: Conclusion: The Tale of Three Minimals
-- Re-cap: How `MinF`, `Const r`, and `IdF` define the spectrum of structural necessity in Haskell.
+## Conclusion: The Tale of Three Minimals
+- **Spectrum of Necessity**: How Zero, Context, and One define the logic of types.
+- **The Alchemy of ADTs**: Discovering the universe from atoms.
 
 ## Annex: Proofs and Derivations
-- **Monad Equivalence**: Deriving `Join` <-> `Bind` <-> `Kleisli`.
-- **Uniqueness Proof**: Formal proof that `MinF` has exactly one valid functor mapping.
+- **Monad Equivalence**: Bind/Join/Kleisli.
+- **Uniqueness Proof**: Formal mapping proof for `MinF`.
 
 ## Bibliography
-- Authoritative reading list Including Wadler, Moggi, Danielsson, and Milewski.
+- Reading list: Wadler, Moggi, Danielsson, Milewski.

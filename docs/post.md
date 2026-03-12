@@ -117,337 +117,182 @@ main = defaultMain $ testGroup "Functor Laws"
 ```
 *(Note: We use `Fun` from QuickCheck to generate random, shrinkable functions for the composition test).*
 
-#### Type Bundle Taxonomy
-In Haskell, we have three ways to bundle types, each with its own niche where the others wouldn't suffice:
+> [!TIP]
+> **The Pro Way: Using `checkers`**: In professional Haskell projects, you shouldn't write these laws by hand for every new type. Libraries like `checkers` provide pre-packaged "batches" for all standard typeclasses. Using `tasty-checkers`, you can simplify the entire test suite to a single line:
+> ```haskell
+> -- Automatically tests all Functor laws (Identity and Composition)
+> testBatch (functor (undefined :: Maybe Int))
+> ```
+> This is especially powerful as you move to Applicatives and Monads, where the number of laws grows significantly (Identity, Homomorphism, Interchange, etc.).
 
-1.  **`type` (Synonym)**: Just a nickname for an existing type. 
-    *   *Example*: `type Coordinates = (Double, Double)`. 
-    *   *Why not the others?*: You want zero friction when passing coordinates to functions and when using existing tuple methods. `newtype` or `data` would force you to wrap/unwrap every time.
-2.  **`newtype` (Strict Wrapper)**: A single-constructor wrapper erased at runtime.
-    *   *Example*: `newtype Meter = Meter Double`.
-    *   *Why not the others?*: You want the compiler to block you from adding `Meter` to `Feet`, but you don't want the performance penalty of `data`. Unlike `type`, this creates a *distinct* type.
-3.  **`data` (Full ADT)**: Flexible structure with multiple forms.
-    *   *Example*: `data Shape = Circle Double | Rectangle Double Double`.
-    *   *Why not the others?*: You need multiple constructors or multiple independent fields. `newtype` is restricted to exactly one field and one constructor.
+### Section 1.2: The Atomic Functors
 
+Now that we understand the rules, let's explore the absolute simplest "atoms" we can build in Haskell. These structures are the building blocks of the entire algebraic universe.
 
-
-### Section 1.4: The Applicative Functor
-
-An `Applicative` is a Functor equipped with two additional powers:
-1.  `pure :: a -> f a`: The ability to bring a raw value into the functor context.
-2.  `(<*>) :: f (a -> b) -> f a -> f b`: The ability to apply a function that is *already within* the context to a value within the context.
-
-Like Functors, Applicatives must obey a set of laws (Identity, Composition, Homomorphism, and Interchange) which ensure that sequencing these context-applications behaves predictably.
-
-### Section 1.5: The Monad
-
-The `Monad` adds the ultimate power: the ability to sequence context-dependent computations where subsequent steps depend on the unwrapped values of prior steps.
-
-What makes Monads intellectually elegant is that there are **three mathematically equivalent paths** to define them. Because they are algebraically equivalent, providing a valid implementation for *any single one* of them (along with your `fmap` and `pure`) allows the other two to be derived entirely for free. 
-*(For a formal treatment of this equivalence, refer to Eugenio Moggi's foundational paper ["Notions of computation and monads"](https://core.ac.uk/download/pdf/82121775.pdf) or the Typeclassopedia. See the Annex below for the algebraic proof).*
-
-These three paths are:
-1. **Bind (`>>=`)**: `m a -> (a -> m b) -> m b`
-2. **Join (`mu`)**: `m (m a) -> m a` (Flattening heavily nested contexts)
-3. **Kleisli composition (`>=>`)**: `(a -> m b) -> (b -> m c) -> (a -> m c)`
-
-Often, `join` (called `mu` in Category Theory) is considered the most foundational and natural way to describe a Monad's raw structure, while `bind` is heavily favored in Haskell for practical ergonomics.
-
----
-
-## Chapter 2: The Minimal Functor/Monad (Proxy)
-
+#### 1. The Smallest Candidate: `Proxy` (`MinF`)
 *(Zero computational data, Zero contextual data).*
 
-Let's begin the exercise. What is the smallest possible Functor we can build in Haskell?
-
-### Section 2.1: The Smallest Valid Candidate
-
-We need a type constructor of kind `* -> *` that holds absolutely the minimum amount of data possible. The answer is **none**.
+The smallest possible Functor holds absolutely the minimum amount of data: **none**.
 ```haskell
-data MinF a = Val
+data MinF a = Val -- In Haskell, known as Proxy
 ```
-*(Note: `Val` is the data constructor. In Haskell, value constructors must always begin with an uppercase letter).*
-
 `MinF` maps any phantom type `a` to a constructor that contains zero term-level data. The type `a` exists only at compile time; at runtime, the box is completely empty.
 
-### Section 2.2: A Singular Functor Implementation
-
-Our task is to write `fmap`.
-```haskell
-fmap :: (a -> b) -> MinF a -> MinF b
-```
-If we try to write this abstractly, we might say `fmap f val = val`.
-Let's apply this to our data structure:
+**Functor Implementation**:
 ```haskell
 instance Functor MinF where
     fmap _ Val = Val
 ```
+**The "Why"**: Due to parametricity, there is exactly one possible implementation that compiles. We are given a function `(a -> b)`. We have a `MinF a` (value `Val`). We must return a `MinF b` (value `Val`). We have no `a` to feed into the function. Therefore, the function *must* be ignored.
 
-**The "Why"**: Due to parametricity, there is exactly one possible implementation that compiles. This phenomenon is famously referred to by author Sandy Maguire as the type signature "forcing your hand." We are given a function `(a -> b)`. We have a `MinF a`, whose only possible value is `Val`. We must return a `MinF b`, whose only possible value is `Val`. We do not have an `a` to feed into the function. Therefore, the function *must* be ignored. Out of mathematical necessity, `fmap _ Val = Val` is the unique, indisputable implementation.
+#### 2. The Accumulator: `Const`
+*(Zero computational data, Some contextual data `r`).*
 
-### Section 2.3: Upgrading to Applicative
-
-Let's look at `pure` and `<*>`:
+If `MinF` holds no data, `Const` holds zero *computational* data `a`, but stores an orthogonal contextual value `r`.
 ```haskell
-pure :: a -> MinF a
-(<*>) :: MinF (a -> b) -> MinF a -> MinF b
+newtype Const r a = Const r
 ```
+**Functor Implementation**:
+```haskell
+instance Functor (Const r) where
+    fmap _ (Const r) = Const r
+```
+**The "Why"**: Just like `MinF`, because we have no `a` to apply the function to, parametricity forces us to ignore the function entirely. Note that at the Functor level, `r` requires no special structure (it doesn't need to be a `Monoid`).
 
-The implementations:
+#### 3. The Wrapper: `Identity` (`IdF`)
+*(One computational data, Zero contextual data).*
+
+Next is the minimal structure with exactly *one* value: a transparent wrapper.
+```haskell
+data IdF a = IdVal a -- In Haskell, known as Identity
+```
+**Functor Implementation**:
+```haskell
+instance Functor IdF where
+    fmap f (IdVal x) = IdVal (f x)
+```
+**The "Why"**: The type signature demands we produce an `IdF b`. We possess an `x :: a` and a function `f :: a -> b`. The *only* mathematical way to obtain a `b` is to apply `f` to `x`.
+
+### Section 1.3: The Algebra of Functors
+
+So far we have looked at the building blocks:
+1.  **`Const r`**: Represents a constant value independent of `a`.
+2.  **`Identity`**: Represents the parameter itself ($X$).
+
+Every other algebraic data type in Haskell can be built by **summing** (Alternative constructors) and **multiplying** (Multiple fields) these blocks together!
+
+### Section 1.4: Discovering Molecules (Compounds)
+
+Using these "atoms," let's see how we can discover the rest of the Haskell universe.
+
+#### 1. The Sum Molecule: `Maybe`
+If we take the **Sum** (`+` in algebra, `Either` in Haskell) of `Proxy` (the number $1$) and `Identity` ($X$), we get the structure for choice or failure:
+`Maybe a ≅ Sum Proxy Identity a ≅ Either () a`
+**Algebraically**: $1 + X$
+
+#### 2. The Product Molecule: `Writer`
+If we take the **Product** ($\times$ in algebra, a Tuple in Haskell) of a constant `Const r` and `Identity` ($X$), we get a structure that carries a "log" along with the value:
+`Writer r a ≅ Product (Const r) Identity a ≅ (r, a)`
+**Algebraically**: $r \times X$
+
+*(Note: `Proxy * Identity ≅ ((), a) ≅ a ≅ Identity`. Proxy acts as the number $1$ in multiplication).*
+
+#### 4. The Infinite Chain: `List`
+By using both Sums and Products with **Recursion**, we can build a list. A list is either empty (`Proxy`) OR a head and a tail (`Product Identity List`).
+`List a ≅ Sum Proxy (Product Identity List) a`
+**Algebraically**: $L(X) = 1 + X \times L(X)$
+
+> **Is $1 + X \times W = W$ always the case?**
+> Looking at the list equation, you might ask: "is it always the case that `Sum Proxy (Product Identity Whatever) = Whatever`?"
+> The answer is no! The formula $1 + X \times W$ describes the "shape" of a single layer of a List. When we say $L(X) = 1 + X \times L(X)$, we are saying that `List` is exactly the type that satisfies this equation (it is the *Fixed Point* of that functor). If `Whatever` was a Binary Tree, its shape equation would look entirely different, such as $T(X) = 1 + X \times T(X) \times T(X)$.
+
+#### 5. Functors entirely out of Proxy
+*   **Proxy + Proxy = Const Bool**: Summing two Proxies creates two possible empty states. `Either () ()` is isomorphic to a Boolean. Mathematically: $1 + 1 = 2$.
+*   **Proxy * Proxy = Proxy**: A product of two empty boxes remains an empty box. Mathematically: $1 \times 1 = 1$.
+
+### Section 1.5: Final Summary of Functors
+
+At this level, Functors are entirely about **Shape and Preservation**. Whether we are dealing with an empty box (`Proxy`), a wrapper (`Identity`), or an infinite chain (`List`), `fmap` ensures that the structure of the data remains physically identical while the values inside are transformed.
+
+#### Type Bundle Taxonomy
+Before moving to Applicatives, remember the three tools Haskell gives us to bundle these shapes:
+
+1.  **`type` (Alias)**: No new type created, zero overhead. Use for readability.
+2.  **`newtype` (Strict Wrapper)**: Distinct type, zero overhead. Use for type safety (e.g., `UserId`).
+3.  **`data` (Full ADT)**: Flexible, supports multiple constructors. Use for complex shapes.
+
+---
+
+## Chapter 2: The Applicative Evolution
+
+Now we step up in power. An `Applicative` is a Functor equipped with two new powers: `pure` (to lift values) and `<*>` (to lift application).
+
+### Section 5.1: The Applicative Atoms
+
+Let's see how our atomic structures "upgrade" to this new level.
+
+#### 1. `MinF` (`Proxy`)
 ```haskell
 instance Applicative MinF where
     pure _ = Val
     Val <*> Val = Val
 ```
+**The "Why"**: Our hands are tied. `pure` gives us an `a`, which we must discard (as `MinF` holds no data). `<*>` combines two empty boxes into one.
 
-**The "Why"**: Again, our hands are tied. `pure` gives us an `a` and demands a `MinF a`. We cannot store the `a`, so we throw it away and return `Val`. The apply operator `<*>` receives two `Val`s and must return a `Val`. There is no other mathematical choice.
-
-### Section 2.4: Upgrading to Monad
-
-We have three equivalent paths to upgrade to a Monad. Let's look at `join` and `bind`.
-
-**Via `join` (`mu`)**:
-```haskell
-join :: MinF (MinF a) -> MinF a
-```
-**Visualizing `mu`**: Walking through the value-level representation, the input type is "A `MinF` whose phantom type happens to be another `MinF`". But at the physical value level, an empty box inside an empty box is still exactly just `Val`. 
-```haskell
-join Val = Val
-```
-
-**Via `bind` (`>>=`)**:
-```haskell
-(>>=) :: MinF a -> (a -> MinF b) -> MinF b
-```
-We receive `Val`. The only thing we can return is `Val`. We have no `a` to pass to the function `(a -> MinF b)`, so we ignore it.
-```haskell
-instance Monad MinF where
-    Val >>= _ = Val
-```
-
-**Haskell Equivalents**: This minimal behavior—a structure carrying a phantom type but no value—is extremely useful. In the standard Haskell library, this is identically represented by `Proxy` (carrying zero values) or `Const r` (carrying some other value `r`, but no `a`).
-
-### Section 2.5: Let the Compiler Do the Work (`deriving`)
-
-Because there is mathematically exactly *one* valid implementation for `MinF` due to parametricity, we don't actually need to write any of this code ourselves. By utilizing GHC extensions like `DeriveFunctor`, we can simply write:
-```haskell
-data MinF a = Val deriving (Functor)
-```
-The compiler mechanically generates the correct code for us because its constraints are exactly the same as ours: its "hands are tied."
-
----
-
-## Chapter 3: The Minimal Applicative Functor (Const)
-
-*(Zero computational data, Some contextual data `r`). Requires `Monoid r`.*
-
-### Section 3.1: The Definition of `Const`
-
-If `MinF` is the minimal structure with *no* contextual value, what if we had a structure that still had no computational data `a`, but held an orthogonal contextual value `r`?
-```haskell
-newtype Const r a = Const r
-```
-It looks very similar to `MinF`, because it *ignores* the type `a` at the value level. However, it actually stores a completely distinct value of type `r`. 
-
-Notice that `Const ()` is structurally identical to `MinF` (which acts as `Proxy`). Therefore, `Const r` is simply a generalization of `Proxy` to hold some non-trivial "shadow" type `r`.
-
-### Section 3.2: A Singular Functor Implementation
-
-```haskell
-instance Functor (Const r) where
-    fmap _ (Const r) = Const r
-```
-**The "Why"**: Just like `MinF`, because we have no `a` to apply the function to, parametricity forces us to ignore the function entirely. Notice that for the `Functor` instance, `r` does not need to be a `Monoid`. We are fully capable of mapping over `Const r` without inspecting or combining the `r` value. We just pass it along unchanged.
-
-### Section 3.3: The Applicative Twist (Necessary and Sufficient)
-
-This is where `Const` requires an upgrade. Before we do, we must briefly define a Monoid. In abstract algebra, a Monoid is simply a set equipped with two things:
-1.  **An associative binary operation** (in Haskell, we call this `mappend` or `<>`).
-2.  **An identity element** (in Haskell, we call this `mempty`).
-
-In categorical terms, a Monoid is just a category with a single object. 
-
-With this in mind, let's look at the Applicative instance:
+#### 2. `Const r` (The Monoid Requirement)
+This is the most critical upgrade in the minimal universe.
 ```haskell
 instance Monoid r => Applicative (Const r) where
     pure _ = Const mempty
     Const r1 <*> Const r2 = Const (r1 `mappend` r2)
 ```
+**The "Why"**: 
+*   `pure` requires us to produce an `r` out of nothing. We must use the **Identity element** (`mempty`).
+*   `<*>` gives us two `r` values and needs one result. We must use the **Binary operation** (`mappend`).
+This precisely defines why `Const` requires its context to be a `Monoid` to achieve Applicative status.
 
-Why is `Monoid r` **necessary** here? 
-*   To write `pure :: a -> Const r a`, we must produce a `Const r`. To do this, we must conjure a value of type `r` out of thin air. We absolutely *must* have a guaranteed identity element to fall back on. Abstract algebra defines this as `mempty`.
-*   For the apply operator `<*>`, we have two isolated `r` values (`r1` and `r2`), and we need to return exactly one. We absolutely *must* have an associative mathematical operation to combine them. Abstract algebra defines this as `mappend`.
-
-Because `mempty` and `mappend` precisely encompass the entire definition of a Monoid, requiring `Monoid r` is perfectly **necessary and sufficient** to upgrade `Const r` to an `Applicative`. 
-
-Because it discards the computational aspect (`a -> b`) and focuses *only* on combining "side-channel" data (`r`), `Const` serves as the foundational basis for **Logging, Accumulation, and Monoidal Analysis**.
-
-### Section 3.4: Why Not a Monad?
-
-You generally cannot write a lawful `Monad` instance for `Const r`. Look at `bind` (`>>=`):
-```haskell
-(>>=) :: Const r a -> (a -> Const r b) -> Const r b
-```
-We do not have an `a`. We cannot execute the function `(a -> Const r b)`. Therefore, we completely lose whatever `r` value the function *would* have produced. Because we forcefully drop the function's potential `r`, we mathematically fail the Monad Left Identity law (`pure a >>= f == f a`).
-
----
-
-## Chapter 4: The Minimal Synchronous Monad (Identity)
-
-*(One computational data, Zero contextual data).*
-
-### Section 4.1: The Next Smallest Candidate
-
-If `MinF` is the minimal structure with *no* value, what is the minimal structure with exactly *one* value?
-```haskell
-data IdF a = IdVal a
-```
-Unlike `MinF`, `IdF` actually possesses the `a` at the term level. It is a completely transparent wrapper.
-
-### Section 4.2: A Singular Functor Implementation
-
-```haskell
-instance Functor IdF where
-    fmap f (IdVal x) = IdVal (f x)
-```
-
-**The "Why"**: The type signature demands we produce an `IdF b`. Due to parametricity, we cannot inspect the type or summon a `b` from the æther. The *only* mathematical way to obtain a `b` is to take the `x` (which is of type `a`) that we possess inside `IdVal`, and apply our given function `f :: (a -> b)` to it.
-
-### Section 4.3: Upgrading to Applicative
-
+#### 3. `Identity` (`IdF`)
 ```haskell
 instance Applicative IdF where
     pure x = IdVal x
     IdVal f <*> IdVal x = IdVal (f x)
 ```
-To implement `pure`, we are given an `x` and must wrap it. To implement `<*>`, we unwrap the function `f`, unwrap the value `x`, physically apply them, and rewrap the result. Parametricity allows no alternative.
-
-### Section 4.4: Upgrading to Monad
-
-Let's witness the three equivalent paths for `IdF`.
-
-**Via `join` (`mu`)**:
-```haskell
-join :: IdF (IdF a) -> IdF a
-join (IdVal (IdVal x)) = IdVal x
-```
-The only structurally preserving way to flatten nested `IdVal`s into a single `IdVal`.
-
-**Via `bind` (`>>=`)**:
-```haskell
-IdVal x >>= f = f x
-```
-We take the `x` out of the wrapper and pass it to `f` (which returns an already-wrapped `IdF b`).
-
-**Via `kleisli` (`>=>`)**:
-```haskell
-(f >=> g) x = f x >>= g   -- Expanding out: (f >=> g) x = let (IdVal y) = f x in g y
-```
-
-**Haskell Equivalents**: In the standard Haskell library, this completely transparent wrapper is known exactly as the `Identity` functor/monad.
+**The "Why"**: Trivial application. We unwrap, apply, and rewrap.
 
 ---
 
-## Chapter 5: The Algebra of Functors (Sums and Products)
+## Chapter 3: The Monadic Conclusion
 
-So far we have looked at the two absolute minimal building blocks of polynomial functors:
-1.  **The Constant Functor (`Const r`)**: Represents a constant value independent of the generic type `a` (like $c$ in algebra). A special case is `Const ()`, which is natively known as `Proxy`. It carries absolutely zero term-level data, which makes it mathematically equivalent to the number $1$.
-2.  **The Identity Functor (`IdF` / `Identity`)**: Represents the parameter itself (like $X$ in algebra).
+The `Monad` adds the power of **Context-Dependent Sequencing** via `bind` (`>>=`) or `join`.
 
-Every other standard algebraic data type can be built by adding (Sum types) and multiplying (Product types) these two foundational blocks together!
+### Section 6.1: The Final Upgrades
 
-Before we do that, does an empty wrapper like `Proxy` actually have practical use? Yes! `Proxy` is heavily used at the term level to guide type inference without incurring runtime costs (e.g., querying the size in `Storable a => Proxy a -> Int`).
+#### 1. `MinF` (`Proxy`)
+```haskell
+instance Monad MinF where
+    Val >>= _ = Val
+```
+Flattening an empty box inside an empty box still yields an empty box.
 
-## Chapter 6: Functors out of Proxy and Identity
+#### 2. `Identity` (`IdF`)
+```haskell
+instance Monad IdF where
+    IdVal x >>= f = f x
+```
+Pure function application.
 
-Let's look at what happens when we combine our minimal blocks using the simplest algebraic data type operations: Sums and Products.
-
-### Section 6.1: The Sum (Maybe)
-
-If we take the **Sum** (represented by the `Either` type, or $+$ in algebra) of `Proxy` (which is isomorphic to $1$) and `Identity` ($X$), we get:
-
-`Sum Proxy Identity a  ≅  Either (Proxy a) (Identity a)  ≅  Either () a  ≅  Maybe a`
-
-Mathematically: $1 + X$
-
-By summing the functor of *Zero computational data* and the functor of *One computational data*, we derive `Maybe`. It is the Minimal Monad of Failure or Choice.
-
-### Section 6.2: The Product (Identity)
-
-What if we take the **Product** (`(,)`, or $\times$ in algebra) of `Proxy` and `Identity`?
-
-`Product Proxy Identity a  ≅  (Proxy a, Identity a)  ≅  ((), a)  ≅  Identity a`
-
-Mathematically: $1 \times X = X$
-
-By multiplying a functor carrying zero data (just `()`) with the identity functor, we haven't added any new information. A tuple of `((), a)` carries no more information than just `a`. Therefore, the product stays as exactly the `Identity` functor! This proves that `Proxy` acts identically to the number $1$ in multiplication.
-
-*(Note: Adding an arbitrary constant `Const r` instead of `Proxy` into the product yields `Product (Const r) Identity a ≅ (r, a) ≅ Writer r a`, representing the Minimal Monad of Logging.)*
-
-## Chapter 7: Functors entirely out of Proxy
-
-### Section 7.1: The Fundamental Rule
-
-Before combining multiple Proxies, there is a fundamental rule in the algebra of algebraic data types to remember:
-
-**Because `Proxy` holds exactly zero values of type `a`, `Proxy` perfectly represents the number 1 (a single state with no `a` data attached).**
-
-Anytime you want to introduce an "empty" case to a data structure (like `Nothing` in `Maybe`, or `[]` in `List`, or `Leaf` in a Tree that holds no data), you are fundamentally using `Proxy` (or `Const ()`) mixed into your sum type!
-
-### Section 7.2: Proxy + Proxy = Const Bool
-
-What if we sum two Proxies together?
-
-`Sum Proxy Proxy a  ≅  Either (Proxy a) (Proxy a)  ≅  Either () ()`
-
-An `Either () ()` type has exactly two possible values (`Left ()` or `Right ()`). That is exactly a Boolean! So summing two Proxies creates the **`Const Bool`** functor.
-Mathematically: $1 + 1 = 2$
-
-### Section 7.3: Proxy * Proxy = Proxy
-
-What if we take the product of two Proxies?
-
-`Product Proxy Proxy a  ≅  (Proxy a, Proxy a)  ≅  ((), ())  ≅  Proxy a`
-
-A tuple of two unit types `((), ())` still holds exactly one possible uninteresting value. Thus, it collapses back down to `Proxy`!
-Mathematically: $1 \times 1 = 1$
-
-## Chapter 8: Recursion and Fixed Points
-
-Once we understand combinations of `Proxy` and `Identity`, we can create infinitely large structures via recursion.
-
-### Section 8.1: List (Recursive Sums & Products)
-
-How do we build the standard `List` functor? A list is either empty (`[]`), or it has a head and a tail (`x : xs`).
-*   The empty case holds zero `a`s. That is **`Proxy`**.
-*   The head + tail case holds one `a` and the rest of the list. That is **`Product Identity List`**.
-
-Therefore, the formula is:
-`List a ≅ Sum Proxy (Product Identity List) a`
-
-Algebraically: $L(X) = 1 + X \times L(X)$
-
-### Section 8.2: Is $1 + X \times W = W$ always the case?
-
-Looking at the list equation, you might ask: "is it always the case that `Sum Proxy (Product Identity Whatever) = Whatever`?"
-
-The answer is no! The formula $1 + X \times W$ describes the "shape" of a single layer of a List. When we say $L(X) = 1 + X \times L(X)$, we are saying that `List` is exactly the type that satisfies this equation (it is the *Fixed Point* of that functor). If `Whatever` was a Binary Tree, its shape equation would look entirely different, such as $T(X) = 1 + X \times T(X) \times T(X)$. 
-
-Different mathematical formulas create different data structures!
+#### 3. `Const r` (The Monad Barrier)
+**Crucially, `Const r` cannot be a Monad.** 
+```haskell
+(>>=) :: Const r a -> (a -> Const r b) -> Const r b
+```
+Because `Const` contains no `a`, we can never execute the function `(a -> Const r b)`. We completely lose whatever `r` value the function *would* have produced, violating the **Left Identity law** (`pure a >>= f == f a`). The evolution stops here.
 
 ---
 
-## Chapter 9: Conclusion: The Tale of Three Minimals
+## Conclusion: The Tale of Three Minimals
 
-These three minimal structures—`MinF`, `Const r`, and `IdF`—perfectly illustrate how Haskell's type system dictates physical behavior at the value level.
-
-*   **With `MinF` (Proxy / Zero)**: You *do not have* an `a` nor contextual data. Because you have no `a` to feed to the function `(a -> b)`, parametricity **forces** you to completely ignore the function.
-*   **With `Const r` (Accumulation)**: You *do not have* an `a`, but you do have contextual data `r`. You are again forced to ignore the function, but you can leverage a `Monoid` to combine the side-channel data.
-*   **With `IdF` (Identity / One)**: You *have* an `a`. Because you must produce a `b`, and you have a function `(a -> b)`, parametricity **forces** you to apply the function to the value.
-
-By starting from the absolute minimal examples, the "magic" of Functors, Applicatives, and Monads evaporates, leaving the elegant, inescapable logic of types. From these, as we see above, all Algebraic Data Types emerge.
+By starting from these absolute minimal examples, the "magic" evaporates, leaving the elegant logic of types and the algebraic discovery of everything from `Maybe` to `List`.
 
 ---
 
