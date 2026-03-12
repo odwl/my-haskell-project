@@ -142,6 +142,8 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **The Top Minimal Implementations**:
   - **1 Inhabitant (`()`)**: The absolute minimum. `mempty = ()` and `() <> () = ()`.
   - **2 Inhabitants (`Bool`)**: Breaking down the 16 mathematically possible binary operations and why exactly 4 of them (`All`, `Any`, `Equivalence`, `Xor`) form Monoids.
+  - **3 Inhabitants (e.g., `Ordering`)**: The combinatorial explosion: 19,683 possible operations $\to$ 243 with an identity $\to$ Exactly 33 valid Monoids!
+- **Commutativity is Not Required**: Explaining that Monoids only require Associativity and Identity. Commutative monoids exist (Abelian Monoids like `Sum`), but many foundational programming monoids (like `List`, `First`, and `Endo`) are strictly non-commutative.
 - **The Limits of Parametricity**: Unlike Functors (`* -> *`), Monoids (`*`) operate on concrete values, meaning parametricity doesn't force a single unique implementation (e.g., `Double` can be `Sum` or `Product`).
 - **The Sum Monoid**: A practical numeric monoid (`mempty = 0`, `<> = +`).
 - **Aggregation with `foldMap`**: How to map elements to a Monoid and fold them securely without requiring the full Monad machinery.

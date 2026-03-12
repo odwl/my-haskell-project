@@ -1046,6 +1046,8 @@ Here is the exhaustive list of all 16 possible logical operations for a Boolean 
 15. **OR (`Any`)**: Returns `True` if at least one is `True`.
 16. **Tautology**: Always returns `True` (ignores both inputs).
 
+Among those, let's exclude the ones that ignore one of the arguments, because they will not fullfil. th. We are left with 10 operations.
+
 However, out of this exhaustive list of 16 logical gates, how many possess a valid identity element to form a Monoid? Exactly 4!
 
 *   If `True` is the identity (`mempty = True`), exactly 2 functions exist:
@@ -1057,11 +1059,24 @@ However, out of this exhaustive list of 16 logical gates, how many possess a val
 
 The other 12 operations either fundamentally lack an identity element (like Projection or Identity) or break the laws of associativity (like NAND or Implication).
 
+#### 3. Types with 3 Inhabitants (e.g., `Ordering`)
+What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`)? We witness a massive combinatorial explosion, but it is still small enough to mathematically map out!
+
+1. **Total Binary Operations**: A binary function takes two arguments, so there are $3 \times 3 = 9$ possible input combinations `(x, y)`. For each of those 9 inputs, the function must choose one of 3 outputs. This yields $3^9 = \mathbf{19,683}$ mathematically possible binary operations!
+2. **Operations with an Identity**: To be a Monoid, we must possess an identity element. We have 3 choices for our identity (let's pick `EQ`). By setting `EQ` as the identity, we instantly lock in the required answers for 5 of our 9 input pairs (e.g., `(LT, EQ) -> LT`). This leaves only 4 remaining input pairs where we still have the freedom to choose any of the 3 outputs. Therefore, there are exactly $3^4 = 81$ operations where `EQ` is the identity. Since any of the 3 elements could have been chosen, there are exactly $3 \times 81 = \mathbf{243}$ total operations that possess a valid Identity Element (these are known mathematically as *Unital Magmas*).
+3. **Operations that are Associative**: Out of those 243 Unital Magmas, we must filter out any that break the Law of Associativity `(x <> y) <> z == x <> (y <> z)`. If we explicitly calculate this for all 27 possible combinations of `(x, y, z)`, the math reveals that exactly **33** of them survive.
+
+Therefore, for a type with 3 values, out of 19,683 possible operations, exactly **33 form perfectly valid Monoids**!
+
 **The Monoid Laws and Testing**
 Just like Functors and Applicatives, instances of `Monoid` must rigidly obey mathematical laws:
 1. **Left Identity**: `mempty <> x == x`
 2. **Right Identity**: `x <> mempty == x`
 3. **Associativity**: `(x <> y) <> z == x <> (y <> z)`
+
+> [!NOTE]
+> **Wait, what about Commutativity?** 
+> Notice that commutativity (`x <> y == y <> x`) is strictly **NOT** one of the Monoid laws! If a Monoid *happens* to also be commutative (like numeric `Sum` or `Product`), it is given a special name: an **Abelian Monoid**. However, the vast majority of useful structural monoids in programming are strictly non-commutative. For example, `List` (`"A" <> "B" /= "B" <> "A"`), `First` (keeps the first `Just` value), and `Endo` (function composition $f \circ g \neq g \circ f$) rigidly obey associativity but deliberately break commutativity!
 
 **Developer Responsibility**: 
 The Haskell compiler will perfectly compile a `Monoid` instance even if it violently breaks these laws! It is solely the developer's responsibility to ensure algebraic correctness. 
