@@ -433,16 +433,6 @@ Since `Proxy` on both sides is an empty box, this structure holds absolutely no 
 **Haskell**: `(Proxy a, Proxy a)`.
 We must provide an empty box for the left side and an empty box for the right side. The state `(Proxy, Proxy)` is the *only* possible state this structure can ever be in. Since it has only one state, it yields zero bits of contextual information and holds zero data, bringing us right back to 1. It is isomorphic to `Proxy`.
 
-#### 5. Proxy + Identity = Maybe
-**Math**: $1 + X$.
-**Haskell**: `Either (Proxy a) (Identity a)`.
-If it's `Left`, we have an empty box (no data). If it's `Right`, we have exactly one `a`. This perfectly encodes the structure of optional data, making it isomorphic to `Maybe a`.
-
-#### 6. Proxy * Identity = Identity
-**Math**: $1 \times X = X$.
-**Haskell**: `(Proxy a, Identity a)`.
-A tuple containing an empty box and a single `a`. The left side adds no data and has no alternative states. The entire structure simply holds precisely one `a`, making it perfectly isomorphic to `Identity a`.
-
 By treating Bifunctors as binary operators running on simple atomic Functors, we observe the foundation of Algebraic Data Types emerging exactly like fundamental school arithmetic.
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
@@ -480,6 +470,13 @@ By missing $1$, we can never create a "Nil" or an "Empty" constructor to termina
 This subcategory guarantees—at the compiler level—that every single structure geometrically contains at least one $A$. The absence of the mathematical $1$ identity is exactly what powers this profound property!
 
 However, to form the full "Polynomial" category that exactly matches the power of general computer science ADTs, *both* of our fundamental operations ($+$ and $\times$) require their natural identities ($0$ and $1$) to terminate data structures (like using $1$ as the empty `Nil` constructor ending a `List`). 
+
+#### 6. Examples of Deriving Compounds
+By leveraging combinations of our extracted identities (`Zero`, `Proxy`) and fundamental functors (`Identity`), we systematically generate powerful structures using the Bifunctor operations.
+*   **Optional Data**: $1 + X$. Using Sum: `Either (Proxy a) (Identity a)` is isomorphic to `Maybe a`.
+*   **Trivial Product**: $1 \times X = X$. Using Product: `(Proxy a, Identity a)` perfectly yields `Identity a`.
+*   **Error Context**: $E + X$. `Either (Const e a) (Identity a)` gives us a computation that succeeds with an `a` or fails with an error `e`.
+*   **Logging Context**: $E \times X$. `(Const e a, Identity a)` perfectly mirrors a `Writer` log context bundled with an `a`.
 
 #### The Ultimate Closure: Bicartesian Closed Categories (BCC)
 So, we have established our two algebraic bifunctors (Sum and Product) and derived their natural identity atoms ($0$ and $1$). What happens if we take exactly these, and add our third non-algebraic bifunctor: the **Exponential** (`->`)?

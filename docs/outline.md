@@ -47,8 +47,6 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
   - $0 \times 1 = 0$: `(Zero a, Proxy a)` isomorphic to `Zero`.
   - $1 + 1 = 2$: `Either (Proxy a) (Proxy a)` isomorphic to `Const Bool`.
   - $1 \times 1 = 1$: `(Proxy a, Proxy a)` isomorphic to `Proxy`.
-  - $1 + X$: `Either (Proxy a) (Identity a)` isomorphic to `Maybe`.
-  - $1 \times X = X$: `(Proxy a, Identity a)` isomorphic to `Identity`.
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
 - **1. What is an Identity?**: Defining an identity via Tensor Products (mathematical neutrality: $B(A, I) \cong A$).
@@ -56,6 +54,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **3. Sub-Category Closures**: Why applying a single bifunctor and its identity leads to a trivial, flat lineage.
 - **4. Polynomial Functors**: The magic of combining multiple interacting bifunctors (+ and $\times$) to generate infinitely rich families (ADTs).
 - **5. Is Identity Required?**: Validating non-unital bifunctor sets. A profound example: generating the strictly **Non-Empty** subcategory of data structures (`Data.List.NonEmpty`) by possessing Sum ($+$) and Product ($\times$) but explicitly missing the Product identity $1$.
+- **6. Basic Examples**: Translating operations into compounds like $1 + X$ (`Maybe`), $1 \times X$ (`Identity`), $E + X$ (Error), and $E \times X$ (Writer).
 - **The Ultimate Closure**: Sum (+), Product (*), and Exponential (`->`) perfectly close to form a **Bicartesian Closed Category (BCC)**, creating the mathematical foundation of typed programming.
 
 ### Section 1.5: Generating Functor Subcategories (The Algebra as a Special Case)
