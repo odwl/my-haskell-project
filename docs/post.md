@@ -30,14 +30,28 @@ In Haskell, a functor is represented as a type constructor that maps from one ty
 
 Technically, a Haskell `Functor` is actually an *Endofunctor* because it maps from the category `Hask` back to the category `Hask`. However, Haskell functors are just a finite subset of all possible categorical functors. For example:
 1.  **Non-Endofunctor**: A functor mapping between two *different* categories.
-    *   *Example (Forgetful Functor)*: Imagine a functor from the category of **Monoids** to the category **Hask**. In the Monoid category, objects are types equipped with `mempty` and `<>`, and morphisms are functions that preserve that structure. The "Forgetful Functor" takes a Monoid and maps it to the raw Haskell type (forgetting the monoidal laws), and maps the homomorphism to a standard Haskell function. Because the domain is "Monoids" and the codomain is "Types," it is not an endofunctor.
+    *   *Example (Forgetful Functor)*: Mapping from the category of **Monoids** to **Hask**.
+    *   *Haskell "Signature"*: `forget :: Monoid a => a -> a`. 
+    *   *Implementation*: `forget x = x`.
+    *   *Logic*: The implementation is trivial (the identity function), but the *category* changes. On the left, `a` must obey monoid laws; on the right, it's just a raw type. We have "forgotten" the algebraic structure.
 2.  **Non-parametric Functor**: A categorical functor that inspects types. 
-    *   *Example*: Imagine a function `isInt :: a -> Bool` that returns `True` if `a` is an `Int` and `False` otherwise. In Haskell, such a function is **impossible** to write parametrically. To be parametric, a function `a -> Bool` must be "blind" to `a`, meaning it must return the same result for *every* possible type (it can only be a constant function like `const True`).
-    *   *Why it's forbidden*: In the signature `fmap :: (a -> b) -> f a -> f b`, the compiler treats `a` as a totally opaque "black box." You cannot write `if a is Int then ...` because the language provides no primitive to branch on the *type* of a polymorphic variable. This "blindness" is exactly what parametricity means, and it's what guarantees that structure-preserving mappings are mathematically unique.
-3.  **Restricted Functor**: A generic categorical functor that only applies to a **subcategory** (a subset of all types).
-    *   *Example*: The `Set` type in `Data.Set`. To map over a `Set`, you need the result type to have an `Ord` instance (to maintain the internal tree structure). 
+    *   *Example*: `isInt :: a -> Bool`. 
+    *   *Haskell Implementation (The "Backdoor")*: 
+      ```haskell
+      import Data.Typeable (Typeable, cast)
+      isInt :: Typeable a => a -> Bool
+      isInt x = isJust (cast x :: Maybe Int)
+      ```
+    *   *Why it's not a standard Functor*: To make it work, we had to add `Typeable a =>`. This breaks the `Functor` contract because `fmap` must work for **any** `a` (the entire category `Hask`). 
+3.  **Restricted Functor**: A generic categorical functor that only applies to a **subcategory**.
+    *   *Example*: `Data.Set`. 
     *   *Haskell Signature*: `mapSet :: (Ord a, Ord b) => (a -> b) -> Set a -> Set b`.
-    *   *Why it fails the Typeclass*: The Haskell `Functor` typeclass requires `fmap` to work for **any** type `b` without any constraints. Since `Set` requires `Ord b`, it cannot fulfill the contract of the standard `Functor` typeclass. Mathematically, it is still a functor (mapping between the "Category of Ordered Types"), but it is "restricted" compared to the full category `Hask`.
+
+### The Great Synthesis: Everything is a Restricted Functor
+You might notice a pattern: in all three cases, we can "fix" the problem by adding a constraint like `Monoid a =>`, `Typeable a =>`, or `Ord a =>`. 
+
+Your intuition is correct: **In Haskell, almost every "non-functor" is actually just a functor on a subcategory.** 
+By adding a constraint, you are explicitly telling the compiler: "I am no longer operating on the category of all types (`Hask`); I am now operating only on the subcategory of types that have this XYZ instance." The standard `Functor` typeclass is simply the special case where that subcategory is the entire category `Hask`.
 
 If we look at valid and invalid candidates in Haskell, it purely comes down to type signatures (kinds):
 *   `Maybe` is a valid functor candidate. 

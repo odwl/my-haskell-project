@@ -14,9 +14,10 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Software Elevation**: Functors in Strictly Functional languages (Haskell, PureScript, etc.).
 - **Haskell Specifics**: Endofunctors on `Hask`; Kind signature `* -> *`.
 - **Taxonomy of Non-Functors**:
-    - **Non-Endofunctor**: Mappings between different categories (e.g., the "Forgetful Functor" from Monoids to `Hask`).
-    - **Non-parametric**: Mappings that branch on type (e.g., the impossible `isInt :: a -> Bool`).
-    - **Restricted**: Mappings requiring constraints (e.g., `Data.Set` requiring `Ord`).
+    - **Non-Endofunctor**: (e.g., `forget :: Monoid a => a -> a`).
+    - **Non-parametric**: (e.g., `isInt :: Typeable a => a -> Bool`).
+    - **Restricted**: (e.g., `Data.Set` requiring `Ord`).
+- **The Great Synthesis**: How constraints transform "Invalid" functors into "Restricted" functors on subcategories.
 - **Signature of Maybe**: `data Maybe a = Nothing | Just a` (Kind `* -> *`).
 - **Type Bundle Taxonomy**: `type` (synonym), `newtype` (zero overhead), `data` (full ADT).
 ### Section 1.2: The Constraint of Parametricity
