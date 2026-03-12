@@ -208,9 +208,14 @@ instance Functor Proxy where
 
 If `Proxy` holds no data, `Const` holds zero *computational* data `a`, but stores an orthogonal contextual value `r`. (We will see later in Chapter 2 that this structure acts as an "Accumulator" once it is upgraded to an `Applicative`). 
 
-**Notes on Specializing `Const`:**
-*   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor.
-*   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data.
+**Notes on Specializing `Const` (The Ordinals):**
+By changing the embedded type `r`, the `Const` functor perfectly mimics the mathematical numbers (Ordinals) based purely on the number of inhabited states:
+*   **The Number $0$ (`Const Void`)**: If we specialize `r` to `Void` (zero inhabitants), `Const Void` becomes impossible to instantiate. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor ($0$).
+*   **The Number $1$ (`Const ()`)**: If we specialize `r` to the unit type `()` (exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy` ($1$).
+*   **The Number $2$ (`Const Bool`)**: If we specialize `r` to `Bool` (exactly two inhabitants), we get a functor that carries exactly one bit of information (True/False). 
+
+This pattern fundamentally demonstrates that constant functors act as the simple discrete numbers of our type algebra!
+
 ```haskell
 newtype Const r a = Const r
 ```
