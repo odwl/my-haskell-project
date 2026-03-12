@@ -61,6 +61,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 ## Annex: Proofs and Derivations
 - **Monad Equivalence**: Bind/Join/Kleisli.
 - **Uniqueness Proof**: Formal mapping proof for `MinF`.
+- **Parametricity**: A deep dive into Natural Transformations, Ends, and Relational Fibrations.
 
 ## Bibliography
 - Reading list: Wadler, Moggi, Danielsson, Milewski.
