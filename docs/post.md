@@ -462,7 +462,7 @@ By treating Bifunctors as binary operators running on simple atomic Functors, we
 
 ### Section 1.4: Deriving the Atoms from Bifunctors
 
-In mathematical systems, we often don't just invent the "atomic" elements out of thin air. We derive them from the operations themselves. 
+In mathematical systems, we often don't just invent the "atomic" elements out of thin air. We derive them from the operations themselves. Here, we are deeply interested in extracting "natural" atomic Functors directly out of our foundational Bifunctors.
 
 #### 1. Extracting a Functor from a Bifunctor
 
