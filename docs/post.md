@@ -92,38 +92,22 @@ The Identity Law guarantees that mapping the identity function over a structure 
 > ```
 > Here, `fakeFmap id (Counter 0 "x")` yields `Counter 1 "x"`, which is **not** equal to the original. This breaks the **Identity Law** (`fmap id == id`).
 
-**A Crucial Note on Enforcement**: Haskell, the language compiler, does *not* enforce these mathematical laws. It is code; it only checks type signatures. It is entirely the developer's responsibility to ensure their instances are lawful. Fortunately, automated property-based testing libraries like `QuickCheck` (often alongside `tasty`) provide an extremely easy and robust way to mathematically test and guarantee that your data structures fulfill these laws across thousands of generated inputs:
+**A Crucial Note on Enforcement**: Haskell, the language compiler, does *not* enforce these mathematical laws. It is code; it only checks type signatures. It is entirely the developer's responsibility to ensure their instances are lawful.
+
+Fortunately, in professional Haskell development, you don't need to write these property tests by hand. Libraries like `checkers` provide pre-packaged "batches" for all standard typeclasses. Using `tasty-checkers`, you can mathematically verify your instances across thousands of generated inputs with a single line:
 
 ```haskell
 import Test.Tasty
-import Test.Tasty.QuickCheck
+import Test.Tasty.Checkers
 
--- 1. Identity Law Propery
-prop_FunctorIdentity :: (Functor f, Eq (f a), Arbitrary (f a)) => f a -> Bool
-prop_FunctorIdentity x = fmap id x == x
-
--- 2. Composition Law Property
-prop_FunctorComposition :: (Functor f, Eq (f c), Arbitrary (f a)) => 
-                           Fun (b, c) -> Fun (a, b) -> f a -> Bool
-prop_FunctorComposition (Fn f) (Fn g) x = fmap (f . g) x == (fmap f . fmap g) x
-
--- Test Suite Setup
 main :: IO ()
 main = defaultMain $ testGroup "Functor Laws"
-  [ testProperty "Maybe Identity" (prop_FunctorIdentity :: Maybe Int -> Bool)
-  , testProperty "Maybe Composition" (prop_FunctorComposition :: 
-                                       Fun (Int, Int) -> Fun (Int, Int) -> Maybe Int -> Bool)
+  [ -- Automatically tests all Functor laws (Identity and Composition)
+    testBatch (functor (undefined :: Maybe Int))
   ]
 ```
-*(Note: We use `Fun` from QuickCheck to generate random, shrinkable functions for the composition test).*
 
-> [!TIP]
-> **The Pro Way: Using `checkers`**: In professional Haskell projects, you shouldn't write these laws by hand for every new type. Libraries like `checkers` provide pre-packaged "batches" for all standard typeclasses. Using `tasty-checkers`, you can simplify the entire test suite to a single line:
-> ```haskell
-> -- Automatically tests all Functor laws (Identity and Composition)
-> testBatch (functor (undefined :: Maybe Int))
-> ```
-> This is especially powerful as you move to Applicatives and Monads, where the number of laws grows significantly (Identity, Homomorphism, Interchange, etc.).
+This approach becomes even more valuable as we move to Applicatives and Monads, where the number of laws (Identity, Homomorphism, Interchange, etc.) grows significantly.
 
 ### Section 1.2: The Atomic Functors
 
