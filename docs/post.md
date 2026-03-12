@@ -505,7 +505,7 @@ At its absolute bare minimum, we just need a **left identity** or a **right iden
 
 **Crucial Distinction**: Do not confuse these properties with the `Bifunctor` laws! The Functor/Bifunctor laws (Identity and Composition) govern the *behavior of mapping functions* and must hold via **strict equality** (e.g., `fmap id == id`). In contrast, possessing a Left or Right Identity type is a property of the *data structure itself*, proven via **structural isomorphism** ($\cong$, meaning the shapes can losslessly map to each other even if they aren't strictly identical types).
 
-*(Note: If a binary operation has both, math dictates they must be the identical type $I$!)*
+*(Note: If a binary operation has both, math dictates they must be the identical type $I$. See the [Annex: Proof of Identity Uniqueness](#proof-of-identity-uniqueness) for the derivation!)*
 
 When you use the identity $I$ to perform your partial application, the choice is no longer yours—the inherent structure of the Bifunctor *forces* its own unique canonical choice onto you! That uniqueness is exactly what "naturality" refers to in this context: it arises purely from the structure itself, independent of arbitrary external choices.
 
@@ -890,6 +890,28 @@ Given `data Proxy a = Proxy`, how do we formally prove the only valid function o
     Because `g` is the only total mapping, `fmap id = id` trivially holds, and no other lawful interpretation exists.
 
 ### Proof of Identity Implies Composition
+
+### Proof of Identity Uniqueness
+
+If a binary operation $B$ has a left identity $I_L$ and a right identity $I_R$, they must be structurally isomorphic ($I_L \cong I_R$).
+
+1.  By definition of a Left Identity, for *any* type $A$: $B(I_L, A) \cong A$.
+2.  Let's choose $A = I_R$. Therefore: $B(I_L, I_R) \cong I_R$.
+3.  By definition of a Right Identity, for *any* type $A$: $B(A, I_R) \cong A$.
+4.  Let's choose $A = I_L$. Therefore: $B(I_L, I_R) \cong I_L$.
+5.  Since both $I_L$ and $I_R$ are mathematically isomorphic to the exact same structural element $B(I_L, I_R)$, then logically $I_L \cong I_R$.
+
+Thus, if both exist, they are structurally identical.
+
+### Strict Equality vs. Structural Isomorphism
+
+It is critical mathematically and computationally to distinguish between typeclass "laws" and structural "isomorphisms" or Unitors.
+
+**Typeclass Laws (Behavioral strict equality)**:
+These govern how typeclass methods (like `fmap`, `bimap`, `>>=`) must behave computationally. When we write a law like `fmap id == id`, we mean **strict equality**. The two sides must evaluate to the exact same value of the exact same type. If you map the identity over `[1, 2]`, you must get the exact `[1, 2]` back, not a copy or an equivalent wrapper. 
+
+**Structural Isomorphisms (Type-level mapping)**:
+These govern the "shape" of the types themselves. When we say $B(I, A) \cong A$ (e.g., `(Either Void A) ≅ A`), we are describing **structural isomorphism**. The compiler knows that `Either Void Bool` and `Bool` are two entirely different types (`Left True` vs `True`). However, because `Void` contains no information, we can write a perfect, lossless two-way mapping between the two structures. These mappings are the exact "Left/Right Unitors". They are not equalities; they are natural transformations between non-equal types.
 
 In Haskell, if `fmap id = id` (Identity Law) holds for a parametrically polymorphic `fmap`, then `fmap (f . g) = fmap f . fmap g` (Composition Law) is automatically satisfied. This is a direct consequence of the **Naturality** of `fmap`.
 
