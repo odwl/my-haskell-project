@@ -1,12 +1,43 @@
 # Minimal Functors, Applicatives, and Monads in Haskell
 
-**Author:** Olivier De Wolf
+**Author:** Olivier De Wolf 
+
+## Table of Contents
+* [1. Introduction](#1-introduction)
+* [Chapter 1: The Foundations of Functors, Applicatives, and Monads](#chapter-1-the-foundations-of-functors-applicatives-and-monads)
+  * [Section 1.1: What is a Functor?](#section-11-what-is-a-functor)
+  * [Section 1.2: Minimal Functors and Bifunctors](#section-12-minimal-functors-and-bifunctors)
+  * [Section 1.3: Deriving the Atoms from Bifunctors](#section-13-deriving-the-atoms-from-bifunctors)
+  * [Section 1.4: Generating Functor Subcategories (The Algebra as a Special Case)](#section-14-generating-functor-subcategories-the-algebra-as-a-special-case)
+  * [Section 1.5: Polynomial Functors](#section-15-polynomial-functors)
+  * [Section 1.6: The Parallel Functor Ecosystem (Solutions for Restricted Functors)](#section-16-the-parallel-functor-ecosystem-solutions-for-restricted-functors)
+  * [Section 1.7: Discovering Molecules (Compounds)](#section-17-discovering-molecules-compounds)
+* [Chapter 2: The Applicative Evolution](#chapter-2-the-applicative-evolution)
+  * [Section 2.1: The Applicative Atoms](#section-21-the-applicative-atoms)
+  * [Section 2.2: Automated Law Testing](#section-22-automated-law-testing)
+* [Chapter 3: The Monadic Conclusion](#chapter-3-the-monadic-conclusion)
+  * [Section 3.1: The Final Upgrades](#section-31-the-final-upgrades)
+  * [Section 3.2: Automated Law Testing](#section-32-automated-law-testing)
+* [Chapter 4: Deep Dive into Bifunctors](#chapter-4-deep-dive-into-bifunctors)
+  * [Section 4.1: The True Nature of Bifunctors](#section-41-the-true-nature-of-bifunctors)
+  * [Section 4.2: The Laws of Bifunctors](#section-42-the-laws-of-bifunctors)
+* [Chapter 5: Monoidal Categories](#chapter-5-monoidal-categories)
+  * [Section 5.1: The Pentagon and Triangle Laws](#section-51-the-pentagon-and-triangle-laws)
+* [Conclusion: The Tale of Three Minimals](#conclusion-the-tale-of-three-minimals)
+* [Annex: Proofs and Derivations](#annex-proofs-and-derivations)
+* [Bibliography](#bibliography)
 
 ## 1. Introduction
 
 Walking through the exercise of constructing "minimal" instances is one of the best ways to deeply understand Functors, Applicatives, and Monads in Haskell. By stripping away domain-specific noise (like state management, I/O, or failure), we demystify a lot of features that initially look like magic. It reveals the underlying mechanics at play.
 
+In mathematics, there is a beautiful, recurring pattern: we like to start with the absolute simplest "atoms" (axiomatic primitives) and establish a clear set of combinators to build more complicated structures. We then look for the *closure*—the minimal set that contains all those starting axioms and remains perfectly valid under every possible combination of those operations. 
+
+In this document, we will apply exactly that mathematical lens. We will start by defining the absolute minimal "atomic" Functors and Bifunctors. Next, we will introduce the combinators of our algebra (Sums and Products). Finally, by exploring the closure of these operations, we will demonstrate how you can transparently build incredibly complex, robust algebraic data types (Molecules) without ever breaking the foundational laws of the atoms.
+
 While the core concepts structured here are foundational to modern Haskell, this specific teaching narrative—starting with absolute minimalism to actually "prove" the forced hand of parametricity—is something usually only found scattered across different resources. We will synthesize foundational ideas found in Philip Wadler's *"Theorems for free!"* and Sandy Maguire's *"Thinking with Types"*.
+
+**Intended Audience:** This journey is designed for mathematicians, computer scientists, or intermediate Haskell programmers who already grasp the basic syntax and perhaps have a surface-level intuition of Category Theory or Abstract Algebra. If you have ever used a Functor or a Monad but felt a lingering desire to derive them from the absolute mathematical "scratch"—to build an unshakeable, axiomatic understanding of *why* they must exist and behave exactly as they do—this exploration is for you!
 
 In this exploration, our scope is specific: we are focusing entirely on Endofunctors operating within the category of Haskell types (from `Hask` to `Hask`). 
 
@@ -14,7 +45,7 @@ In this exploration, our scope is specific: we are focusing entirely on Endofunc
 
 The true protagonist of this journey is **Parametricity**. Due to parametric polymorphism (the inability to inspect types at runtime), the implementation of most functor, applicative, and monad instances for simple structures is mathematically forced to be unique. This provides immense "intellectual economy" for Haskell developers: operations like `bind`, `pure`, `fmap`, `apply` (`<*>`), and Kleisli composition (`>=>`) generally have exactly one possible correct implementation for simple structural types. The compiler practically writes the code for you. 
 
-*(Note: There are rare counterexamples where multiple valid implementations might exist—for example, traversing a complex tree structure in different orders—but these are atypical for the minimal types we are exploring).*
+*(Note: There are rare counterexamples where multiple valid implementations might exist—for example, traversing a complex tree structure in different orders, or the `List` monad which actually has exactly two valid implementations for `bind`—but these are atypical for the minimal types we are exploring).*
 
 ---
 
@@ -106,37 +137,9 @@ main = defaultMain $ testGroup "Functor Laws"
 >
 > It is possible (though rare in practice) to write a "malicious" law-breaking functor that passes these tests by only failing on very specific, ungenerated inputs—a concept explored in the [Law-Breaking Functors](#5-law-breaking-functors-non-valid-functors) section.
 
-#### 4. Categorical Functors that are not Haskell Functors
-These structures satisfy the mathematical laws—including the **Identity Law**—but fail Haskell's unconstrained mapping condition (Point 2).
+*(Moved to Section 1.5: The Parallel Functor Ecosystem)*
 
-1.  **The Forgetful Functor (`Monoid` -> `Hask`)**:
-    ```haskell
-    forget :: Monoid a => a -> a
-    forget = id
-    ```
-    *   *Verification*: `forget id == id` holds, but it requires the `Monoid a` constraint.
-2.  **The Type Inspector (`isInt`)**:
-    ```haskell
-    isInt :: Typeable a => a -> Bool
-    ```
-    *   *Verification*: Breaks Point 2. It inspects the type, violating the "blindness" of true polymorphism.
-3.  **The Balanced Tree (`Data.Set`)**:
-    ```haskell
-    mapSet :: Ord b => (a -> b) -> Set a -> Set b
-    ```
-    *   *Logic*: Rebuilding the BST requires `Ord b`. This makes `Set` a **Restricted Functor**. While it obeys the laws on its valid subcategory, it cannot be a standard Haskell `Functor`.
-
-1.  **The Counter (Mutation Lie)**:
-    ```haskell
-    data Counter a = Counter Int a
-
-    -- Point 1: Valid signature (* -> *)
-    -- Point 2: Perfectly parametric (ignores 'a')
-    fakeFmap f (Counter n x) = Counter (n + 1) (f x)
-    ```
-    **Why it fails**: `fakeFmap id (Counter 0 "x")` results in `Counter 1 "x"`. Since this is not equal to the original value, the **Identity Law** is broken. Because it breaks the first law, it is not a Functor in any category, including Haskell.
-
-2.  **The Malicious Functor (Hidden Law-Breaker)**:
+#### 4. The Malicious Functor (Hidden Law-Breaker)
     This example illustrates why testing alone isn't proof. It has the correct signature and is parametric, but it "hides" its law-breaking behavior behind a conditional:
     ```haskell
     data MyBox a = MyBox Int a
@@ -150,30 +153,43 @@ These structures satisfy the mathematical laws—including the **Identity Law**�
 
 ---
 
-### Section 1.2: The Atomic Functors
+### Section 1.2: Minimal Functors and Bifunctors
 
-Now that we understand the rules, let's explore the absolute simplest "atoms" we can build in Haskell. These structures are the building blocks of the entire algebraic universe.
+Now that we have explored several examples of types that are *not* valid functors, let's reverse the approach. We will define the absolute simplest, most minimal structural types we can physically imagine building in Haskell. We will conduct this exercise for both standard **Functors** (types with a single parameter, `* -> *`) and **Bifunctors** (types with two parameters, `* -> * -> *`). 
 
-#### 1. The Smallest Candidate: `Proxy` (`MinF`)
+The beautiful consequence of choosing structures this simple is that it perfectly demonstrates the "forced hand" of **parametricity**. Because these minimal types contain almost no data, there is mathematically only a single possible way to map over them without violating the type signature. Once we define the type, the compiler practically writes the unique `Functor` and `Bifunctor` instances for us!
+
+These minimal structures act as the "atoms" from which the rest of the algebraic universe is built.
+
+#### Minimal Functors
+
+#### 1. The Smallest Candidate: `Proxy`
 *(Zero computational data, Zero contextual data).*
 
 The smallest possible Functor holds absolutely the minimum amount of data: **none**.
 ```haskell
-data MinF a = Val -- In Haskell, known as Proxy
+data Proxy a = Proxy
 ```
-`MinF` maps any phantom type `a` to a constructor that contains zero term-level data. The type `a` exists only at compile time; at runtime, the box is completely empty.
+`Proxy` maps any phantom type `a` to a constructor that contains zero term-level data. The type `a` exists only at compile time; at runtime, the box is completely empty.
 
 **Functor Implementation**:
 ```haskell
-instance Functor MinF where
-    fmap _ Val = Val
+instance Functor Proxy where
+    fmap _ Proxy = Proxy
 ```
-**The "Why"**: Due to parametricity, there is exactly one possible implementation that compiles. We are given a function `(a -> b)`. We have a `MinF a` (value `Val`). We must return a `MinF b` (value `Val`). We have no `a` to feed into the function. Therefore, the function *must* be ignored.
+**The "Why"**: Due to parametricity, there is exactly one possible implementation that compiles. We are given a function `(a -> b)`. We have a `Proxy a` (value `Proxy`). We must return a `Proxy b` (value `Proxy`). We have no `a` to feed into the function. Therefore, the function *must* be ignored.
 
-#### 2. The Accumulator: `Const`
+**Law Verification**:
+*   *Identity*: `fmap id Proxy == Proxy == id Proxy`
+*   *Composition*: `fmap (f . g) Proxy == Proxy == fmap f Proxy == fmap f (fmap g Proxy)`
+
+*(Note: As proven by Wadler's "Theorems for free!", satisfying the Identity law automatically guarantees the Composition law for any parametrically polymorphic functor. We explicitly verify both here and throughout this section purely for the sake of a complete, explicit proof).*
+
+#### 2. The Constant Context: `Const r`
 *(Zero computational data, Some contextual data `r`).*
 
-If `MinF` holds no data, `Const` holds zero *computational* data `a`, but stores an orthogonal contextual value `r`.
+If `Proxy` holds no data, `Const` holds zero *computational* data `a`, but stores an orthogonal contextual value `r`. (We will see later in Chapter 2 that this structure acts as an "Accumulator" once it is upgraded to an `Applicative`). 
+*(Note that if we specialize `r` to the unit type `()`, we get `Const ()`, which holds exactly zero term-level data. Thus, `Proxy` is mathematically isomorphic to `Const ()`. They are not literally the same type (a `type` synonym), but they encode the exact same information: nothing! You can translate back and forth between `Proxy` and `Const ()` without losing any data).*
 ```haskell
 newtype Const r a = Const r
 ```
@@ -182,31 +198,266 @@ newtype Const r a = Const r
 instance Functor (Const r) where
     fmap _ (Const r) = Const r
 ```
-**The "Why"**: Just like `MinF`, because we have no `a` to apply the function to, parametricity forces us to ignore the function entirely. Note that at the Functor level, `r` requires no special structure (it doesn't need to be a `Monoid`).
+**The "Why"**: Just like `Proxy`, because we have no `a` to apply the function to, parametricity forces us to ignore the function entirely. Note that at the Functor level, `r` requires no special structure (it doesn't need to be a `Monoid`).
 
-#### 3. The Wrapper: `Identity` (`IdF`)
+**Law Verification**:
+*   *Identity*: `fmap id (Const r) == Const r == id (Const r)`
+*   *Composition*: `fmap (f . g) (Const r) == Const r == fmap f (Const r) == fmap f (fmap g (Const r))`
+
+#### 3. The Wrapper: `Identity`
 *(One computational data, Zero contextual data).*
 
 Next is the minimal structure with exactly *one* value: a transparent wrapper.
 ```haskell
-data IdF a = IdVal a -- In Haskell, known as Identity
+newtype Identity a = Identity a
 ```
 **Functor Implementation**:
 ```haskell
-instance Functor IdF where
-    fmap f (IdVal x) = IdVal (f x)
+instance Functor Identity where
+    fmap f (Identity x) = Identity (f x)
 ```
-**The "Why"**: The type signature demands we produce an `IdF b`. We possess an `x :: a` and a function `f :: a -> b`. The *only* mathematical way to obtain a `b` is to apply `f` to `x`.
+**The "Why"**: The type signature demands we produce an `Identity b`. We possess an `x :: a` and a function `f :: a -> b`. The *only* mathematical way to obtain a `b` is to apply `f` to `x`.
 
-### Section 1.3: The Algebra of Functors
+**Law Verification**:
+*   *Identity*: `fmap id (Identity x) == Identity (id x) == Identity x == id (Identity x)`
+*   *Composition*: `fmap (f . g) (Identity x) == Identity ((f . g) x) == Identity (f (g x)) == fmap f (Identity (g x)) == fmap f (fmap g (Identity x))`
 
-So far we have looked at the building blocks:
-1.  **`Const r`**: Represents a constant value independent of `a`.
-2.  **`Identity`**: Represents the parameter itself ($X$).
+#### 4. The Exponential: `(->) r` (The Reader)
+*(Infinite computational data, delayed by domain `r`).*
 
-Every other algebraic data type in Haskell can be built by **summing** (Alternative constructors) and **multiplying** (Multiple fields) these blocks together!
+While `Either` and `(,)` represent algebra's polynomial addition ($+$) and multiplication ($\times$), functions represent exponents ($a^r$). This forms the "Reader" functor: an environment `r` waiting to produce our `a`.
+```haskell
+-- The type constructor is `(->) r`. The parameter is `a`.
+instance Functor ((->) r) where
+    fmap f g = f . g 
+    -- Equivalently: fmap = (.)
+```
+**The "Why"**: We need to produce a function of type `(r -> b)`. We possess a function `g :: r -> a` and a mapping function `f :: a -> b`. The only mathematical way to obtain a `b` from an `r` without cheating is to pipe the argument `r` through `g` to get an `a`, and then pipe that `a` into `f`. This is exactly function composition `(.)`.
 
-### Section 1.4: Polynomial Functors
+**Law Verification**:
+*   *Identity*: `fmap id g == id . g == g == id g`
+*   *Composition*: `fmap (f . h) g == (f . h) . g == f . (h . g) == f . fmap h g == fmap f (fmap h g)`
+
+##### Exponential Blends and Higher-Order Exponentials
+To truly illustrate the power of parametricity, consider what happens when we combine our building blocks (Sums, Products, and Exponentials). Even for these complex concepts, parametricity completely forces the only mathematically valid implementation!
+
+*   **1. The Blended Exponent/Product (`State s`)**: Mathematically $(A \times S)^S$. It computes an $a$ while modifying an environment $s$. 
+    ```haskell
+    newtype State s a = State (s -> (a, s))
+
+    instance Functor (State s) where
+        fmap f (State g) = State $ \s -> 
+            let (a, new_s) = g s 
+            in (f a, new_s)
+    ```
+    *The "Why"*: We must produce a function returning `(b, s)`. We possess an initial state `s` and a function `g` returning `(a, s)`. The only legal move is to apply `s` to `g`, extract the resulting `a`, hit that `a` with our `f`, and return it bundled tightly with the new `s`! The state piping is practically written for us by the type system.
+
+*   **2. The Higher-Order Exponential (`Cont r`)**: Mathematically $R^{(R^A)}$. It is a function that takes a callback `(a -> r)` and eventually produces an `r`.
+    ```haskell
+    newtype Cont r a = Cont ((a -> r) -> r)
+
+    instance Functor (Cont r) where
+        fmap f (Cont g) = Cont $ \callback_b -> 
+            g (\a -> callback_b (f a))
+    ```
+    *The "Why"*: This is a brain-bender, but parametricity saves us. We must return an `r`. We possess `callback_b :: (b -> r)` and `g :: ((a -> r) -> r)`. We are forced to pass *something* to `g` that looks like `(a -> r)`. Since we possess a `b -> r`, and an `a -> b`, the only legal move is to compose them: `callback_b . f` is of type `a -> r`. We feed that exact composition to `g`. The types dictate the entire callback logic!
+
+#### Minimal Bifunctors
+
+Just as we started Chapter 1 by looking at the simplest possible Functors (`Proxy`, `Const`, `Identity`), we can apply the exact same "shrinking" exercise to Bifunctors (`* -> * -> *`). While `Either` (Sum) and `(,)` (Product) are the fundamental operations of our algebra, they both contain term-level data. We can go simpler in three distinct ways:
+
+##### 1. The Absolute Simplest: The "Bi-Proxy" (Zero Data)
+Just like `Proxy` ignoring its `a`, the simplest Bifunctor ignores *both* `a` and `b`. It is essentially an empty box with two phantom types.
+
+```haskell
+data BiProxy a b = BiProxy
+```
+**Bifunctor Implementation**:
+```haskell
+instance Bifunctor BiProxy where
+    bimap _ _ BiProxy = BiProxy
+```
+**The "Why"**: The signature demands we produce a `BiProxy c d` (value `BiProxy`). We are given two functions `(a -> c)` and `(b -> d)`. Because we possess neither an `a` nor a `b` to apply the functions to, parametricity forces us to ignore both functions entirely.
+
+**Law Verification**:
+*   *Identity*: `bimap id id BiProxy == BiProxy == id BiProxy`
+*   *Composition*: `bimap (f . g) (h . i) BiProxy == BiProxy == bimap f h BiProxy == bimap f h (bimap g i BiProxy)`
+
+##### 2. The Unrelated Constant (Context Data Only)
+Just like `Const r a` holds an `r` but ignores `a`, we can have a Bifunctor that holds an `r` but ignores both `a` and `b`. *(Notice the exact same parallel here: if we specialize `r` to the unit type `()`, we get `ConstContext ()`, which is mathematically isomorphic to `BiProxy`!)*
+
+```haskell
+newtype ConstContext r a b = ConstContext r
+```
+**Bifunctor Implementation**:
+```haskell
+instance Bifunctor (ConstContext r) where
+    bimap _ _ (ConstContext r) = ConstContext r
+```
+**The "Why"**: We must produce a `ConstContext r c d`. We possess an orthogonal context value `r`. Because we have no `a` or `b` to transform, we are forced to discard the mapping functions and return the unadulterated context.
+
+**Law Verification**:
+*   *Identity*: `bimap id id (ConstContext r) == ConstContext r == id (ConstContext r)`
+*   *Composition*: `bimap (f . g) (h . i) (ConstContext r) == ConstContext r == bimap f h (ConstContext r) == bimap f h (bimap g i (ConstContext r))`
+
+##### 3. The One-Sided Constants (Left and Right)
+A Bifunctor takes two arguments. We can define Bifunctors that act like `Identity` on one side, and `Proxy` on the other.
+
+**The Left identity (ignoring the right):**
+```haskell
+newtype ConstLeft a b = ConstLeft a
+```
+**Bifunctor Implementation**:
+```haskell
+instance Bifunctor ConstLeft where
+    bimap f _ (ConstLeft a) = ConstLeft (f a)
+```
+**The "Why"**: We need a `ConstLeft c d`. We possess an `a` and a function `(a -> c)`. We are mathematically forced to apply `f` to `a` to produce the required `c`. Since we possess no `b`, the second function is ignored.
+
+**Law Verification**:
+*   *Identity*: `bimap id id (ConstLeft a) == ConstLeft (id a) == ConstLeft a == id (ConstLeft a)`
+*   *Composition*: `bimap (f . g) (h . i) (ConstLeft a) == ConstLeft ((f . g) a) == ConstLeft (f (g a)) == bimap f h (ConstLeft (g a)) == bimap f h (bimap g i (ConstLeft a))`
+
+**The Right identity (ignoring the left):**
+```haskell
+newtype ConstRight a b = ConstRight b
+```
+**Bifunctor Implementation**:
+```haskell
+instance Bifunctor ConstRight where
+    bimap _ g (ConstRight b) = ConstRight (g b)
+```
+**The "Why"**: We need a `ConstRight c d`. We possess a `b` and a function `(b -> d)`. Parametricity dictates we must apply `g` to `b` to produce the required `d`. The first function is ignored.
+
+**Law Verification**:
+*   *Identity*: `bimap id id (ConstRight b) == ConstRight (id b) == ConstRight b == id (ConstRight b)`
+*   *Composition*: `bimap (f . g) (h . i) (ConstRight b) == ConstRight ((h . i) b) == ConstRight (h (i b)) == bimap f h (ConstRight (i b)) == bimap f h (bimap g i (ConstRight b))`
+
+##### 4. The Sum Molecule: `Either`
+The fundamental co-product of two types.
+
+**Bifunctor Implementation**:
+```haskell
+instance Bifunctor Either where
+    bimap f _ (Left a)  = Left (f a)
+    bimap _ g (Right b) = Right (g b)
+```
+**The "Why"**: `Either` encapsulates a choice. If the constructor contains an `a` (`Left`), we are forced to apply `f` to obtain a `c`. If it contains a `b` (`Right`), we are forced to apply `g` to obtain a `d`.
+
+**Law Verification**:
+*   *Identity*:
+    ```haskell
+    bimap id id (Left a) == Left (id a) == Left a == id (Left a)
+    bimap id id (Right b) == Right (id b) == Right b == id (Right b)
+    ```
+*   *Composition*:
+    ```haskell
+    bimap (f . g) (h . i) (Left a) == Left ((f . g) a) == Left (f (g a)) == bimap f h (Left (g a)) == bimap f h (bimap g i (Left a))
+    bimap (f . g) (h . i) (Right b) == Right ((h . i) b) == Right (h (i b)) == bimap f h (Right (i b)) == bimap f h (bimap g i (Right b))
+    ```
+
+##### 5. The Product Molecule: `(,)`
+The fundamental product of two types.
+
+**Bifunctor Implementation**:
+```haskell
+instance Bifunctor (,) where
+    bimap f g (a, b) = (f a, g b)
+```
+**The "Why"**: A Tuple constructor definitively contains both an `a` *and* a `b`. To produce a tuple of type `(c, d)`, we must apply `f` to the left element and `g` to the right element.
+
+**Law Verification**:
+*   *Identity*: `bimap id id (a, b) == (id a, id b) == (a, b) == id (a, b)`
+*   *Composition*: `bimap (f . g) (h . i) (a, b) == ((f . g) a, (h . i) b) == (f (g a), h (i b)) == bimap f h (g a, i b) == bimap f h (bimap g i (a, b))`
+
+##### 6. The Dual Exponential: `BiReader r`
+Just as we saw functions pull us out of polynomial algebras at the 1D Functor level, an exponential delays computation at the 2D Bifunctor level. Mathematically, it is $(A \times B)^R$. 
+
+**Bifunctor Implementation**:
+```haskell
+newtype BiReader r a b = BiReader (r -> (a, b))
+
+instance Bifunctor (BiReader r) where
+    bimap f g (BiReader h) = BiReader $ \r -> 
+        let (a, b) = h r 
+        in (f a, g b)
+```
+**The "Why"**: We are returning a delayed computation of a tuple. We possess a function `h :: r -> (a, b)`. We are given two mapping functions `f :: a -> c` and `g :: b -> d`. The only legal mathematical move is to intercept the environment `r` the moment it arrives, feed it to `h` to obtain our `a` and `b`, apply `f` to `a`, apply `g` to `b`, and return the newly bundled tuple. The entire pipeline is rigidly defined by the types involved.
+
+*(Note: We could also define the Sum representation $(A + B)^R$ as `r -> Either a b`, which acts via pattern matching but is constrained by the exact same strict algebraic flow).*
+
+### Section 1.3: Deriving the Atoms from Bifunctors
+
+In mathematical systems, we often don't just invent the "atomic" identity elements out of thin air. They are actually mathematically *derived* from the existence of the operations! If a category declares that a binary operation like Sum ($+$) or Product ($\times$) exists, we immediately seek to find its natural identity element.
+
+#### 1. The Sum Identity (The Void)
+If our category contains the **Sum Bifunctor** (`Either` or $+$), the laws of algebra dictate that there must exist a mathematical $0$ (the Initial Object). In Haskell, this $0$ is the type `Void`, a type with literally zero inhabitants making it impossible to instantiate. 
+We can construct a constant functor from it: `Const Void a` (often represented as `V1` in `GHC.Generics`). Summing with $0$ does nothing mathematically: `Either (Const Void a) x` is exactly isomorphic to `x`. 
+*(Note: This means mathematically, `Proxy` is not truly the "simplest"—it is simply $1$. `Const Void` is strictly smaller as it is exactly $0$!)*
+
+#### 2. The Product Identity (The Proxy)
+If our category contains the **Product Bifunctor** (`(,)` or $\times$), it implies the existence of a mathematical $1$ (the Terminal Object). In Haskell, this is `()` (Unit). 
+We construct a constant functor from it as `Const () a` or simply `Proxy` (often represented as `U1` in `GHC.Generics`). Multiplying by $1$ does nothing: `(Proxy, x)` is exactly isomorphic to `x`. 
+
+#### The Ultimate Closure: Bicartesian Closed Categories (BCC)
+So, we have established our two algebraic bifunctors (Sum and Product) and derived their natural identity atoms ($0$ and $1$). What happens if we take exactly these, and add our third non-algebraic bifunctor: the **Exponential** (`->`)?
+
+If a category contains exactly those three foundational Bifunctor operations (`Either`, `(,)`, and `->`) along with their identities (`Void` and `()`), it fulfills the mathematical requirements to be called a **Bicartesian Closed Category** (BCC).
+
+*   **"Cartesian"**: The category possesses Products ($\times$) and a Terminal Object ($1$).
+*   **"Bi-"**: The category *also* possesses Coproducts ($+$) and an Initial Object ($0$).
+*   **"Closed"**: The category possesses Exponentials (`->`), allowing functions to be treated as values and evaluated.
+
+This completely "closed" loop of operations is extraordinarily profound. According to the Curry-Howard isomorphism, a Bicartesian Closed Category is the exact mathematical equivalent of **Simply Typed Lambda Calculus**, the theoretical foundation of intuitionistic propositional logic. 
+
+The closure built by these three simple Bifunctors creates the entire logical framework that strongly typed programming languages like Haskell rely on!
+
+### Section 1.4: Generating Functor Subcategories (The Algebra as a Special Case)
+
+*(Note on Terminology: When mathematicians or Haskell programmers say a structure is "algebraic" — as in Algebraic Data Types or ADTs — they mean it is constructed strictly using only polynomial combinations: Sums `+` and Products `*`. Function arrows `->` represent Exponentials, which are conceptually a tier "above" simple algebra!
+To make this concrete:
+*   **Algebraic**: Things defined exclusively by values and their geometry. This includes types like `Bool` ($1 + 1$), `Maybe` ($1 + X$), `List`, and `Tree`, as well as mathematical structures like **Monoids** and **Groups**.
+*   **Non-Algebraic (Exponentials)**: Things that require an execution environment or delayed computation (`->`). This includes types like the `Reader` ($A^R$), `State`, and `Cont`, which are structurally higher-order).*
+
+#### 1. The Algebra of Functors
+
+When you build an algebraic equation in mathematics, like $f(x) = 2x + 1$, you only need two foundational components to start building: your numbers (constants like 1, 2) and your variable ($x$).
+
+For standard Endofunctors (`* -> *`), it is incredibly obvious what our two "atomic" building blocks must therefore be:
+1.  **The Constants ($C$)**: `Const r` represents any constant value independent of `x`. At its absolute simplest scale, `Proxy` (or `Const ()`) represents the mathematical constant $1$.
+2.  **The Single Variable ($X$)**: `Identity` rigidly represents the single parameter/variable $x$ itself.
+
+Every other single-variable algebraic data type in Haskell can be built by taking these primitives, **summing** them (using Alternative constructors, representing $+$), and **multiplying** them (using Multiple fields, representing $\times$)!
+
+But are Sums and Products Functors themselves? Yes! In Category Theory, operations like Sum ($+$) and Product ($\times$) are specifically known as **Bifunctors** because they map *two* categories (or a product of categories) into one. In Haskell, these are represented by `Either` (Sum) and `(,)` (Product). 
+
+Because they are Bifunctors, if you fix one of their arguments, they immediately become standard Endofunctors (`* -> *`). Furthermore, the category of Functors is closed over these operations: the sum or product of two Functors is inherently a Functor (like `Data.Functor.Sum` and `Data.Functor.Product`).
+
+*(Note: The formal laws governing how these products and sums associate and interact are a bit more complex, requiring them to verify the **pentagon** and **triangle** laws from Monoidal Categories. We will refer to the details of these laws in [Chapter 5](#chapter-5-monoidal-categories) at the end of this journey).*
+
+**Functors entirely out of Proxy:**
+To see these Bifunctors in action with our simplest atomic functor, `Proxy`:
+*   **Proxy + Proxy = Const Bool**: Summing two Proxies creates two possible empty states. `Either () ()` is isomorphic to a Boolean. Mathematically: $1 + 1 = 2$.
+*   **Proxy * Proxy = Proxy**: A product of two empty boxes remains an empty box. Mathematically: $1 \times 1 = 1$.
+
+#### 2. The Algebra of Bifunctors
+
+Is there an algebra for Bifunctors just as there is for standard Functors? Absolutely! Because the category of Functors is closed over Products and Sums, we can combine our foundational Bifunctor atoms exactly the same way to build incredibly complex Bifunctors.
+
+If standard Functors (`* -> *`) are single-variable polynomials like $f(x) = x^2 + 1$, then Bifunctors (`* -> * -> *`) are simply two-variable polynomials like $f(a, b) = a \times b + a$. 
+
+This means it becomes very obvious what our two "atomic variables" are:
+*   **The First Variable ($A$)**: `ConstLeft a b = ConstLeft a` (ignoring the right).
+*   **The Second Variable ($B$)**: `ConstRight a b = ConstRight b` (ignoring the left).
+
+Equipped with our two atomic variables, we can perform any algebraic operation:
+*   **Bifunctor Sums ($+$)**: We can wrap a Bifunctor inside `Either` (e.g. `Either (BiProxy a b) (a, b)`).
+*   **Bifunctor Products ($\times$)**: We can tuple Bifunctors together (e.g. `(Either a b, ConstContext String a b)`).
+*   **Bifunctor Fixed Points**: Just like `List` recursively nests standard Functors, structures like a `Bifunctor Tree` can recursively nest Bifunctors (e.g. `data BiTree a b = Leaf a b | Node (BiTree a b) (BiTree a b)`).
+
+Anything you can do in one dimension (`* -> *`), Category Theory allows you to transparently extend into two dimensions (`* -> * -> *`) using the exact same polynomial algebra!
+
+### Section 1.5: Polynomial Functors
 
 The relationship between Category Theory and Haskell's **Algebraic Data Types (ADTs)** is formalized through **Polynomial Functors**.
 
@@ -218,7 +469,67 @@ If a functor is built solely from:
 
 ... it is a **Polynomial Functor**. Most standard Haskell ADTs (like `Maybe`, `Either`, and non-recursive records) are polynomial. They are the "algebra" of types, where complex structures are discovered by summing and multiplying simpler ones.
 
-### Section 1.5: Discovering Molecules (Compounds)
+#### Why the Name "Polynomial"?
+The terminology is beautifully literal. Think about a regular algebraic polynomial from high school math, like $F(X) = 1 + Int + X^2$. It is built using exactly the same operations:
+*   **$X$**: The variable (The Identity Functor).
+*   **$1, Int$**: Constants (The Constant Functor).
+*   **Multiplication ($X^2 = X \times X$)**: Products (Tuples `(a, a)`).
+*   **Addition ($+$)**: Sums (`Either` or alternative constructors).
+
+When we build an Algebraic Data Type (ADT) in Haskell, we are quite literally writing a polynomial equation. For example, consider this functor:
+```haskell
+data Shape a = Empty | Point Int | Line a a
+```
+If we translate this to algebra using our building blocks:
+*   `Empty` has zero parameters: It is $1$ (a constant, `Proxy`).
+*   `Point Int` has an `Int` but no parameter `a`: It is the constant $Int$.
+*   `Line a a` has two parameters (a pair): It is the product of identity with itself, $X \times X = X^2$.
+
+So, the polynomial functor shape for `Shape a` is mathematically written as: 
+**$F(X) = 1 + Int + X^2$**
+
+### Section 1.6: The Parallel Functor Ecosystem (Solutions for Restricted Functors)
+
+As we briefly highlighted in Section 1.1, the mathematical definition of a functor is far broader than Haskell's native `Functor` typeclass (which strictly maps `* -> *` unconstrained). When structures inevitably violate these two rules, we do not throw our hands up in defeat! 
+
+The Haskell ecosystem simply defines *parallel* typeclasses to capture these different categorical mappings, allowing us to retain the exact same structural guarantees.
+
+#### 1. The Too-Wide Functor: `Bifunctor`
+If a structure has a kind of `* -> * -> *` (like `Either` or `(,)`), it is a perfectly valid functor mapping from the product category $Hask \times Hask \to Hask$. Because it requires two types, we use `Data.Bifunctor`:
+```haskell
+class Bifunctor p where
+    bimap :: (a -> b) -> (c -> d) -> p a c -> p b d
+```
+*(We will completely deconstruct these in [Chapter 4](#chapter-4-deep-dive-into-bifunctors)).*
+
+#### 2. The Reverse Functor: `Contravariant`
+A standard Functor maps "covariant" inputs (it *produces* values). But what if a structure only *consumes* values? This is mathematically a functor mapped from the opposite category: $Hask^{op} \to Hask$. 
+
+If you have a `Predicate a` (a wrapper around `a -> Bool`), you can't map its output (`Bool`), but you can map its input!
+```haskell
+class Contravariant f where
+    contramap :: (a -> b) -> f b -> f a  -- Notice the reversed 'b' and 'a'!
+```
+
+#### 3. The Mixed Functor: `Profunctor`
+If a Bifunctor maps two covariant types, a **Profunctor** is a mapping over one contravariant shape and one covariant shape. The standard function arrow `(->)` is a Profunctor.
+```haskell
+class Profunctor p where
+    dimap :: (a -> b) -> (c -> d) -> p b c -> p a d
+```
+`dimap` allows you to simultaneously map the *incoming* argument (before the function runs) and the *outgoing* result (after the function runs). They form the categorical backbone of the `lens` library.
+
+#### 4. The Constrained Functor: `MonoFunctor` (The `mono-traversable` library)
+Recall that `Data.Set` fails to be a `Functor` because rebuilding its internal tree requires an `Ord a` constraint on mapping. It is a "Restricted Functor" mapping only onto a subcategory. 
+
+Similarly, structures like `ByteString` or `Text` aren't parametric at all (they have kind `*`), but logically act precisely like containers. To solve this, Michael Snoyman's `mono-traversable` library created the `MonoFunctor` typeclass:
+```haskell
+class MonoFunctor mono where
+    omap :: (Element mono -> Element mono) -> mono -> mono
+```
+This allows us to maintain the interface and laws of a Functor over mathematically restricted or entirely monomorphic structures.
+
+### Section 1.7: Discovering Molecules (Compounds)
 
 Using these "atoms," let's see how we can discover the rest of the Haskell universe.
 
@@ -243,23 +554,6 @@ By using both Sums and Products with **Recursion**, we can build a list. A list 
 > Looking at the list equation, you might ask: "is it always the case that `Sum Proxy (Product Identity Whatever) = Whatever`?"
 > The answer is no! The formula $1 + X \times W$ describes the "shape" of a single layer of a List. When we say $L(X) = 1 + X \times L(X)$, we are saying that `List` is exactly the type that satisfies this equation (it is the *Fixed Point* of that functor). If `Whatever` was a Binary Tree, its shape equation would look entirely different, such as $T(X) = 1 + X \times T(X) \times T(X)$.
 
-#### 5. Functors entirely out of Proxy
-*   **Proxy + Proxy = Const Bool**: Summing two Proxies creates two possible empty states. `Either () ()` is isomorphic to a Boolean. Mathematically: $1 + 1 = 2$.
-*   **Proxy * Proxy = Proxy**: A product of two empty boxes remains an empty box. Mathematically: $1 \times 1 = 1$.
-
-### Section 1.6: Final Summary of Functors
-
-At this level, Functors are entirely about **Shape and Preservation**. Whether we are dealing with an empty box (`Proxy`), a wrapper (`Identity`), or an infinite chain (`List`), `fmap` ensures that the structure of the data remains physically identical while the values inside are transformed.
-
-#### Type Bundle Taxonomy
-Before moving to Applicatives, remember the three tools Haskell gives us to bundle these shapes:
-
-1.  **`type` (Alias)**: No new type created, zero overhead. Use for readability.
-2.  **`newtype` (Strict Wrapper)**: Distinct type, zero overhead. Use for type safety (e.g., `UserId`).
-3.  **`data` (Full ADT)**: Flexible, supports multiple constructors. Use for complex shapes.
-
----
-
 ## Chapter 2: The Applicative Evolution
 
 Now we step up in power. An `Applicative` is a Functor equipped with two new powers: `pure` (to lift values) and `<*>` (to lift application).
@@ -268,13 +562,13 @@ Now we step up in power. An `Applicative` is a Functor equipped with two new pow
 
 Let's see how our atomic structures "upgrade" to this new level.
 
-#### 1. `MinF` (`Proxy`)
+#### 1. `Proxy`
 ```haskell
-instance Applicative MinF where
-    pure _ = Val
-    Val <*> Val = Val
+instance Applicative Proxy where
+    pure _ = Proxy
+    Proxy <*> Proxy = Proxy
 ```
-**The "Why"**: Our hands are tied. `pure` gives us an `a`, which we must discard (as `MinF` holds no data). `<*>` combines two empty boxes into one.
+**The "Why"**: Our hands are tied. `pure` gives us an `a`, which we must discard (as `Proxy` holds no data). `<*>` combines two empty boxes into one.
 
 #### 2. `Const r` (The Monoid Requirement)
 This is the most critical upgrade in the minimal universe.
@@ -288,11 +582,11 @@ instance Monoid r => Applicative (Const r) where
 *   `<*>` gives us two `r` values and needs one result. We must use the **Binary operation** (`mappend`).
 This precisely defines why `Const` requires its context to be a `Monoid` to achieve Applicative status.
 
-#### 3. `Identity` (`IdF`)
+#### 3. `Identity`
 ```haskell
-instance Applicative IdF where
-    pure x = IdVal x
-    IdVal f <*> IdVal x = IdVal (f x)
+instance Applicative Identity where
+    pure x = Identity x
+    Identity f <*> Identity x = Identity (f x)
 ```
 **The "Why"**: Trivial application. We unwrap, apply, and rewrap.
 
@@ -313,17 +607,17 @@ The `Monad` adds the power of **Context-Dependent Sequencing** via `bind` (`>>=`
 
 ### Section 3.1: The Final Upgrades
 
-#### 1. `MinF` (`Proxy`)
+#### 1. `Proxy`
 ```haskell
-instance Monad MinF where
-    Val >>= _ = Val
+instance Monad Proxy where
+    Proxy >>= _ = Proxy
 ```
 Flattening an empty box inside an empty box still yields an empty box.
 
-#### 2. `Identity` (`IdF`)
+#### 2. `Identity`
 ```haskell
-instance Monad IdF where
-    IdVal x >>= f = f x
+instance Monad Identity where
+    Identity x >>= f = f x
 ```
 Pure function application.
 
@@ -342,6 +636,65 @@ Finally, we can verify our Monad instances (Left Identity, Right Identity, and A
   -- Automatically tests all Monad laws
   testBatch (monad (undefined :: Maybe (Int, String, Int)))
 ```
+
+---
+
+## Chapter 4: Deep Dive into Bifunctors
+
+### Section 4.1: The True Nature of Bifunctors
+In Category Theory, a **Bifunctor** is not actually a special new structure; it is quite literally just a standard Functor whose domain happens to be a **Product Category**. 
+
+If you have two categories, $\mathcal{C}$ and $\mathcal{D}$, you can create a Product Category $\mathcal{C} \times \mathcal{D}$. The objects in this category are pairs of objects $(c, d)$, and the morphisms are pairs of morphisms $(f, g)$. A Bifunctor is simply a normal Functor $F$ that maps from that Product Category into a third category $\mathcal{E}$:
+
+$$F: \mathcal{C} \times \mathcal{D} \to \mathcal{E}$$
+
+In Haskell, everything happens in the single category `Hask`. So, a Haskell `Bifunctor` is just a standard functor mapping from the product category to the base category:
+
+$$F: \mathbf{Hask} \times \mathbf{Hask} \to \mathbf{Hask}$$
+
+Because it's just a normal Functor from a Product Category, the mapping operation (`bimap`) takes a pair of morphisms (which in Haskell means two functions: `(a -> c)` and `(b -> d)`) and applies them to the pair of objects inside the structure.
+### Section 4.2: The Laws of Bifunctors
+
+When you implement an `instance Bifunctor` in Haskell, you must satisfy laws analogous to the standard Functor laws, just extended over two dimensions. Since a Bifunctor is just a functor from a Product Category, the morphisms we are mapping are pairs of functions. 
+
+The two laws are:
+
+1. **Identity Law**:
+   ```haskell
+   bimap id id == id
+   ```
+   *Meaning*: If you apply the identity function to both the left and right sides simultaneously, the structure and its contents must remain completely unchanged.
+
+2. **Composition Law**:
+   ```haskell
+   bimap (f . g) (h . i) == bimap f h . bimap g i
+   ```
+   *Meaning*: Composing two functions and then mapping them over a Bifunctor is identical to mapping the first pair of functions, and then mapping the second pair of functions over the result.
+
+**The `first` and `second` Equivalences**
+The `Data.Bifunctor` typeclass in Haskell also provides the helper functions `first` and `second` to map over only one side of the Bifunctor. The definition of a Bifunctor inextricably links `bimap`, `first`, and `second` through these properties:
+*   `bimap f g == first f . second g`
+*   `first f == bimap f id`
+*   `second g == bimap id g`
+
+This reinforces the concept described in [Section 1.3](#section-13-the-algebra-of-functors-bifunctors): if you fix the identity function to one side of a Bifunctor, it mathematically collapses into a standard Endofunctor.
+
+## Chapter 5: Monoidal Categories
+
+### Section 5.1: The Pentagon and Triangle Laws
+
+A **Monoidal Category** is a higher-level structure that uses a specific Bifunctor as a "tensor product". 
+
+It is defined by:
+1. A base category (like `Hask`).
+2. A specific **Bifunctor** acting as the tensor product (like `(,)` or `Either`).
+3. A unit object (like `()` for products, or `Void` for sums).
+4. Associativity and Unit natural isomorphisms.
+5. **The Coherence Conditions**: This is where the **pentagon identity** (ensuring associativity associates consistently) and the **triangle identity** (ensuring the unit behaves consistently) come into play.
+
+While `Either` and `(,)` are Bifunctors, they are *special* Bifunctors because they act as the tensor products that turn `Hask` into a Monoidal Category. Other Bifunctors (like `BiProxy` or `ConstContext r`) are perfectly valid Bifunctors without forming a monoidal category with strict pentagon/triangle laws.
+
+*(This section is a placeholder for a future deep-dive into the formal definitions of tensor products, and how they interact structurally via the pentagon and triangle identities).*
 
 ---
 
@@ -375,14 +728,14 @@ m >>= f = join (fmap f m)
 ```
 
 ### Proof of Unique Functor Identity
-Given `data MinF a = Val`, how do we formally prove the only valid function of type `(a -> a) -> MinF a -> MinF a` preserving structure is the identity?
+Given `data Proxy a = Proxy`, how do we formally prove the only valid function of type `(a -> a) -> Proxy a -> Proxy a` preserving structure is the identity?
 
-1.  Let `g :: MinF a -> MinF a` be a total, terminating function.
-2.  The only inhabited value of `MinF a` at the term level is `Val`.
-3.  Therefore, `g Val = Val`.
+1.  Let `g :: Proxy a -> Proxy a` be a total, terminating function.
+2.  The only inhabited value of `Proxy a` at the term level is `Proxy`.
+3.  Therefore, `g Proxy = Proxy`.
 4.  By definition, the `id` function is `id x = x`. 
-5.  Thus, `id Val = Val`.
-6.  Since `g Val = id Val` for the sole value of the type, `g = id`.
+5.  Thus, `id Proxy = Proxy`.
+6.  Since `g Proxy = id Proxy` for the sole value of the type, `g = id`.
     Because `g` is the only total mapping, `fmap id = id` trivially holds, and no other lawful interpretation exists.
 
 ### Proof of Identity Implies Composition
@@ -453,6 +806,17 @@ In this setting, a type operator (like List) isn't just a functor; it must be a 
 
 ---
 
+### Summary and Type Bundle Taxonomy
+At this level, Functors are entirely about **Shape and Preservation**. Whether we are dealing with an empty box (`Proxy`), a wrapper (`Identity`), or an infinite chain (`List`), `fmap` ensures that the structure of the data remains physically identical while the values inside are transformed.
+
+Before moving to Applicatives, remember the three tools Haskell gives us to bundle these shapes:
+
+1.  **`type` (Alias)**: No new type created, zero overhead. Use for readability.
+2.  **`newtype` (Strict Wrapper)**: Distinct type, zero overhead. Use for type safety (e.g., `UserId`).
+3.  **`data` (Full ADT)**: Flexible, supports multiple constructors. Use for complex shapes.
+
+---
+
 ## Bibliography
 *   **"Theorems for free!"** by Philip Wadler (1989).
 *   **"Notions of computation and monads"** by Eugenio Moggi (1991).
@@ -461,3 +825,4 @@ In this setting, a type operator (like List) isn't just a functor; it must be a 
 *   *(Recommended Reading)* **"Thinking with Types"** by Sandy Maguire.
 *   *(Recommended Reading)* **"Functors, Applicatives, And Monads In Pictures"** by Aditya Bhargava.
 *   **"Category Theory for Programmers"** (Introductory Notes) by Bartosz Milewski ([PDF Link](https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf)).
+*   **"Algebra of Programming"** by Richard Bird and Oege de Moor (1997) — *A foundational text exploring how algebras and functor subcategories are derived systematically from building blocks like Bifunctors.*
