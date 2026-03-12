@@ -30,11 +30,18 @@ In Haskell, a functor is represented as a type constructor that maps from one ty
 
 Technically, a Haskell `Functor` is actually an *Endofunctor* because it maps from the category `Hask` back to the category `Hask`. However, Haskell functors are just a finite subset of all possible categorical functors. For example:
 1.  **Non-Endofunctor**: A functor mapping from a completely different category (e.g., the category of Sets) to `Hask`.
-2.  **Non-parametric Functor**: A categorical functor that inspects types (e.g., mapping `Int` to `String` and `Bool` to `Double`). This is strictly forbidden in Haskell due to parametricity.
-3.  **Restricted Functor**: A generic categorical functor might only apply to a *subset* of objects (types). A Haskell `Functor` mathematically must unconditionally apply to *all* types.
+2.  **Non-parametric Functor**: A categorical functor that inspects types. 
+    *   *Example*: Imagine a container where `fmap` behaves differently based on the type it finds. For instance, `fmap f (Box x)` might apply `f` if `x` is an `Int`, but do something else if `x` is a `String`. 
+    *   *Why it's forbidden*: In Haskell, the signature `fmap :: (a -> b) -> f a -> f b` works for **all** `a`. Because of parametric polymorphism, the compiler treats `a` as a totally opaque "black box." You physically cannot write `if a is Int then ...` because the language provides no primitive to inspect types at that level of generality. This "blindness" is what guarantees structure preservation.
+3.  **Restricted Functor**: A generic categorical functor that only applies to a **subcategory** (a subset of all types).
+    *   *Example*: The `Set` type in `Data.Set`. To map over a `Set`, you need the result type to have an `Ord` instance (to maintain the internal tree structure). 
+    *   *Haskell Signature*: `mapSet :: (Ord a, Ord b) => (a -> b) -> Set a -> Set b`.
+    *   *Why it fails the Typeclass*: The Haskell `Functor` typeclass requires `fmap` to work for **any** type `b` without any constraints. Since `Set` requires `Ord b`, it cannot fulfill the contract of the standard `Functor` typeclass. Mathematically, it is still a functor (mapping between the "Category of Ordered Types"), but it is "restricted" compared to the full category `Hask`.
 
 If we look at valid and invalid candidates in Haskell, it purely comes down to type signatures (kinds):
-*   `Maybe` is a valid functor candidate because it has kind `* -> *`. It needs one concrete type (like `Int`) to become a concrete type (`Maybe Int`).
+*   `Maybe` is a valid functor candidate. 
+    *   **Signature**: `data Maybe a = Nothing | Just a`
+    *   **Kind**: `* -> *` (It needs one concrete type, like `Int`, to become a concrete type `Maybe Int`).
 *   `Int` is an invalid candidate. It already has kind `*`.
 
 *A brief taxonomy note*: In Haskell, it helps to distinguish how we bundle these types. `type` just defines a synonym. `newtype` is a single-constructor wrapper with zero runtime overhead, heavily used for isolating functor behaviors. `data` is a full algebraic data type capable of multiple constructors. 
