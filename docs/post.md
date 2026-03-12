@@ -85,8 +85,6 @@ You must satisfy the Identity and Composition laws:
 >
 > This stems from the fact that `fmap` is a parametrically polymorphic function. Its behavior is so constrained by its type signature that it cannot "sneak in" extra logic that would specifically target composed functions differently than identity. This is a core result of Philip Wadler's famous paper: [**"Theorems for free!"**](https://people.mpi-sws.org/~dreyer/tor/papers/wadler.pdf). A formal proof of this is provided in the [Annex](#proof-of-identity-implies-composition).
 
-**Automated Law Testing**: Haskell's compiler only checks types, not math. Professional developers use `checkers` to verify these laws across thousands of generated inputs:
-
 ```haskell
 import Test.Tasty
 import Test.Tasty.Checkers
@@ -97,6 +95,16 @@ main = defaultMain $ testGroup "Functor Laws"
     testBatch (functor (undefined :: Maybe Int))
   ]
 ```
+
+> [!WARNING]
+> #### Caveat: Testing vs. Proof (Property-Based Testing)
+> While `testBatch` provides extreme confidence by checking thousands of random inputs, it is not a formal mathematical proof. Because it relies on **Property-Based Testing** (QuickCheck), it is probabilistic. 
+>
+> In Haskell, there is a fundamental difference between:
+> 1.  **Verification (Testing)**: Checking that the законы hold for *many* random cases.
+> 2.  **Proof (Types/Parametricity)**: Using the compiler and Category Theory (the "Shortcut") to guarantee the laws hold for *all* cases.
+>
+> It is possible (though rare in practice) to write a "malicious" law-breaking functor that passes these tests by only failing on very specific, ungenerated inputs—a concept explored in the [Law-Breaking Functors](#5-law-breaking-functors-non-valid-functors) section.
 
 #### 4. Categorical Functors that are not Haskell Functors
 These structures satisfy the mathematical laws—including the **Identity Law**—but fail Haskell's unconstrained mapping condition (Point 2).
@@ -118,20 +126,27 @@ These structures satisfy the mathematical laws—including the **Identity Law**�
     ```
     *   *Logic*: Rebuilding the BST requires `Ord b`. This makes `Set` a **Restricted Functor**. While it obeys the laws on its valid subcategory, it cannot be a standard Haskell `Functor`.
 
-#### 5. Law-Breaking Functors (Non-Valid Functors)
-Finally, there are structures that have the correct **Signature** (Point 1) and are completely **Parametric** (Point 2), but fail the **Mathematical Laws**.
+1.  **The Counter (Mutation Lie)**:
+    ```haskell
+    data Counter a = Counter Int a
 
-Consider the **Counter** example:
-```haskell
-data Counter a = Counter Int a
+    -- Point 1: Valid signature (* -> *)
+    -- Point 2: Perfectly parametric (ignores 'a')
+    fakeFmap f (Counter n x) = Counter (n + 1) (f x)
+    ```
+    **Why it fails**: `fakeFmap id (Counter 0 "x")` results in `Counter 1 "x"`. Since this is not equal to the original value, the **Identity Law** is broken. Because it breaks the first law, it is not a Functor in any category, including Haskell.
 
--- Point 1: Valid signature (* -> *)
--- Point 2: Perfectly parametric (ignores 'a')
-fakeFmap :: (a -> b) -> Counter a -> Counter b
-fakeFmap f (Counter n x) = Counter (n + 1) (f x)
-```
+2.  **The Malicious Functor (Hidden Law-Breaker)**:
+    This example illustrates why testing alone isn't proof. It has the correct signature and is parametric, but it "hides" its law-breaking behavior behind a conditional:
+    ```haskell
+    data MyBox a = MyBox Int a
 
-**Why it fails**: `fakeFmap id (Counter 0 "x")` results in `Counter 1 "x"`. Since this is not equal to the original value, the **Identity Law** is broken. Because it breaks the first law, it is not a Functor in any category, including Haskell.
+    instance Functor MyBox where
+        fmap f (MyBox x val) 
+          | x == 12345 = MyBox (x + 1) (f val) -- Breaking Identity
+          | otherwise  = MyBox x (f val)      -- Looking Lawful
+    ```
+    If `testBatch` never randomly generates the integer `12345`, this structure will **pass all your tests** while remaining mathematically invalid!
 
 ---
 
