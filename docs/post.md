@@ -375,18 +375,12 @@ It is crucial to remember that the Haskell compiler **only checks types, not mat
 
 While we can easily prove these properties mathematically by hand for simple types (as shown below), in Haskell we can actually automate this verification! Using property testing libraries like `tasty-quickcheck` (and typeclass rule validators like `quickcheck-classes`), we can generate thousands of random instances to guarantee our Bifunctor truly behaves correctly. 
 
-A test suite verifying `Either` would simply look like:
+A test suite verifying `Either` can be reduced to one simple line:
 ```haskell
-import Test.Tasty
-import Test.Tasty.QuickCheck
 import Test.QuickCheck.Classes
 
-tests :: TestTree
-tests = testGroup "Testing Bifunctor Laws"
-  [ -- Validates: bimap id id == id
-    -- Validates: bimap (f . g) (h . i) == bimap f h . bimap g i
-    testProperties "Either Bifunctor" $ bifunctor (Proxy :: Proxy Either)
-  ]
+-- Automatically tests both Identity and Composition!
+testProperties "Either Bifunctor" $ bifunctor (Proxy :: Proxy Either)
 ```
 
 This ensures we never break the two fundamental rules:
