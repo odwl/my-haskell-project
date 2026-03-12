@@ -5,7 +5,7 @@ module Lambda.ParserTest (parserTests) where
 
 import Control.Applicative (Alternative (..))
 import Data.Bifunctor (second)
-import Data.Char (isAlpha, isAlphaNum, isAscii, isDigit, isPunctuation, isSpace, isSymbol)
+import Data.Char (isAlpha, isAlphaNum, isDigit, isPunctuation, isSpace, isSymbol)
 import Data.List (intercalate, isPrefixOf)
 import Lambda.Parser (AExp (..), BinOp (..), CmpOp (..), Exp (..), Id, Parser, Stmt (..), Value (..), aexp, binop, cmpop, expr, identifier, isReservedWord, mkId, num, stmt, stmts)
 import Test.QuickCheck.Checkers

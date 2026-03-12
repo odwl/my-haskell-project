@@ -40,6 +40,7 @@ import Test.Tasty.QuickCheck
 zipperTests :: TestTree
 zipperTests = testGroup "Zipper Tests" [tests, customTests, learningExerciseTests, quickCheckTests]
 
+tests :: TestTree
 tests =
   let leaf v = node v Nothing Nothing
       node v l r = Just (BT v l r :: BinTree Int)
@@ -181,7 +182,7 @@ learningExerciseTests =
 
     mirrorInitialTree =
       BT
-        1
+        (1 :: Int)
         ( Just $
             BT
               2
@@ -192,7 +193,7 @@ learningExerciseTests =
 
     mirrorExpectedTree =
       BT
-        1
+        (1 :: Int)
         ( Just $
             BT
               2
