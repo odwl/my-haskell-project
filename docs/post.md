@@ -24,65 +24,63 @@ The true protagonist of this journey is **Parametricity**. Due to parametric pol
 
 If you ask a mathematician, they will point you to Saunders Mac Lane, one of the founders of Category Theory. In Category Theory, a functor is a structure-preserving mapping between two categories. It is a ubiquitous concept in mathematics; for instance, you have *Forgetful functors* (which strip algebraic structure) and *Free functors* (which automatically build algebraic structure).
 
-In the software realm, functors are widely used in almost every modern programming language, though developers often don't realize it when using map functions over arrays or options in non-functional languages. However, in strictly functional languages like Haskell, PureScript, Idris, Scala, and OCaml, they are elevated to first-class citizens with explicit interfaces. 
+In Haskell, the `Functor` typeclass is a specific implementation of a categorical functor. To be a valid `Functor` in Haskell, you must satisfy four distinct conditions:
 
-In Haskell, a functor is represented as a type constructor that maps from one type to another type; it has the kind `* -> *`. 
+1.  **A Well-Kinded Type Constructor (`* -> *`)**: You must be an *Endofunctor* on the category `Hask`. This means you map from `Hask` back to `Hask`. 
+    *   *Invalid Kind*: `Int` (kind `*`) or `(,)` (kind `* -> * -> *`) are not functors on their own. They don't have the right "shape" to be a container/wrapper.
+2.  **A Valid Morphism Mapping (`fmap`)**: You must provide a function `fmap :: (a -> b) -> f a -> f b`. This is the implementation of how "arrows" are mapped between categories.
+3.  **No Contextual Constraints**: The mapping must work for *any* type `a` and `b`. You cannot require that `a` or `b` have certain properties (like `Eq` or `Ord`).
+4.  **Mathematical Laws**: You must satisfy the Identity and Composition laws (see Section 1.3).
 
-Technically, a Haskell `Functor` is actually an *Endofunctor* because it maps from the category `Hask` back to the category `Hask`. However, Haskell functors are just a finite subset of all possible categorical functors. 
+#### Taxonomy of "Almost" Functors
+Many structures in Haskell *are* valid functors in Category Theory but fail the Haskell language conditions (usually Condition 3).
 
-> [!IMPORTANT]
-> **A Note on Validity in Haskell**: To be a valid `Functor` in the Haskell language, you must be able to write an `instance Functor f where ...`. Any mapping that requires additional typeclass constraints (like `ABC a => ...`) is **rejected** by the compiler as a valid instance, because the typeclass contract mandates that `fmap` MUST work for every possible type `a` and `b` in `Hask`.
+1.  **The Forgetful Functor (`Monoid` -> `Hask`)**:
+    ```haskell
+    -- In Category Theory, this is a functor between different categories.
+    -- It "forgets" the Monoid structure to return the raw type.
+    forget :: Monoid a => a -> a
+    forget = id
+    ```
+    *   *Haskell Status*: Not a `Functor` instance because it requires the `Monoid a` constraint.
+2.  **The Type Inspector (`isInt`)**:
+    ```haskell
+    import Data.Typeable (Typeable, cast)
+    import Data.Maybe (isJust)
 
-For example:
-1.  **Non-Endofunctor**: A functor mapping between two *different* categories.
-    *   *Example (Forgetful Functor)*: Mapping from the category of **Monoids** to **Hask**.
-    *   *Haskell Box*:
-      ```haskell
-      -- This maps a Monoid back to its raw internal type.
-      forget :: Monoid a => a -> a
-      forget x = x
-      ```
-    *   *Logic*: The implementation is trivial (the identity function), but the *category* changes. On the left, `a` must obey monoid laws; on the right, it's just a raw type. We have "forgotten" the algebraic structure.
-2.  **Non-parametric Functor**: A categorical functor that inspects types. 
-    *   *Example*: `isInt :: a -> Bool`. 
-    *   *Haskell Implementation (The "Backdoor")*: 
-      ```haskell
-      import Data.Typeable (Typeable, cast)
-      isInt :: Typeable a => a -> Bool
-      isInt x = isJust (cast x :: Maybe Int)
-      ```
-    *   *Why it's not a standard Functor*: To make it work, we had to add `Typeable a =>`. This breaks the `Functor` contract because `fmap` must work for **any** `a` (the entire category `Hask`). 
-3.  **Restricted Functor**: A generic categorical functor that only applies to a **subcategory**.
-    *   *Example*: `Data.Set`. 
-    *   *Haskell Signature*: `mapSet :: Ord b => (a -> b) -> Set a -> Set b`.
-    *   *Why do we need (Ord b)?*: A `Set` in Haskell is typically implemented as a balanced **Binary Search Tree (BST)**. To maintain the set's invariant (elements are ordered and unique), every time you map a function over it, the internal tree must be rebuilt using the comparisons of the *new* values. If the new values `b` don't have an `Ord` instance, the compiler has no way to figure out where to place them in the tree!
+    -- This is a functor that inspects the object in Category Theory.
+    isInt :: Typeable a => a -> Bool
+    isInt x = isJust (cast x :: Maybe Int)
+    ```
+    *   *Haskell Status*: Not a `Functor` instance because it requires `Typeable a`. It won't work for *any* `a`, only those the compiler can reify. This is why we call it a "backdoor": it bypasses the intentional "blindness" of parametric polymorphism.
+3.  **The Balanced Tree (`Data.Set`)**:
+    ```haskell
+    -- Rebuilds a BST based on new values.
+    mapSet :: Ord b => (a -> b) -> Set a -> Set b
+    ```
+    *   *Logic*: A `Set` is implemented as a balanced **Binary Search Tree (BST)**. To maintain the invariant (ordered and unique), every map operation must rebuild the tree using comparisons of the *new* values `b`. Since this requires `Ord b`, it is a **Restricted Functor** mapping to the subcategory of ordered types.
 
 ### The Great Synthesis: Everything is a Restricted Functor
-You might notice a pattern: in the cases above, we can usually "fix" the problem by adding a constraint like `Monoid a =>`, `Typeable a =>`, or `Ord a =>`. 
+In all three cases above, we can "fix" the problem by adding a constraint like `Monoid a =>`, `Typeable a =>`, or `Ord b =>`. 
 
 **In Haskell, almost every "non-functor" is actually just a functor on a subcategory.** 
-By adding a constraint, you are explicitly telling the compiler: "I am no longer operating on the category of all types (`Hask`); I am now operating only on the subcategory of types that have this XYZ instance." The standard `Functor` typeclass is simply the special case where that subcategory is the entire category `Hask`.
+By adding a constraint, you are explicitly telling the compiler: "I am no longer operating on the category of all types (`Hask`); I am now operating only on a subcategory." The standard `Functor` typeclass is simply the special case where that subcategory is the entire category `Hask`.
 
-### Is there such a thing as a "Truly" Non-Functor?
-Is it possible to have something that isn't even a functor on a subcategory? **Yes.** These are mappings that physically violate the **Functor Laws**.
+*(Note: We will discuss "Truly" Non-Functors—those that break the laws—in Section 1.3).*
 
-*   *Example (The Lawbreaker)*:
-  ```haskell
-  data Counter a = Counter Int a
+If we look at valid candidates in Haskell:
+*   `Maybe` is a valid functor candidate (Kind `* -> *`).
+*   `Identity` is a valid functor candidate (Kind `* -> *`).
 
-  -- This looks like a functor, but it's a lie.
-  fakeFmap :: (a -> b) -> Counter a -> Counter b
-  fakeFmap f (Counter n x) = Counter (n + 1) (f x)
-  ```
-*   **Why it fails**: This violates the **Identity Law** (`fmap id == id`). If you apply `id` to `Counter 0 "hello"`, you get `Counter 1 "hello"`. The structure was not preserved; it was mutated. This is not a functor in *any* category because it doesn't respect the concept of an identity mapping.
+#### Type Bundle Taxonomy
+In Haskell, we have three ways to bundle types, each with a specific purpose:
 
-If we look at valid and invalid candidates in Haskell, it purely comes down to type signatures (kinds):
-*   `Maybe` is a valid functor candidate. 
-    *   **Signature**: `data Maybe a = Nothing | Just a`
-    *   **Kind**: `* -> *` (It needs one concrete type, like `Int`, to become a concrete type `Maybe Int`).
-*   `Int` is an invalid candidate. It already has kind `*`.
-
-*A brief taxonomy note*: In Haskell, it helps to distinguish how we bundle these types. `type` just defines a synonym. `newtype` is a single-constructor wrapper with zero runtime overhead, heavily used for isolating functor behaviors. `data` is a full algebraic data type capable of multiple constructors. 
+1.  **`type` (Synonym)**: Just an alias for an existing type. No runtime or compile-time overhead.
+    *   *Example*: `type Username = String`. Use this for readability, but it doesn't prevent you from passing a `String` where a `Username` is expected.
+2.  **`newtype` (Wrapper)**: A single-constructor wrapper around exactly one field. 
+    *   *Example*: `newtype UserId = UserId Int`. Unlike `type`, this creates a *distinct* type for the compiler, but the wrapper is erased at runtime (zero overhead). You cannot have multiple constructors or multiple fields in a `newtype`.
+3.  **`data` (ADT)**: A full algebraic data type.
+    *   *Example*: `data User = Anonymous | Registered UserId Username`. Essential for types with multiple constructors (like `Maybe`) or multiple independent fields.
 
 ### Section 1.2: The Constraint of Parametricity
 
@@ -96,6 +94,18 @@ The core of the Haskell `Functor` typeclass is `fmap`:
 ```haskell
 fmap :: (a -> b) -> f a -> f b
 ```
+
+The Identity Law guarantees that mapping the identity function over a structure results in the original structure.
+
+> [!WARNING]
+> **Truly Non-Functors (The Lawbreakers)**: Not everything that looks like a functor is one. If a mapping violates the laws, it is not a functor in *any* category.
+> 
+> *Example (Mutation Lie)*:
+> ```haskell
+> data Counter a = Counter Int a
+> fakeFmap f (Counter n x) = Counter (n + 1) (f x)
+> ```
+> Here, `fakeFmap id (Counter 0 "x")` yields `Counter 1 "x"`, which is **not** equal to the original. This breaks the **Identity Law** (`fmap id == id`).
 
 Compare this to standard function application, the `($)` operator:
 ```haskell

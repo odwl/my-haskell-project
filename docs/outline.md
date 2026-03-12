@@ -11,21 +11,24 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 ## Chapter 1: The Foundations of Functors, Applicatives, and Monads
 ### Section 1.1: What is a Functor?
 - **Categorical Origin**: Saunders Mac Lane and structure-preserving mappings.
-- **Software Elevation**: Functors in Strictly Functional languages (Haskell, PureScript, etc.).
-- **Haskell Specifics**: Endofunctors on `Hask`; Kind signature `* -> *`.
-- **Taxonomy of Non-Functors**:
-    - **Non-Endofunctor**: (e.g., `forget :: Monoid a => a -> a`).
-    - **Non-parametric**: (e.g., `isInt :: Typeable a => a -> Bool`).
-    - **Restricted**: (e.g., `Data.Set` requiring `Ord`).
+- **Haskell's 4 Conditions**:
+    1. Kind signature `* -> *` (Endofunctors on Hask).
+    2. Morphism mapping (`fmap`).
+    3. No constraints (the parametricity requirement).
+    4. Mathematical Laws (Identity and Composition).
+- **Taxonomy of Categorical Functors (Haskell Non-Functors)**:
+    - **The Forgetful Functor**: (e.g., `forget = id` on Monoids).
+    - **The Type Inspector**: (e.g., `isInt` via `Typeable`).
+    - **The Balanced Tree**: (e.g., `Data.Set` requiring `Ord`).
 - **The Great Synthesis**: How constraints transform "Invalid" functors into "Restricted" functors on subcategories.
-- **Truly Non-Functors**: Law-breaking examples (e.g., `Counter` Mutation).
+- **Type Bundle Taxonomy**: `type` vs `newtype` vs `data` (Purposes and constraints).
 - **Signature of Maybe**: `data Maybe a = Nothing | Just a` (Kind `* -> *`).
-- **Type Bundle Taxonomy**: `type` (synonym), `newtype` (zero overhead), `data` (full ADT).
 ### Section 1.2: The Constraint of Parametricity
 - **"Theorems for free!"**: How type signatures dictate physical behavior. Implementation must preserve structure because the type `a` is invisible to the logic.
 ### Section 1.3: `fmap` (and `<$>`) and the Functor Laws
 - **Mechanical Lifting**: `fmap` as function application lifted into context.
 - **The Laws**: Identity (`fmap id == id`) and Composition.
+- **Truly Non-Functors**: Law-breaking examples (e.g., `Counter` Mutation).
 - **Enforcement**: QuickCheck and `tasty` for property-based testing of laws.
 ### Section 1.4: The Applicative Functor
 - **Powers**: `pure` (lifting values) and `<*>` (lifting application).
