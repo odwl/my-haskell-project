@@ -138,16 +138,17 @@ testProperties "Maybe Functor" $ functor (Proxy :: Proxy Maybe)
 *(Moved to Section 1.6: The Parallel Functor Ecosystem)*
 
 #### 4. The Malicious Functor (Hidden Law-Breaker)
-    This example illustrates why testing alone isn't proof. It has the correct signature and is parametric, but it "hides" its law-breaking behavior behind a conditional:
-    ```haskell
-    data MyBox a = MyBox Int a
+This example illustrates why testing alone isn't proof. It has the correct signature and is parametric, but it "hides" its law-breaking behavior behind a conditional:
 
-    instance Functor MyBox where
-        fmap f (MyBox x val) 
-          | x == 12345 = MyBox (x + 1) (f val) -- Breaking Identity
-          | otherwise  = MyBox x (f val)      -- Looking Lawful
-    ```
-    If `testBatch` never randomly generates the integer `12345`, this structure will **pass all your tests** while remaining mathematically invalid!
+```haskell
+data MyBox a = MyBox Int a
+
+instance Functor MyBox where
+    fmap f (MyBox x val) 
+      | x == 12345 = MyBox (x + 1) (f val) -- Breaking Identity
+      | otherwise  = MyBox x (f val)      -- Looking Lawful
+```
+If `testBatch` never randomly generates the integer `12345`, this structure will **pass all your tests** while remaining mathematically invalid!
 
 ---
 
