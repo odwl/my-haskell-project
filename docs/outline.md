@@ -11,9 +11,10 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 ### Section 1.1: What is a Functor?
 - **Foundations**: Well-kindedness (`* -> *`), Unconstrained Morphism Mapping (`fmap`).
 - **Parametricity**: Theorems for free!
-- **Some "Almost" Functors**: Subcategory functors (Forgetful, Type Inspector, Balanced Trees).
 - **Mathematical Laws**: Identity and Composition.
-- **Property-Based Testing**: QuickCheck and the **Pro Tip: Using `checkers`** for `testBatch`.
+- **Automated Law Testing**: Professional verification with `tasty-checkers`.
+- **Categorical Functors that are not Haskell Functors**: Verifying identity on subcategories.
+- **Law-Breaking Functors (Non-Valid)**: Breaking identity with parametric side-effects.
 
 ### Section 1.2: The Atomic Functors
 > *Focus: Atoms at the Functor level only.*
@@ -22,7 +23,8 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **`Identity` (One)**: Transparency; mapping forced by possession of `a`.
 
 ### Section 1.3: The Algebra of Functors
-- **Atoms to Molecules**: Using Sums (+) and Products (*) as algebraic operators.
+- **Polynomial Functors**: The relationship between Category Theory and ADTs.
+- **Atoms to Molecules**: Summing (+) and Multiplying (*) block construction.
 
 ### Section 1.4: Discovering Molecules (Compounds)
 - **`Maybe`**: $1 + X$ (Sum of Proxy and Identity).
@@ -63,6 +65,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 ## Annex: Proofs and Derivations
 - **Monad Equivalence**: Bind/Join/Kleisli.
 - **Uniqueness Proof**: Formal mapping proof for `MinF`.
+- **Identity Implies Composition**: Formal proof of the parametricity shortcut.
 - **Parametricity**: A deep dive into Natural Transformations, Ends, and Relational Fibrations.
 
 ## Bibliography

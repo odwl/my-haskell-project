@@ -80,21 +80,12 @@ You must satisfy the Identity and Composition laws:
 1.  **Identity Law**: `fmap id == id`
 2.  **Composition Law**: `fmap (f . g) == (fmap f) . (fmap g)`
 
-The Identity Law guarantees that mapping the identity function over a structure results in the original structure.
+> [!IMPORTANT]
+> **The Parametricity Shortcut**: A remarkable result from Category Theory and Haskell's type system is that **if a parametric function satisfies the Identity Law, it automatically satisfies the Composition Law.** 
+>
+> This stems from the fact that `fmap` is a parametrically polymorphic function. Its behavior is so constrained by its type signature that it cannot "sneak in" extra logic that would specifically target composed functions differently than identity. This is a core result of Philip Wadler's famous paper: [**"Theorems for free!"**](https://people.mpi-sws.org/~dreyer/tor/papers/wadler.pdf). A formal proof of this is provided in the [Annex](#proof-of-identity-implies-composition).
 
-> [!WARNING]
-> **Truly Non-Functors (The Lawbreakers)**: Not everything that looks like a functor is one. If a mapping violates the laws, it is not a functor in *any* category.
-> 
-> *Example (Mutation Lie)*:
-> ```haskell
-> data Counter a = Counter Int a
-> fakeFmap f (Counter n x) = Counter (n + 1) (f x)
-> ```
-> Here, `fakeFmap id (Counter 0 "x")` yields `Counter 1 "x"`, which is **not** equal to the original. This breaks the **Identity Law** (`fmap id == id`).
-
-**A Crucial Note on Enforcement**: Haskell, the language compiler, does *not* enforce these mathematical laws. It is code; it only checks type signatures. It is entirely the developer's responsibility to ensure their instances are lawful.
-
-Fortunately, in professional Haskell development, you don't need to write these property tests by hand. Libraries like `checkers` provide pre-packaged "batches" for all standard typeclasses. Using `tasty-checkers`, you can mathematically verify your instances across thousands of generated inputs with a single line:
+**Automated Law Testing**: Haskell's compiler only checks types, not math. Professional developers use `checkers` to verify these laws across thousands of generated inputs:
 
 ```haskell
 import Test.Tasty
@@ -102,12 +93,47 @@ import Test.Tasty.Checkers
 
 main :: IO ()
 main = defaultMain $ testGroup "Functor Laws"
-  [ -- Automatically tests all Functor laws (Identity and Composition)
+  [ -- Automatically tests all Functor laws
     testBatch (functor (undefined :: Maybe Int))
   ]
 ```
 
-This approach becomes even more valuable as we move to Applicatives and Monads, where the number of laws (Identity, Homomorphism, Interchange, etc.) grows significantly.
+#### 4. Categorical Functors that are not Haskell Functors
+These structures satisfy the mathematical laws—including the **Identity Law**—but fail Haskell's unconstrained mapping condition (Point 2).
+
+1.  **The Forgetful Functor (`Monoid` -> `Hask`)**:
+    ```haskell
+    forget :: Monoid a => a -> a
+    forget = id
+    ```
+    *   *Verification*: `forget id == id` holds, but it requires the `Monoid a` constraint.
+2.  **The Type Inspector (`isInt`)**:
+    ```haskell
+    isInt :: Typeable a => a -> Bool
+    ```
+    *   *Verification*: Breaks Point 2. It inspects the type, violating the "blindness" of true polymorphism.
+3.  **The Balanced Tree (`Data.Set`)**:
+    ```haskell
+    mapSet :: Ord b => (a -> b) -> Set a -> Set b
+    ```
+    *   *Logic*: Rebuilding the BST requires `Ord b`. This makes `Set` a **Restricted Functor**. While it obeys the laws on its valid subcategory, it cannot be a standard Haskell `Functor`.
+
+#### 5. Law-Breaking Functors (Non-Valid Functors)
+Finally, there are structures that have the correct **Signature** (Point 1) and are completely **Parametric** (Point 2), but fail the **Mathematical Laws**.
+
+Consider the **Counter** example:
+```haskell
+data Counter a = Counter Int a
+
+-- Point 1: Valid signature (* -> *)
+-- Point 2: Perfectly parametric (ignores 'a')
+fakeFmap :: (a -> b) -> Counter a -> Counter b
+fakeFmap f (Counter n x) = Counter (n + 1) (f x)
+```
+
+**Why it fails**: `fakeFmap id (Counter 0 "x")` results in `Counter 1 "x"`. Since this is not equal to the original value, the **Identity Law** is broken. Because it breaks the first law, it is not a Functor in any category, including Haskell.
+
+---
 
 ### Section 1.2: The Atomic Functors
 
@@ -158,6 +184,16 @@ instance Functor IdF where
 **The "Why"**: The type signature demands we produce an `IdF b`. We possess an `x :: a` and a function `f :: a -> b`. The *only* mathematical way to obtain a `b` is to apply `f` to `x`.
 
 ### Section 1.3: The Algebra of Functors
+
+The relationship between Category Theory and Haskell's **Algebraic Data Types (ADTs)** is formalized through **Polynomial Functors**.
+
+If a functor is built solely from:
+-   **Constants**: `Const r` ($C$ or $1$)
+-   **Identity**: `Identity` ($X$)
+-   **Sums**: `Either` ($+$)
+-   **Products**: Tuples ($\times$)
+
+... it is a **Polynomial Functor**. Most standard Haskell ADTs (like `Maybe`, `Either`, and non-recursive records) are polynomial. They are the "algebra" of types, where complex structures are discovered by summing and multiplying simpler ones.
 
 So far we have looked at the building blocks:
 1.  **`Const r`**: Represents a constant value independent of `a`.
@@ -330,7 +366,18 @@ Given `data MinF a = Val`, how do we formally prove the only valid function of t
 4.  By definition, the `id` function is `id x = x`. 
 5.  Thus, `id Val = Val`.
 6.  Since `g Val = id Val` for the sole value of the type, `g = id`.
-Because `g` is the only total mapping, `fmap id = id` trivially holds, and no other lawful interpretation exists.
+    Because `g` is the only total mapping, `fmap id = id` trivially holds, and no other lawful interpretation exists.
+
+### Proof of Identity Implies Composition
+
+In Haskell, if `fmap id = id` (Identity Law) holds for a parametrically polymorphic `fmap`, then `fmap (f . g) = fmap f . fmap g` (Composition Law) is automatically satisfied. This is a direct consequence of the **Naturality** of `fmap`.
+
+1.  **The Signature**: `fmap :: forall a b. (a -> b) -> F a -> F b`.
+2.  **Naturality Condition**: For any natural transformation $\eta : F \to G$, and any function $k : a \to b$, the condition $\eta_b \circ F(k) = G(k) \circ \eta_a$ must hold.
+3.  **Treating `fmap` as a transformation**: We can view $fmap(f)$ as a transformation from the functor `F` to itself.
+4.  **Free Theorem**: The "Free Theorem" for the type of `fmap` (as derived in Wadler's paper) states:
+    `fmap f . fmap g = fmap (f . g)`
+    This equality holds because the type of `fmap` is so restrictive that it cannot differentiate between "applying a composition" and "composing two applications" without knowing the internal structure of the types—which parametricity forbids.
 
 ---
 
