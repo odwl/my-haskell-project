@@ -1065,7 +1065,9 @@ Of the 7 surviving operations, 3 of them fail to have a corresponding right iden
 *   **Material Implication** (→): `T → x = x` (Left Identity is `T`), but `x → T = True` (Fails Right Identity).
 *   **Converse Nonimplication** (↚): `F ↚ x = x` (Left Identity is `F`), but `x ↚ F = False` (Fails Right Identity).
 
-Discarding those 3 leaves us with exactly 4 operations that possess a complete, **two-sided** identity element. As mathematical luck would have it, all 4 of these also satisfy Associativity, perfectly forming our 4 possible Boolean Monoids!
+Discarding those 3 leaves us with exactly 4 operations that possess a complete, **two-sided** identity element. At parameter size 2, proving that these surviving 4 operations also satisfy the final Monoid Law (Associativity) becomes trivial. In fact, any 2-inhabitant operation that possesses a valid two-sided identity is mathematically *guaranteed* to be associative! (See the mathematical proof of this anomaly in **Annex A**).
+
+These remaining 4 operations perfectly form our 4 Boolean Monoids!
 
 #### 3. Types with 3 Inhabitants (e.g., `Ordering`)
 What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`)? We witness a massive combinatorial explosion, but it is still small enough to mathematically map out!
@@ -1111,6 +1113,42 @@ Monoids become incredibly powerful when we need to squash a structure down to a 
 *   **"Theorems for free!"** by Philip Wadler (1989).
 *   **"Notions of computation and monads"** by Eugenio Moggi (1991).
 *   **"Fast and Loose Reasoning is Morally Correct"** by Nils Anders Danielsson, John Hughes, Patrik Jansson, and Jeremy Gibbons (2006).
+
+---
+
+## Annex A: Proof of 2-Inhabitant Associativity
+*Proof that all 2-inhabitant logical operations possessing a valid two-sided identity element are automatically associative.*
+
+Assume we have a 2-element type `{E, X}`. 
+We declare that `E` is the identity element. Because `E` is the identity, the rules `E ⋄ a = a` and `a ⋄ E = a` instantly lock in 3 of the 4 slots in our logical multiplication table (Cayley Table):
+
+| `x \ y` | E | X |
+| :---: | :---: | :---: |
+| **E** | `E` | `X` |
+| **X** | `X` | **???** |
+
+Because this table represents a closed binary operation on a 2-inhabitant type, there are only two possible values we can pick for the single empty box (`X ⋄ X`):
+1. **Case 1**: `X ⋄ X = E` (This forms the XOR or Equivalence gate)
+2. **Case 2**: `X ⋄ X = X` (This forms the OR or AND gate)
+
+Now, we must test the Law of Associativity: `(a ⋄ b) ⋄ c == a ⋄ (b ⋄ c)`. 
+
+*   **Trivial Cases**: If any of `a`, `b`, or `c` is the identity `E`, the associativity law trivially holds without evaluation. (For example, if `a = E`, then `(E ⋄ b) ⋄ c = b ⋄ c`, and `E ⋄ (b ⋄ c) = b ⋄ c`).
+*   **The Single Non-Trivial Case**: The only case where none of the operands are the identity is when `a`, `b`, and `c` are all `X`. Thus, the entire proof hinges on whether `(X ⋄ X) ⋄ X == X ⋄ (X ⋄ X)`.
+
+Let us evaluate this final equation for both possible remaining tables:
+
+**Case 1 (where `X ⋄ X = E`)**: 
+* Left side: `(X ⋄ X) ⋄ X = E ⋄ X = X`
+* Right side: `X ⋄ (X ⋄ X) = X ⋄ E = X`
+* Since `X = X`, Associativity unconditionally holds.
+
+**Case 2 (where `X ⋄ X = X`)**:
+* Left side: `(X ⋄ X) ⋄ X = X ⋄ X = X`
+* Right side: `X ⋄ (X ⋄ X) = X ⋄ X = X`
+* Since `X = X`, Associativity unconditionally holds.
+
+**Q.E.D.** Once you successfully lock in an identity element on a 2-inhabitant type, there is simply no remaining mathematical room in the $2 \times 2$ matrix for associativity to break!
 *   **"The Typeclassopedia"** by Brent Yorgey (The Monad Reader Issue 13, 2009).
 *   *(Recommended Reading)* **"Thinking with Types"** by Sandy Maguire.
 *   *(Recommended Reading)* **"Functors, Applicatives, And Monads In Pictures"** by Aditya Bhargava.
