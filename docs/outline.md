@@ -18,6 +18,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
     - **Non-parametric**: (e.g., `isInt :: Typeable a => a -> Bool`).
     - **Restricted**: (e.g., `Data.Set` requiring `Ord`).
 - **The Great Synthesis**: How constraints transform "Invalid" functors into "Restricted" functors on subcategories.
+- **Truly Non-Functors**: Law-breaking examples (e.g., `Counter` Mutation).
 - **Signature of Maybe**: `data Maybe a = Nothing | Just a` (Kind `* -> *`).
 - **Type Bundle Taxonomy**: `type` (synonym), `newtype` (zero overhead), `data` (full ADT).
 ### Section 1.2: The Constraint of Parametricity
