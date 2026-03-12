@@ -487,8 +487,9 @@ For a completely generic Bifunctor with no special algebraic properties, making 
 
 But if the Bifunctor has a special structural property—such as possessing a left and/or right identity element—then it is better to find a more natural way to extract a Functor! 
 
-At its absolute bare minimum, we just need a **left identity** or a **right identity**: does there exist a type $I$ such that plugging in any type $A$ yields $B(I, A) \cong A$ (left identity) or $B(A, I) \cong A$ (right identity)?
-
+At its absolute bare minimum, we just need a **left identity** or a **right identity**. What does this actually mean mathematically? It means there must exist a specific type $I$ along with a perfect two-way mapping—a structural isomorphism—that proves combining $I$ with any type $A$ leaves $A$ completely unchanged (neither losing nor inventing any data):
+*   **A Left Identity** requires a structural isomorphism known as the **Left Unitor** (often denoted $\lambda$): proving $B(I, A) \cong A$.
+*   **A Right Identity** requires a structural isomorphism known as the **Right Unitor** (often denoted $\rho$): proving $B(A, I) \cong A$.
 *(Note: If a binary operation has both, math dictates they must be the identical type $I$!)*
 
 When you use the identity $I$ to perform your partial application, the choice is no longer yours—the inherent structure of the Bifunctor *forces* its own unique canonical choice onto you! That uniqueness is exactly what "naturality" refers to in this context: it arises purely from the structure itself, independent of arbitrary external choices.
