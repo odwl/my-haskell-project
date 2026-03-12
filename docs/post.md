@@ -1020,35 +1020,46 @@ While functors and applicatives define the shape of computations, A type is a mo
 1. `mempty`: An identity "empty" value.
 2. `mappend` (or `<>`): A binary associative operation to combine two values.
 
+**The Monoid Laws and Testing**
+Just like Functors and Applicatives, instances of `Monoid` must rigidly obey mathematical laws:
+1. **Left Identity**: `mempty <> x == x`
+2. **Right Identity**: `x <> mempty == x`
+3. **Associativity**: `(x <> y) <> z == x <> (y <> z)`
+
 What are the top minimal implementations of a Monoid? Of course, because we mathematically require an identity value, a monoid cannot be `Void` (a type with 0 inhabitants).
 
 #### 1. The Absolute Minimum (1 Inhabitant)
-**The Unit `()`**: There is only one value, so `mempty = ()` and `() <> () = ()`.
+**The Unit `()`**: There is only one value, so `mempty = ()` and `() <> () = ()`. This is the absolute minimum implementation of a Monoid and it is very easy to verify that it satisfies the Monoid laws.
 
 #### 2. Types with 2 Inhabitants (`Bool`)
 A type with exactly 2 values (like `Bool` with `True` and `False`) has $2 \times 2 = 4$ possible input combinations for a binary function. For each input, it must choose one of 2 outputs, yielding $2^4 = 16$ mathematically possible binary operations.
 
 Here is the exhaustive list of all 16 possible logical operations for a Boolean type:
-1. **Contradiction**: Always returns `False` (ignores both inputs).
-2. **NOR (Not OR)**: Returns `True` only if both are `False`.
-3. **Converse Nonimplication ($B \not\rightarrow A$)**: Returns `True` only if $B$ is True and $A$ is False.
-4. **Negation A**: Always returns `Not A` (ignores the second argument).
-5. **Material Nonimplication ($A \not\rightarrow B$)**: Returns `True` only if $A$ is True and $B$ is False.
-6. **Negation B**: Always returns `Not B` (ignores the first argument).
-7. **XOR (Exclusive OR)**: Returns `True` if inputs are different.
-8. **NAND (Not AND)**: Returns `False` only if both are `True`.
-9. **AND (`All`)**: Returns `True` only if both are `True`.
-10. **Equivalence (XNOR)**: Returns `True` if inputs are the same.
-11. **Projection B**: Always returns $B$ (ignores the first argument).
-12. **Material Implication ($A \rightarrow B$)**: Returns `False` only if $A$ is True and $B$ is False.
-13. **Projection A**: Always returns $A$ (ignores the second argument).
-14. **Converse Implication ($B \rightarrow A$)**: Returns `False` only if $B$ is True and $A$ is False.
-15. **OR (`Any`)**: Returns `True` if at least one is `True`.
-16. **Tautology**: Always returns `True` (ignores both inputs).
+1. **Contradiction** ($\bot$): Always returns `False` (ignores both inputs).
+2. **NOR** ($\downarrow$): Returns `True` only if both are `False`.
+3. **Converse Nonimplication** ($\not\leftarrow$): Returns `True` only if $B$ is True and $A$ is False.
+4. **Negation A** ($\neg A$): Always returns `Not A` (ignores the second argument).
+5. **Material Nonimplication** ($\not\rightarrow$): Returns `True` only if $A$ is True and $B$ is False.
+6. **Negation B** ($\neg B$): Always returns `Not B` (ignores the first argument).
+7. **XOR** ($\oplus$): Returns `True` if inputs are different.
+8. **NAND** ($\uparrow$): Returns `False` only if both are `True`.
+9. **AND** ($\land$): Returns `True` only if both are `True`.
+10. **Equivalence** ($\leftrightarrow$): Returns `True` if inputs are the same.
+11. **Projection B** ($B$): Always returns $B$ (ignores the first argument).
+12. **Material Implication** ($\rightarrow$): Returns `False` only if $A$ is True and $B$ is False.
+13. **Projection A** ($A$): Always returns $A$ (ignores the second argument).
+14. **Converse Implication** ($\leftarrow$): Returns `False` only if $B$ is True and $A$ is False.
+15. **OR** ($\lor$): Returns `True` if at least one is `True`.
+16. **Tautology** ($\top$): Always returns `True` (ignores both inputs).
 
-Among those, let's exclude the ones that ignore one of the arguments, because they will not fullfil. th. We are left with 10 operations.
+Among those, let's exclude the 6 operations that unconditionally ignore one or both of their arguments. Since an identity element $e$ must satisfy $x \diamond e = x$ and $e \diamond x = x$, any function that completely ignores an input can never satisfy these laws. These 6 are:
+*   **Contradiction** and **Tautology** (ignore both inputs).
+*   **Projection A** and **Negation A** (ignore the second input).
+*   **Projection B** and **Negation B** (ignore the first input).
 
-However, out of this exhaustive list of 16 logical gates, how many possess a valid identity element to form a Monoid? Exactly 4!
+We are left with 10 operations that genuinely depend on both inputs.
+
+From those remaining 10 logical gates, how many possess a valid identity element to form a Monoid? Exactly 4!
 
 *   If `True` is the identity (`mempty = True`), exactly 2 functions exist:
     *   **Boolean `All` (AND)**: `True` and `&&`.
@@ -1057,7 +1068,7 @@ However, out of this exhaustive list of 16 logical gates, how many possess a val
     *   **Boolean `Any` (OR)**: `False` and `||`.
     *   **Boolean Exclusive OR (XOR)**: `False` and `/=`.
 
-The other 12 operations either fundamentally lack an identity element (like Projection or Identity) or break the laws of associativity (like NAND or Implication).
+The remaining 6 operations (NAND, NOR, and the 4 Implications/Nonimplications) fail to form Monoids because they either fundamentally lack a **two-sided** identity element (e.g., Implication only has a left-identity, while NAND has none at all) or violently break the laws of associativity.
 
 #### 3. Types with 3 Inhabitants (e.g., `Ordering`)
 What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`)? We witness a massive combinatorial explosion, but it is still small enough to mathematically map out!
@@ -1068,11 +1079,6 @@ What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`
 
 Therefore, for a type with 3 values, out of 19,683 possible operations, exactly **33 form perfectly valid Monoids**!
 
-**The Monoid Laws and Testing**
-Just like Functors and Applicatives, instances of `Monoid` must rigidly obey mathematical laws:
-1. **Left Identity**: `mempty <> x == x`
-2. **Right Identity**: `x <> mempty == x`
-3. **Associativity**: `(x <> y) <> z == x <> (y <> z)`
 
 > [!NOTE]
 > **Wait, what about Commutativity?** 
