@@ -1035,40 +1035,37 @@ What are the top minimal implementations of a Monoid? Of course, because we math
 A type with exactly 2 values (like `Bool` with `True` and `False`) has $2 \times 2 = 4$ possible input combinations for a binary function. For each input, it must choose one of 2 outputs, yielding $2^4 = 16$ mathematically possible binary operations.
 
 Here is the exhaustive list of all 16 possible logical operations for a Boolean type:
-1. **Contradiction** ($\bot$): Always returns `False` (ignores both inputs).
-2. **NOR** ($\downarrow$): Returns `True` only if both are `False`.
-3. **Converse Nonimplication** ($\not\leftarrow$): Returns `True` only if $B$ is True and $A$ is False.
-4. **Negation A** ($\neg A$): Always returns `Not A` (ignores the second argument).
-5. **Material Nonimplication** ($\not\rightarrow$): Returns `True` only if $A$ is True and $B$ is False.
-6. **Negation B** ($\neg B$): Always returns `Not B` (ignores the first argument).
-7. **XOR** ($\oplus$): Returns `True` if inputs are different.
-8. **NAND** ($\uparrow$): Returns `False` only if both are `True`.
-9. **AND** ($\land$): Returns `True` only if both are `True`.
-10. **Equivalence** ($\leftrightarrow$): Returns `True` if inputs are the same.
-11. **Projection B** ($B$): Always returns $B$ (ignores the first argument).
-12. **Material Implication** ($\rightarrow$): Returns `False` only if $A$ is True and $B$ is False.
-13. **Projection A** ($A$): Always returns $A$ (ignores the second argument).
-14. **Converse Implication** ($\leftarrow$): Returns `False` only if $B$ is True and $A$ is False.
-15. **OR** ($\lor$): Returns `True` if at least one is `True`.
-16. **Tautology** ($\top$): Always returns `True` (ignores both inputs).
+1. **Contradiction** (⊥): Always returns `False` (ignores both inputs).
+2. **NOR** (↓): Returns `True` only if both are `False`.
+3. **Converse Nonimplication** (↚): Returns `True` only if $B$ is True and $A$ is False.
+4. **Negation A** (¬A): Always returns `Not A` (ignores the second argument).
+5. **Material Nonimplication** (↛): Returns `True` only if $A$ is True and $B$ is False.
+6. **Negation B** (¬B): Always returns `Not B` (ignores the first argument).
+7. **XOR** (⊕): Returns `True` if inputs are different.
+8. **NAND** (↑): Returns `False` only if both are `True`.
+9. **AND** (∧): Returns `True` only if both are `True`.
+10. **Equivalence** (↔): Returns `True` if inputs are the same.
+11. **Projection B** (B): Always returns $B$ (ignores the first argument).
+12. **Material Implication** (→): Returns `False` only if $A$ is True and $B$ is False.
+13. **Projection A** (A): Always returns $A$ (ignores the second argument).
+14. **Converse Implication** (←): Returns `False` only if $B$ is True and $A$ is False.
+15. **OR** (∨): Returns `True` if at least one is `True`.
+16. **Tautology** (⊤): Always returns `True` (ignores both inputs).
 
-Among those, let's exclude the 6 operations that unconditionally ignore one or both of their arguments. Since an identity element $e$ must satisfy $x \diamond e = x$ and $e \diamond x = x$, any function that completely ignores an input can never satisfy these laws. These 6 are:
-*   **Contradiction** and **Tautology** (ignore both inputs).
-*   **Projection A** and **Negation A** (ignore the second input).
-*   **Projection B** and **Negation B** (ignore the first input).
+To find our Monoids, we can mathematically filter these down by rigorously testing the identity laws!
 
-We are left with 10 operations that genuinely depend on both inputs.
+**1. Which ones fail the Left Identity requirement? ($e \diamond x = x$)**
+An operation must have some constant $e$ (`True` or `False`) that leaves the right side $x$ unchanged. 
+Exactly **9 operations utterly fail** to have a left identity. These include the ones that ignore the right argument (Contradiction, Tautology, Projection A, Negation A), as well as NOR, NAND, Negation B, Material Nonimplication (↛), and Converse Implication (←).
+Discarding those 9 leaves us with exactly 7 operations possessing a valid left identity.
 
-From those remaining 10 logical gates, how many possess a valid identity element to form a Monoid? Exactly 4!
+**2. Which ones fail the Right Identity requirement? ($x \diamond e = x$)**
+Of the 7 surviving operations, 3 of them fail to have a corresponding right identity element:
+*   **Projection B** (B): Has a left identity but evaluation always yields $e \neq x$ on the right.
+*   **Material Implication** (→): `T → x = x` (Left Identity is `T`), but `x → T = True` (Fails Right Identity).
+*   **Converse Nonimplication** (↚): `F ↚ x = x` (Left Identity is `F`), but `x ↚ F = False` (Fails Right Identity).
 
-*   If `True` is the identity (`mempty = True`), exactly 2 functions exist:
-    *   **Boolean `All` (AND)**: `True` and `&&`.
-    *   **Boolean Equivalence (XNOR)**: `True` and `==`.
-*   If `False` is the identity (`mempty = False`), exactly 2 functions exist:
-    *   **Boolean `Any` (OR)**: `False` and `||`.
-    *   **Boolean Exclusive OR (XOR)**: `False` and `/=`.
-
-The remaining 6 operations (NAND, NOR, and the 4 Implications/Nonimplications) fail to form Monoids because they either fundamentally lack a **two-sided** identity element (e.g., Implication only has a left-identity, while NAND has none at all) or violently break the laws of associativity.
+Discarding those 3 leaves us with exactly 4 operations that possess a complete, **two-sided** identity element. As mathematical luck would have it, all 4 of these also satisfy Associativity, perfectly forming our 4 possible Boolean Monoids!
 
 #### 3. Types with 3 Inhabitants (e.g., `Ordering`)
 What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`)? We witness a massive combinatorial explosion, but it is still small enough to mathematically map out!
