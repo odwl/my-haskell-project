@@ -1,5 +1,6 @@
 module Lambda.ListAverage where
 
+import Control.Monad (foldM, (>=>))
 import Control.Monad.State
 import Data.Functor.Const (Const (..), getConst)
 import Data.Monoid (Sum (..), getSum)
@@ -19,12 +20,34 @@ sumFold :: [Double] -> Double
 sumFold = foldl (+) 0
 
 -- | Returns the sum of all elements using monoid map
+-- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
+-- Sum :: a -> Sum a
 sumMonoid :: [Double] -> Double
 sumMonoid = getSum . foldMap Sum
 
 -- | Returns the sum using Applicative '<*>' on Const (Sum Double)
+-- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
+-- Const :: a -> Const a b
+-- getConst :: Const a b -> a
 sumApplicative :: [Double] -> Double
 sumApplicative = getSum . getConst . traverse (Const . Sum)
+
+-- | Returns the sum of all elements using foldl and Monad bind (>>=) on Sum
+-- foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
+-- (>>=) :: Monad m => m a -> (a -> m b) -> m b
+sumMonad :: [Double] -> Double
+sumMonad = getSum . foldl (\acc x -> acc >>= \a -> Sum (a + x)) (Sum 0)
+
+-- | Returns the sum of all elements using foldM on Sum
+-- foldM :: (Foldable t, Monad m) => (b -> a -> m b) -> b -> t a -> m b
+sumFoldM :: [Double] -> Double
+sumFoldM = getSum . foldM (\acc x -> return (acc + x)) 0
+
+-- | Returns the sum of all elements using foldr and Kleisli composition (>=>)
+-- foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
+-- (>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c
+sumKleisli :: [Double] -> Double
+sumKleisli xs = getSum $ foldr (>=>) return (map (\x acc -> Sum (acc + x)) xs) 0
 
 -- | Returns the length of the list using fold
 lenFold :: [Double] -> Double

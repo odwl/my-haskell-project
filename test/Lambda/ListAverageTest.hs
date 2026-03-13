@@ -22,16 +22,22 @@ listAverageTests =
         ],
       testGroup
         "QuickCheck"
-        [ testProperty "sum functions (Case, Fold, Monoid, Applicative) are invariant" $ \xs ->
+        [ testProperty "sum functions (Case, Fold, Monoid, Applicative, Monad, Kleisli) are invariant" $ \xs ->
             let input = xs :: [Double]
                 vCase = sumCase input
                 vFold = sumFold input
                 vMonoid = sumMonoid input
                 vApplicative = sumApplicative input
+                vMonad = sumMonad input
+                vFoldM = sumFoldM input
+                vKleisli = sumKleisli input
                 diffCaseFold = abs (vCase - vFold)
                 diffCaseMonoid = abs (vCase - vMonoid)
                 diffCaseApplicative = abs (vCase - vApplicative)
-             in diffCaseFold < 1e-9 && diffCaseMonoid < 1e-9 && diffCaseApplicative < 1e-9,
+                diffCaseMonad = abs (vCase - vMonad)
+                diffCaseFoldM = abs (vCase - vFoldM)
+                diffCaseKleisli = abs (vCase - vKleisli)
+             in diffCaseFold < 1e-9 && diffCaseMonoid < 1e-9 && diffCaseApplicative < 1e-9 && diffCaseMonad < 1e-9 && diffCaseFoldM < 1e-9 && diffCaseKleisli < 1e-9,
           testProperty "sumCase equals sum" $ \xs ->
             let diff = abs (sumCase (xs :: [Double]) - sum xs)
              in diff < 1e-9,
