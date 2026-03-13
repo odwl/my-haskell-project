@@ -600,6 +600,24 @@ Equipped with our two atomic variables, we can perform any algebraic operation:
 
 Anything you can do in one dimension (`* -> *`), Category Theory allows you to transparently extend into two dimensions (`* -> * -> *`) using the exact same polynomial algebra!
 
+#### 3. Composing Functors into a Bifunctor (`Biff`)
+While `Compose` elegantly handles nesting a Functor inside another Functor (`f ∘ g`), what happens when we want to compose Functors directly into the independent branches of a **Bifunctor**?
+
+Because a standard Bifunctor `p` takes exactly two type arguments, we can mathematically substitute two independent Functors (`f` and `g`) into those dimensional parameters! In Haskell, this exact compositional bridge is completely formalized by the `Biff` operator in `Data.Bifunctor.Biff`:
+
+```haskell
+-- 'p' is a Bifunctor (like Either or Pair)
+-- 'f' and 'g' are Functors (like List, Maybe)
+newtype Biff p f g a b = Biff (p (f a) (g b))
+
+instance (Bifunctor p, Functor f, Functor g) => Bifunctor (Biff p f g) where
+    bimap f1 f2 (Biff pfg) = Biff (bimap (fmap f1) (fmap f2) pfg)
+```
+
+`Biff` mathematically proves that if you take a base Bifunctor ($p$) and compose it with two Functors ($f$ and $g$), the structure is mathematically guaranteed to generate a perfectly lawful, brand-new **Bifunctor**!
+
+For example, `Biff Either [] Maybe a b` geometrically creates `Either [a] (Maybe b)`. Because `Either`, `List`, and `Maybe` are completely lawful atoms, `Biff` automatically writes `bimap` for you by natively mapping the left function over the list and the right function over the `Maybe` branch. This flawlessly bridges 1D Functors and 2D Bifunctors in our mathematical closed algebraic system!
+
 ### Section 1.6: Polynomial Functors
 
 The relationship between Category Theory and Haskell's **Algebraic Data Types (ADTs)** is formalized through **Polynomial Functors**.
