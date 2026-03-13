@@ -162,6 +162,7 @@ The mathematically absolute smallest possible Functor has no constructors at all
 data Zero a -- No constructors!
 
 instance Functor Zero where
+    fmap :: (a -> b) -> Zero a -> Zero b
     fmap _ z = case z of {} 
 ```
 
@@ -183,6 +184,7 @@ The key here is that there is only one possible way to construct a `Proxy a`: us
 **Functor Implementation**:
 ```haskell
 instance Functor Proxy where
+    fmap :: (a -> b) -> Proxy a -> Proxy b
     fmap _ Proxy = Proxy
 ```
 **The "Why"**: Due to parametricity, there is exactly one possible implementation that compiles. We are given a function `(a -> b)`. We have a `Proxy a` (value `Proxy`). We must return a `Proxy b` (value `Proxy`). We have no `a` to feed into the function. Therefore, the function *must* be ignored.
@@ -198,26 +200,27 @@ instance Functor Proxy where
 
 If `Proxy` holds no data, `Const` holds zero *computational* data `a`, but stores an orthogonal contextual value `r`. (We will see later in Chapter 2 that this structure acts as an "Accumulator" once it is upgraded to an `Applicative`). 
 
-**Notes on Specializing `Const`:**
-*   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor.
-*   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data.
-*   **`Const Bool`**: If we specialize `r` to `Bool` (a type with exactly two inhabitants), we get a functor that safely exists and carries exactly one bit of information (True or False).
-
-*(We will see in Section 1.3 how these three specific specializations intimately link to the numbers $0$, $1$, and $2$ in algebraic arithmetic!)*
-
 ```haskell
 newtype Const r a = Const r
 ```
 **Functor Implementation**:
 ```haskell
 instance Functor (Const r) where
+    fmap :: (a -> b) -> Const r a -> Const r b
     fmap _ (Const r) = Const r
 ```
 **The "Why"**: Just like `Proxy`, because we have no `a` to apply the function to, parametricity forces us to ignore the function entirely. Note that at the Functor level, `r` requires no special structure (it doesn't need to be a `Monoid`).
 
 **Law Verification**:
 *   *Identity*: `fmap id (Const r) == Const r == id (Const r)`
-*   *Composition*: `fmap (f . g) (Const r) == Const r == fmap f (Const r) == fmap f (fmap g (Const r))`
+*   *Composition*: Guaranteed automatically by parametricity ("Theorems for free!") since the Identity law is satisfied.
+
+**Notes on Specializing `Const`:**
+*   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor.
+*   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data.
+*   **`Const Bool`**: If we specialize `r` to `Bool` (a type with exactly two inhabitants), we get a functor that safely exists and carries exactly one bit of information (True or False).
+
+*(We will see in Section 1.3 how these three specific specializations intimately link to the numbers $0$, $1$, and $2$ in algebraic arithmetic!)*
 
 #### 4. The Wrapper: `Identity`
 *(One computational data, Zero contextual data).*
