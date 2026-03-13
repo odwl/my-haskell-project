@@ -136,7 +136,7 @@ If `testBatch` never randomly generates the integer `12345`, this structure will
 
 ---
 
-### Section 1.2: Minimal Functors and Bifunctors
+### Section 2.2: Minimal Functors and Bifunctors
 
 Now that we have explored several examples of types that are *not* valid functors, let's reverse the approach. We will define the absolute simplest, most minimal structural types we can physically imagine building in Haskell. We will conduct this exercise for both standard **Functors** (types with a single parameter, `* -> *`) and **Bifunctors** (types with two parameters, `* -> * -> *`). 
 
@@ -426,7 +426,7 @@ instance Bifunctor (BiReader r) where
     == bimap f g (bimap j k (BiReader h))
     ```
 
-### Section 1.3: Bifunctors as Binary Operations on Functors
+### Section 2.3: Bifunctors as Binary Operations on Functors
 
 Because a Bifunctor maps two types into a new type, we can think of it mathematically as a **binary operator** on the category of Functors! By taking two existing Functors, $F$ and $G$, and combining them using a Bifunctor operator $B$, we generate an entirely new Functor: $H(x) = B(F(x), G(x))$. 
 
@@ -475,7 +475,7 @@ This conceptually proves why `Const Void` acts as the true algebraic identity fo
 
 By treating Bifunctors as binary operators running on simple atomic Functors, we observe the foundation of Algebraic Data Types emerging exactly like fundamental school arithmetic.
 
-### Section 1.4: Deriving the Atoms from Bifunctors
+### Section 2.4: Deriving the Atoms from Bifunctors
 
 In mathematical systems, we often don't just invent the "atomic" elements out of thin air. We derive them from the operations themselves. Here, we are deeply interested in extracting "natural" atomic Functors directly out of our foundational Bifunctors.
 
@@ -566,7 +566,7 @@ This completely "closed" loop of operations is extraordinarily profound. Accordi
 
 The closure built by these three simple Bifunctors creates the entire logical framework that strongly typed programming languages like Haskell rely on!
 
-### Section 1.5: Generating Functor Subcategories (The Algebra as a Special Case)
+### Section 2.5: Generating Functor Subcategories (The Algebra as a Special Case)
 
 *(Note on Terminology: When mathematicians or Haskell programmers say a structure is "algebraic" — as in Algebraic Data Types or ADTs — they mean it is constructed strictly using only polynomial combinations: Sums `+` and Products `*`. Function arrows `->` represent Exponentials, which are conceptually a tier "above" simple algebra!
 To make this concrete:
@@ -629,7 +629,7 @@ instance (Bifunctor p, Functor f, Functor g) => Bifunctor (Biff p f g) where
 
 For example, `Biff Either [] Maybe a b` geometrically creates `Either [a] (Maybe b)`. Because `Either`, `List`, and `Maybe` are completely lawful atoms, `Biff` automatically writes `bimap` for you by natively mapping the left function over the list and the right function over the `Maybe` branch. This flawlessly bridges 1D Functors and 2D Bifunctors in our mathematical closed algebraic system!
 
-### Section 1.6: Polynomial Functors
+### Section 2.6: Polynomial Functors
 
 The relationship between Category Theory and Haskell's **Algebraic Data Types (ADTs)** is formalized through **Polynomial Functors**.
 
@@ -660,9 +660,9 @@ If we translate this to algebra using our building blocks:
 So, the polynomial functor shape for `Shape a` is mathematically written as: 
 **$F(X) = 1 + Int + X^2$**
 
-### Section 1.7: The Parallel Functor Ecosystem (Solutions for Restricted Functors)
+### Section 2.7: The Parallel Functor Ecosystem (Solutions for Restricted Functors)
 
-As we briefly highlighted in Section 1.1, the mathematical definition of a functor is far broader than Haskell's native `Functor` typeclass (which strictly maps `* -> *` unconstrained). When structures inevitably violate these two rules, we do not throw our hands up in defeat! 
+As we briefly highlighted in Section 2.1, the mathematical definition of a functor is far broader than Haskell's native `Functor` typeclass (which strictly maps `* -> *` unconstrained). When structures inevitably violate these two rules, we do not throw our hands up in defeat! 
 
 The Haskell ecosystem simply defines *parallel* typeclasses to capture these different categorical mappings, allowing us to retain the exact same structural guarantees.
 
@@ -701,7 +701,7 @@ class MonoFunctor mono where
 ```
 This allows us to maintain the interface and laws of a Functor over mathematically restricted or entirely monomorphic structures.
 
-### Section 1.8: Discovering Molecules (Compounds)
+### Section 2.8: Discovering Molecules (Compounds)
 
 Using these "atoms," let's see how we can discover the rest of the Haskell universe.
 
