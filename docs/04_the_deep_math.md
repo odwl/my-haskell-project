@@ -228,7 +228,7 @@ These govern the "shape" of the types themselves. When we say $B(I, A) \cong A$ 
 ## Bibliography
 *   **"Theorems for free!"** by Philip Wadler (1989).
 *   **"Notions of computation and monads"** by Eugenio Moggi (1991).
-*   **"Fast and Loose Reasoning is Morally Correct"** by Nils Anders Danielsson, John Hughes, Patrik Jansson, and Jeremy Gibbons (2006).
+*   **"Fast and Loose Reasoning is Morally Correct"** by Nils Anders Danielsson, John Hughes, Patrik Jansson, and Jeremy Gibbons (2006) — *A practice widely accepted in the Haskell community, beautifully formalized by Nils Anders Danielsson, John Hughes, and others in their famous paper: "Fast and Loose Reasoning is Morally Correct".*
 *   **"The Typeclassopedia"** by Brent Yorgey (The Monad Reader Issue 13, 2009).
 *   *(Recommended Reading)* **"Thinking with Types"** by Sandy Maguire.
 *   *(Recommended Reading)* **"Functors, Applicatives, And Monads In Pictures"** by Aditya Bhargava.
