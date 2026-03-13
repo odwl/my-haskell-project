@@ -209,14 +209,14 @@ instance Functor (Const r) where
     fmap :: (a -> b) -> Const r a -> Const r b
     fmap _ (Const r) = Const r
 ```
-**The "Why"**: Just like `Proxy`, because we have no `a` to apply the function to, parametricity forces us to ignore the function entirely. Note that at the Functor level, `r` requires no special structure (it doesn't need to be a `Monoid`).
+**The "Why"**: We need to create an instance of `Const r b`. To do this, we need an instance of `r`. The mapping function `f` cannot help us because we don't have any `a` to feed it! So the only way is to extract the `r` from the passed instance of `Const r a` (via `getConst` or, as done here, simple pattern matching). There is mathematically no other choice. Note that at the Functor level, `r` requires no special structure (it doesn't need to be a `Monoid`).
 
 **Law Verification**:
 *   *Identity*: `fmap id (Const r) == Const r == id (Const r)`
 *   *Composition*: Guaranteed automatically by parametricity ("Theorems for free!") since the Identity law is satisfied.
 
 **Notes on Specializing `Const`:**
-*   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor.
+*   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor. It is actually very common in real-world Haskell to write `Const Void` instead of defining a custom `Zero`!
 *   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data.
 *   **`Const Bool`**: If we specialize `r` to `Bool` (a type with exactly two inhabitants), we get a functor that safely exists and carries exactly one bit of information (True or False).
 
