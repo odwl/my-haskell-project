@@ -159,7 +159,7 @@ The mathematically absolute smallest possible Functor has no constructors at all
 ```haskell
 {-# LANGUAGE EmptyCase #-}
 
-data Zero a -- No constructors!
+data Zero a -- No constructors! (Note: While not built-in by this name, an identical structure exists in base as `V1` from `GHC.Generics`)
 
 instance Functor Zero where
     fmap :: (a -> b) -> Zero a -> Zero b
@@ -217,8 +217,8 @@ instance Functor (Const r) where
 
 **Notes on Specializing `Const`:**
 *   **`Const Void`**: If we specialize `r` to `Void` (a type with zero inhabitants, logically defined as `data Void`), `Const Void` becomes impossible to instantiate at runtime. Thus, `Const Void` is mathematically isomorphic to our completely empty `Zero` functor. It is actually very common in real-world Haskell to write `Const Void` instead of defining a custom `Zero`!
-*   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant, logically defined as `data () = ()`), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data.
-*   **`Const Bool`**: If we specialize `r` to `Bool` (a type with exactly two inhabitants, logically defined as `data Bool = False | True`), we get a functor that safely exists and carries exactly one bit of information (True or False).
+*   **`Const ()`**: If we specialize `r` to the unit type `()` (a type with exactly one inhabitant, logically defined as `data () = ()`), we get a functor that safely exists but carries zero bits of information. Thus, `Const ()` is mathematically isomorphic to our empty box `Proxy`! You can translate back and forth between `Proxy` and `Const ()` without losing any data (i.e., you can write functions `f (Const ()) = Proxy` and `g Proxy = Const ()` where applying both functions always returns the exact original value).
+*   **`Const Bool`**: If we specialize `r` to `Bool` (a type with exactly two inhabitants, logically defined as `data Bool = False | True`), we get a functor that safely exists and carries exactly one bit of information (True or False). Thus, `Const Bool` is mathematically isomorphic to `Either (Proxy a) (Proxy a)`, where `Left Proxy` acts as `False` and `Right Proxy` acts as `True`!
 
 *(We will see in Section 1.3 how these three specific specializations intimately link to the numbers $0$, $1$, and $2$ in algebraic arithmetic!)*
 
