@@ -135,16 +135,20 @@ This document serves as the master architectural blueprint for the four-part "Mi
 - **Aggregation with `foldMap`**: How to map elements to a Monoid and fold them securely without requiring the full Monad machinery.
 
 ### Chapter 7: Minimal Foldable and the Foldable Laws
-#### Section 7.1: The Absolute Minimum Foldable
-- **The Empty Foldable (`Proxy`)**: How to fold a structure containing exactly zero elements (returns `mempty`).
-- **The Single-Element Foldable (`Identity`)**: Trivial traversal (returns `f x`).
-- **The Homomorphism**: Understanding `toList` as the unifying concept of all foldables.
+#### Section 7.1: What is a Foldable?
+- **1. A Well-Kinded Type Constructor**: Why `Foldable` requires kind `* -> *` (excluding `Int` and `Void`).
+- **2. Unconstrained Morphism Mapping (`foldMap`)**: The Minimal Complete Definition and the logic of Parametricity Constraints.
+- **3. Mathematical Laws**: Ensuring fold consistency across modes of traversal.
+- **Category Theory Origin**: The lossy projection onto a Monoid (`traverse` via `Const`).
 
-#### Section 7.2: The Architecture of foldMap
-- **Parametricity Constraints**: How the abstract type signature `(a -> m) -> t a -> m` theoretically permits lawless right-to-left traversals.
-- **The Foldable Laws**: Forcing the structure to behave predictably.
-  - Consistency equalities: Enforcing that `foldMap` is perfectly isomorphic to sequential `foldr` and `foldl`.
-- **Destructive Traversals**: The realization that `foldMap` is literally just `traverse` using the `Const` Applicative Functor.
+#### Section 7.2: The Absolute Minimum Foldable
+1. The Mathematically Unreachable Foldable (`Zero`) - The vacuous success
+2. The Empty Foldable (`Proxy`) - Conjuring `mempty` out of thin air
+3. The Single-Element Foldable (`Identity`) - The "Forced Hand" of the Foldable Laws
+4. The Ghost Data (`Const r`) - Holding the wrong type mapping
+5. The Static Pairing (`(e, a)`) - Discarding unmappable bounds
+6. The Branching Possibility (`Either e`) - Fusing proofs across branches
+7. The Homomorphism (The Essence of `toList`) as a structure-preserving map.
 
 ---
 
@@ -179,4 +183,4 @@ This document serves as the master architectural blueprint for the four-part "Mi
 - **The Cayley Table Proof**: Mathematical proof showing that once a two-sided identity element is locked in for a 2-inhabitant type, the remaining $2 \times 2$ grid leaves no structural room for associativity to fail.
 
 ### Bibliography
-- Reading list: Wadler, Moggi, Danielsson, Milewski.
+- Reading list: Wadler, Moggi, Danielsson, Milewski, Swierstra, McBride.

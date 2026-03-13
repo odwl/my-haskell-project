@@ -234,6 +234,8 @@ These govern the "shape" of the types themselves. When we say $B(I, A) \cong A$ 
 *   *(Recommended Reading)* **"Functors, Applicatives, And Monads In Pictures"** by Aditya Bhargava.
 *   **"Category Theory for Programmers"** (Introductory Notes) by Bartosz Milewski ([PDF Link](https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf)).
 *   **"Algebra of Programming"** by Richard Bird and Oege de Moor (1997) — *A foundational text exploring how algebras and functor subcategories are derived systematically from building blocks like Bifunctors.*
+*   **"Data types à la carte"** by Wouter Swierstra (2008) — *A seminal paper proving how to use the algebraic Sum operator over Functors to modularly compose distinct data types and interpreters.*
+*   **"The derivative of a regular type is its type of one-hole contexts"** by Conor McBride (2001) — *A mind-bending proof that taking the calculus derivative of a data type's polynomial structurally generates its exact Zipper.*
 
 ---
 
