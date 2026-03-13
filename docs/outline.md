@@ -29,17 +29,16 @@ This document serves as the master architectural blueprint for the four-part "Mi
   - **The Counter**: Mutations breaking identity.
   - **The Malicious Functor**: Hidden behavior conditionally breaking identity.
 
-#### Section 2.2: Minimal Functors and Bifunctors
+#### Section 2.2: Minimal Functors
 > *Focus: Atoms at the Functor level only.*
 
-##### Minimal Functors
 - **`Zero` (Uninhabited)**: The absolute bottom; zero constructors, mathematically impossible to instantiate.
 - **`Proxy` (The Empty Box)**: One constructor; `fmap` MUST ignore the function.
 - **`Const r` (Constant Context)**: Context-only. Includes notes on `Const Void` (isomorphic to `Zero`) and `Const ()` (isomorphic to `Proxy`).
 - **`Identity` (One)**: Transparency; mapping forced by possession of `a`.
 - **`(->) r` (The Exponential)**: The Reader function; infinite delayed computational data via domain `r`.
 
-##### Minimal Bifunctors
+#### Section 2.3: Minimal Bifunctors
 - **`BiProxy`**: Zero data, ignores both type parameters.
 - **`ConstContext r`**: Context data only, ignores both type parameters.
 - **`ConstLeft` / `ConstRight`**: One-sided constants acting as half-Identity, half-Proxy.
@@ -47,7 +46,7 @@ This document serves as the master architectural blueprint for the four-part "Mi
 - **Product (`(,)`)**: The fundamental product operation of two types.
 - **`BiReader r` (Dual Exponential)**: The delayed computation of a tuple.
 
-#### Section 2.3: Bifunctors as Binary Operations on Functors
+#### Section 2.4: Bifunctors as Binary Operations on Functors
 - **Binary Operator**: Treating $H(x) = B(F(x), G(x))$ as combinatorial arithmetic of functors.
 - **Minimal Examples**:
   - $0 + 1 = 1$: `Either (Zero a) (Proxy a)` isomorphic to `Proxy`.
@@ -57,7 +56,7 @@ This document serves as the master architectural blueprint for the four-part "Mi
   - $1 \times X = X$: `(Proxy a, Identity a)` isomorphic to `Identity`.
 - **The Ordinals**: Showing how `Const r` mathematically maps to $0$, $1$, and $2$ based on inhabited states now that $+$ and $\times$ are defined.
 
-#### Section 2.4: Deriving the Atoms from Bifunctors
+#### Section 2.5: Deriving the Atoms from Bifunctors
 - **1. Extracting a Functor from a Bifunctor**: Explaining partial application and why picking an arbitrary type $T$ is not mathematically "natural".
 - **2. Bifunctors with Identity ("Naturality")**: How possessing a left or right identity forces a unique canonical choice. Classifying our zoo of bifunctors (`BiProxy`, `->`, `Either`, `(,)`).
 - **3. Sub-Category Closures**: Why applying a single bifunctor and its identity leads to a trivial, flat lineage.
@@ -66,7 +65,7 @@ This document serves as the master architectural blueprint for the four-part "Mi
 - **6. Basic Examples**: Translating operations into compounds like $1 + X$ (`Maybe`), $E + X$ (Error), and $E \times X$ (Writer).
 - **The Ultimate Closure**: Sum (+), Product (*), and Exponential (`->`) perfectly close to form a **Bicartesian Closed Category (BCC)**, creating the mathematical foundation of typed programming.
 
-#### Section 2.5: Generating Functor Subcategories (The Algebra as a Special Case)
+#### Section 2.6: Generating Functor Subcategories (The Algebra as a Special Case)
 - **Closure of Bifunctors**: Generating a subcategory of functors from a starting set of bifunctors.
 - **What "Algebraic" means**: A specialized subcategory generated strictly by adding (Sum) and multiplying (Product) atoms, excluding Exponentials.
 - **The Algebra of Functors (1D)**: Summing (+) and Multiplying (*) single-variable building blocks.
@@ -75,17 +74,17 @@ This document serves as the master architectural blueprint for the four-part "Mi
 - **Proxy Math**: $1 + 1 = 2$ (`Const Bool`) and $1 \times 1 = 1$.
 - **The Algebra of Bifunctors (2D)**: Extending the exact same algebra to two-variable polynomials (`ConstLeft`, `ConstRight`).
 
-#### Section 2.6: Polynomial Functors
+#### Section 2.7: Polynomial Functors
 - **Polynomial Functors**: The relationship between Category Theory and ADTs.
 - **Why the Name "Polynomial"?**: Exploring the $1 + X + X^2$ shape equations mapping directly to types.
 
-#### Section 2.7: The Parallel Functor Ecosystem
+#### Section 2.8: The Parallel Functor Ecosystem
 - **Bifunctors**: Product category ($* \to * \to *$).
 - **Contravariant**: Opposite category ($Hask^{op} \to Hask$).
 - **Profunctors**: Mixed variance mapping.
 - **MonoFunctor (`mono-traversable`)**: Mapping monomorphic or constrained structures (`Data.Set`).
 
-#### Section 2.8: Discovering Molecules (Compounds)
+#### Section 2.9: Discovering Molecules (Compounds)
 - **`Maybe`**: $1 + X$ (Sum of Proxy and Identity).
 - **`Writer`**: $r \times X$ (Product of Const and Identity).
 - **`List`**: $1 + X \times L(X)$ (Recursive chain).
