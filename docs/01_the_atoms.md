@@ -165,7 +165,7 @@ instance Functor Zero where
     fmap _ z = case z of {} 
 ```
 
-**The "Why"**: Because `Zero a` has no constructors, we can never actually instantiate it at runtime. However, the type signature `(a -> b) -> Zero a -> Zero b` is perfectly valid. If we were somehow handed a value `z` of type `Zero a`, we prove to the compiler we can produce a `Zero b` by pattern matching on its non-existent constructors, leading to an empty case. Parametricity holds because the transformation is forced by the absolute absence of data.
+**The "Why"**: Because `Zero a` has no constructors, we can never actually instantiate it at runtime. However, the type signature `(a -> b) -> Zero a -> Zero b` is perfectly valid. Actually, any data type with zero constructors (an uninhabited type), regardless of how many type parameters it takes (like `data Zero a b c`), is ALWAYS guaranteed to be a perfectly lawful Functor, Bifunctor, Profunctor, etc. If we were somehow handed a value `z` of type `Zero a`, we prove to the compiler we can produce a `Zero b` by pattern matching on its non-existent constructors, leading to an empty case. Parametricity holds because the transformation is forced by the absolute absence of data.
 
 **Law Verification**:
 *   *Identity*: `fmap id z` where `z :: Zero a`. Pattern matching on `z` (empty case) immediately satisfies the law as no value exists to violate it.
