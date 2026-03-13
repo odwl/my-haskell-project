@@ -169,7 +169,7 @@ instance Functor Zero where
 
 **Law Verification**:
 *   *Identity*: `fmap id z` where `z :: Zero a`. Pattern matching on `z` (empty case) immediately satisfies the law as no value exists to violate it.
-*   *Composition*: `fmap (f . g) z` similarly satisfies the law through the empty case logic.
+*   *Composition*: Guaranteed automatically by parametricity ("Theorems for free!") since the Identity law is satisfied.
 
 #### 2. The Empty Box: `Proxy`
 *(One constructor, Zero computational data, Zero contextual data).*
