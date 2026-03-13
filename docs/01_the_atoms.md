@@ -8,6 +8,17 @@ In mathematics, there is a beautiful, recurring pattern: we like to start with t
 
 In this document, we will apply exactly that mathematical lens. We will start by defining the absolute minimal "atomic" Functors and Bifunctors. Next, we will introduce the combinators of our algebra (Sums and Products). Finally, by exploring the closure of these operations, we will demonstrate how you can transparently build incredibly complex, robust algebraic data types (Molecules) without ever breaking the foundational laws of the atoms.
 
+### The Updated $\to$ Ranking (Simplicity to Power)
+
+| Rank | Type Class | Core Idea | Why it's here |
+|---|---|---|---|
+| 1 | Functor | Mapping | Only 1 law/method. Purely transformative. |
+| 2 | Foldable | Reducing | High utility, intuitive "summary" logic. |
+| 3 | Applicative | Multi-context | Applying functions across multiple containers. |
+| 4 | Alternative | Selection | Adds "OR" logic and "Failure" to Applicative. |
+| 5 | Monad | Sequencing | Introduces "Flattening" and step-by-step dependency. |
+| 6 | Traversable | Commuting | The most abstract; requires understanding all above. |
+
 While the core concepts structured here are foundational to modern Haskell, this specific teaching narrative—starting with absolute minimalism to actually "prove" the forced hand of parametricity—is something usually only found scattered across different resources. We will synthesize foundational ideas found in Philip Wadler's *"Theorems for free!"* and Sandy Maguire's *"Thinking with Types"*.
 
 **Intended Audience:** This journey is designed for mathematicians, computer scientists, or intermediate Haskell programmers who already grasp the basic syntax and perhaps have a surface-level intuition of Category Theory or Abstract Algebra. If you have ever used a Functor or a Monad but felt a lingering desire to derive them from the absolute mathematical "scratch"—to build an unshakeable, axiomatic understanding of *why* they must exist and behave exactly as they do—this exploration is for you!
