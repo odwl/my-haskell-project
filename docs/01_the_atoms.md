@@ -53,42 +53,7 @@ This restriction is forced by **Parametricity**. When we write a polymorphic fun
 
 If we have a generic type `a` and need to produce a generic type `b`, we cannot inspect the value, switch on its type, or conjure a `b` out of thin air. This drastic restriction essentially forces our implementations to **preserve structure**. This concept is famously codified in Philip Wadler's paper ["Theorems for free!"](https://people.mpi-sws.org/~dreyer/tor/papers/wadler.pdf), which proves that simply reading the type signature of a polymorphic function tells you almost everything about what the function physically *must* do.
 
-##### Some "Almost" Functors
-Many structures in Haskell *are* valid functors in Category Theory but fail the Haskell language condition above.
 
-1.  **The Forgetful Functor (`Monoid` -> `Hask`)**:
-    ```haskell
-    -- In Category Theory, this is a functor between different categories.
-    forget :: Monoid a => a -> a
-    forget = id
-    ```
-    *   *Haskell Status*: Not a `Functor` instance because it requires the `Monoid a` constraint.
-2.  **The Type Inspector (`isInt`)**:
-    ```haskell
-    import Data.Typeable (Typeable, cast)
-    import Data.Maybe (isJust)
-
-    -- This is a functor that inspects the object in Category Theory.
-    isInt :: Typeable a => a -> Bool
-    isInt x = isJust (cast x :: Maybe Int)
-    ```
-    *   *Haskell Status*: Not a `Functor` instance because it requires `Typeable a`. It won't work for *any* `a`, only those the compiler can reify. This is why we call it a "backdoor": it bypasses the intentional "blindness" of parametric polymorphism.
-3.  **The Balanced Tree (`Data.Set`)**:
-    ```haskell
-    -- Rebuilds a BST based on new values.
-    mapSet :: Ord b => (a -> b) -> Set a -> Set b
-    ```
-    *   *Logic*: A `Set` is implemented as a balanced **Binary Search Tree (BST)**. To maintain the invariant (ordered and unique), every map operation must rebuild the tree using comparisons of the *new* values `b`. Since this requires `Ord b`, it is a **Restricted Functor** mapping to the subcategory of ordered types.
-
-##### The Great Synthesis: Everything is a Restricted Functor
-In all three cases above, we can "fix" the problem by adding a constraint like `Monoid a =>`, `Typeable a =>`, or `Ord b =>`. 
-
-**In Haskell, almost every "non-functor" is actually just a functor on a subcategory.** 
-By adding a constraint, you are explicitly telling the compiler: "I am no longer operating on the category of all types (`Hask`); I am now operating only on a subcategory." The standard `Functor` typeclass is simply the special case where that subcategory is the entire category `Hask`.
-
-If we look at valid candidates in Haskell:
-*   `Maybe` is a valid functor candidate (Kind `* -> *`).
-*   `Identity` is a valid functor candidate (Kind `* -> *`).
 
 #### 3. Mathematical Laws
 You must satisfy the Identity and Composition laws:
@@ -121,7 +86,47 @@ testProperties "Maybe Functor" $ functor (Proxy :: Proxy Maybe)
 
 *(Moved to Section 1.6: The Parallel Functor Ecosystem)*
 
-#### 4. The Malicious Functor (Hidden Law-Breaker)
+#### 4. Almost Functors
+Many structures look like Functors but fail one of the strict Haskell criteria or the mathematical laws. 
+
+##### 4.1. The Constrained Functors
+Many structures in Haskell *are* valid functors in Category Theory but fail the Haskell unconstrained mapping condition.
+
+1.  **The Forgetful Functor (`Monoid` -> `Hask`)**:
+    ```haskell
+    -- In Category Theory, this is a functor between different categories.
+    forget :: Monoid a => a -> a
+    forget = id
+    ```
+    *   *Haskell Status*: Not a `Functor` instance because it requires the `Monoid a` constraint.
+2.  **The Type Inspector (`isInt`)**:
+    ```haskell
+    import Data.Typeable (Typeable, cast)
+    import Data.Maybe (isJust)
+
+    -- This is a functor that inspects the object in Category Theory.
+    isInt :: Typeable a => a -> Bool
+    isInt x = isJust (cast x :: Maybe Int)
+    ```
+    *   *Haskell Status*: Not a `Functor` instance because it requires `Typeable a`. It won't work for *any* `a`, only those the compiler can reify. This is why we call it a "backdoor": it bypasses the intentional "blindness" of parametric polymorphism.
+3.  **The Balanced Tree (`Data.Set`)**:
+    ```haskell
+    -- Rebuilds a BST based on new values.
+    mapSet :: Ord b => (a -> b) -> Set a -> Set b
+    ```
+    *   *Logic*: A `Set` is implemented as a balanced **Binary Search Tree (BST)**. To maintain the invariant (ordered and unique), every map operation must rebuild the tree using comparisons of the *new* values `b`. Since this requires `Ord b`, it is a **Restricted Functor** mapping to the subcategory of ordered types.
+
+**The Great Synthesis: Everything is a Restricted Functor**
+In all three cases above, we can "fix" the problem by adding a constraint like `Monoid a =>`, `Typeable a =>`, or `Ord b =>`. 
+
+**In Haskell, almost every "non-functor" is actually just a functor on a subcategory.** 
+By adding a constraint, you are explicitly telling the compiler: "I am no longer operating on the category of all types (`Hask`); I am now operating only on a subcategory." The standard `Functor` typeclass is simply the special case where that subcategory is the entire category `Hask`.
+
+If we look at valid candidates in Haskell:
+*   `Maybe` is a valid functor candidate (Kind `* -> *`).
+*   `Identity` is a valid functor candidate (Kind `* -> *`).
+
+##### 4.2. The Malicious Functor (Hidden Law-Breaker)
 This example illustrates why testing alone isn't proof. It has the correct signature and is parametric, but it "hides" its law-breaking behavior behind a conditional:
 
 ```haskell
@@ -147,7 +152,7 @@ These minimal structures act as the "atoms" from which the rest of the algebraic
 #### Minimal Functors
 
 #### 1. The Absolute Bottom: `Zero`
-*(Zero constructors, Zero computational data, Zero contextual data).*
+*(Zero constructors, Zero computational data, Zero contextual data. Mathematically, it uniquely forms the **Initial Object** of the `Hask` category, with the usual caveat of bottom/undefined values (`_|_`) slightly muddying strict categorical purity).*
 
 The mathematically absolute smallest possible Functor has no constructors at all. It represents an uninhabited type—it's mathematically impossible to construct a value of this type. It represents total "nothingness".
 
