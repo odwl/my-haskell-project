@@ -37,13 +37,18 @@ The absolute simplest monoids are those that completely ignore the `Bin` operati
 
 Both of these represent flat closures.
 
-### B. The Destructive Fakes (`First` and `Second`)
-What if we define a combinator that simply selects one of the inputs and discards the other?
-`type Bin f g = f` (The `First` combinator).
-This satisfies the `(* -> *) -> (* -> *) -> (* -> *)` kind requirement perfectly. However, it catastrophically fails the **Monoid Laws**.
-A Monoid must have an `Atom` (identity element `e`) such that `Bin e f = f` (Left Identity).
-If we evaluate `Bin e f` using the `First` logic, it returns `e`. So for the law to hold, `e` must magically transform its type to exactly match whatever arbitrary `f` was passed in! There is no single `Atom` Functor in the universe that is simultaneously equal to `List`, `Maybe`, and `Tree`.
-Because it is impossible to define an `Atom` base case for `First` or `Second`, you cannot fold them over an empty list. They are *Semigroups*, but they cannot mathematically generate an N-ary Glue.
+### B. Semigroups vs. Monoids (The Destructive Fakes `First` and `Second`)
+What if we drop the `Atom` requirement entirely and only keep the `Bin` operator? If we just enforce an associativity law on `Bin`, we have defined a **Semigroup over Functors**.
+
+With just a Semigroup, you can define combinators like `First` (where `type Bin f g = f`) or `Second`. They satisfy the `(* -> *) -> (* -> *) -> (* -> *)` kind requirement perfectly. 
+
+However, they are mathematically "incomplete" to build N-ary structures. If you use a Semigroup `Bin` to fold an N-ary list, you can only fold lists that have *at least one functor in them* ($N \ge 1$). 
+
+If you hand a Semigroup an empty list `[]` to fold, it mathematically catastrophically crashes. Because you dropped the `Atom` (the identity element), the space is undefined at $N=0$. 
+
+A Monoid explicitly requires an `Atom` such that `Bin e f = f` (Left Identity) and `Bin f e = f` (Right Identity). It is impossible to define an `Atom` base case for `First` because the `e` would have to magically morph its type to equal whatever arbitrary `f` was passed in! 
+
+Therefore, `First` and `Second` are mathematically valid *Semigroups*, but they cannot ever be *Monoids*. And because they have no $N=0$ case, they cannot generate complete ADT universes!
 
 There are exactly two fundamental active properties we can manipulate: **Choice** and **Conjunction**.
 
