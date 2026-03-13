@@ -1,15 +1,17 @@
-# Outline: Minimal Functors, Applicatives, and Monads in Haskell
+# Master Outline: The Minimal Haskell Series
 
-This document is a rich structural breakdown of the "Minimal Functors" post, serving as a roadmap for the theoretical and pedagogical journey.
+This document serves as the master architectural blueprint for the four-part "Minimal Haskell" blog series.
 
-## 1. Introduction
+## Part 1: The Atoms (docs/01_the_atoms.md)
+
+### 1. Introduction
 - **The Teaching Narrative**: Using absolute minimalism to prove the "forced hand" of parametricity.
 - **Intended Audience**: Mathematicians and intermediate functional programmers seeking an axiomatic, bottom-up categorical understanding.
 - **Scope**: Focusing on Endofunctors within the `Hask` category.
 - **Parametricity**: The protagonist; how polymorphism forces unique implementations of `fmap`, `pure`, and `bind`.
 
-## Chapter 1: The Foundations of Functors and Bifunctors
-### Section 1.1: What is a Functor?
+### Chapter 1: The Foundations of Functors and Bifunctors
+#### Section 1.1: What is a Functor?
 - **Foundations**: Well-kindedness (`* -> *`), Unconstrained Morphism Mapping (`fmap`).
 - **Parametricity**: Theorems for free!
 - **Mathematical Laws**: Identity and Composition.
@@ -22,17 +24,17 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
   - **The Counter**: Mutations breaking identity.
   - **The Malicious Functor**: Hidden behavior conditionally breaking identity.
 
-### Section 1.2: Minimal Functors and Bifunctors
+#### Section 1.2: Minimal Functors and Bifunctors
 > *Focus: Atoms at the Functor level only.*
 
-#### Minimal Functors
+##### Minimal Functors
 - **`Zero` (Uninhabited)**: The absolute bottom; zero constructors, mathematically impossible to instantiate.
 - **`Proxy` (The Empty Box)**: One constructor; `fmap` MUST ignore the function.
 - **`Const r` (Constant Context)**: Context-only. Includes notes on `Const Void` (isomorphic to `Zero`) and `Const ()` (isomorphic to `Proxy`).
 - **`Identity` (One)**: Transparency; mapping forced by possession of `a`.
 - **`(->) r` (The Exponential)**: The Reader function; infinite delayed computational data via domain `r`.
 
-#### Minimal Bifunctors
+##### Minimal Bifunctors
 - **`BiProxy`**: Zero data, ignores both type parameters.
 - **`ConstContext r`**: Context data only, ignores both type parameters.
 - **`ConstLeft` / `ConstRight`**: One-sided constants acting as half-Identity, half-Proxy.
@@ -40,7 +42,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Product (`(,)`)**: The fundamental product operation of two types.
 - **`BiReader r` (Dual Exponential)**: The delayed computation of a tuple.
 
-### Section 1.3: Bifunctors as Binary Operations on Functors
+#### Section 1.3: Bifunctors as Binary Operations on Functors
 - **Binary Operator**: Treating $H(x) = B(F(x), G(x))$ as combinatorial arithmetic of functors.
 - **Minimal Examples**:
   - $0 + 1 = 1$: `Either (Zero a) (Proxy a)` isomorphic to `Proxy`.
@@ -50,7 +52,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
   - $1 \times X = X$: `(Proxy a, Identity a)` isomorphic to `Identity`.
 - **The Ordinals**: Showing how `Const r` mathematically maps to $0$, $1$, and $2$ based on inhabited states now that $+$ and $\times$ are defined.
 
-### Section 1.4: Deriving the Atoms from Bifunctors
+#### Section 1.4: Deriving the Atoms from Bifunctors
 - **1. Extracting a Functor from a Bifunctor**: Explaining partial application and why picking an arbitrary type $T$ is not mathematically "natural".
 - **2. Bifunctors with Identity ("Naturality")**: How possessing a left or right identity forces a unique canonical choice. Classifying our zoo of bifunctors (`BiProxy`, `->`, `Either`, `(,)`).
 - **3. Sub-Category Closures**: Why applying a single bifunctor and its identity leads to a trivial, flat lineage.
@@ -59,7 +61,7 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **6. Basic Examples**: Translating operations into compounds like $1 + X$ (`Maybe`), $E + X$ (Error), and $E \times X$ (Writer).
 - **The Ultimate Closure**: Sum (+), Product (*), and Exponential (`->`) perfectly close to form a **Bicartesian Closed Category (BCC)**, creating the mathematical foundation of typed programming.
 
-### Section 1.5: Generating Functor Subcategories (The Algebra as a Special Case)
+#### Section 1.5: Generating Functor Subcategories (The Algebra as a Special Case)
 - **Closure of Bifunctors**: Generating a subcategory of functors from a starting set of bifunctors.
 - **What "Algebraic" means**: A specialized subcategory generated strictly by adding (Sum) and multiplying (Product) atoms, excluding Exponentials.
 - **The Algebra of Functors (1D)**: Summing (+) and Multiplying (*) single-variable building blocks.
@@ -68,74 +70,57 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **Proxy Math**: $1 + 1 = 2$ (`Const Bool`) and $1 \times 1 = 1$.
 - **The Algebra of Bifunctors (2D)**: Extending the exact same algebra to two-variable polynomials (`ConstLeft`, `ConstRight`).
 
-### Section 1.6: Polynomial Functors
+#### Section 1.6: Polynomial Functors
 - **Polynomial Functors**: The relationship between Category Theory and ADTs.
 - **Why the Name "Polynomial"?**: Exploring the $1 + X + X^2$ shape equations mapping directly to types.
 
-### Section 1.7: The Parallel Functor Ecosystem
+#### Section 1.7: The Parallel Functor Ecosystem
 - **Bifunctors**: Product category ($* \to * \to *$).
 - **Contravariant**: Opposite category ($Hask^{op} \to Hask$).
 - **Profunctors**: Mixed variance mapping.
 - **MonoFunctor (`mono-traversable`)**: Mapping monomorphic or constrained structures (`Data.Set`).
 
-### Section 1.8: Discovering Molecules (Compounds)
+#### Section 1.8: Discovering Molecules (Compounds)
 - **`Maybe`**: $1 + X$ (Sum of Proxy and Identity).
 - **`Writer`**: $r \times X$ (Product of Const and Identity).
 - **`List`**: $1 + X \times L(X)$ (Recursive chain).
 - **Fixed Points**: Shape equations (Lists vs. Trees).
 
-## Chapter 2: The Applicative Evolution
-### Section 2.1: Foundations
+---
+
+## Part 2: The Evolution (docs/02_the_evolution.md)
+
+### Chapter 2: The Applicative Evolution
+#### Section 2.1: Foundations
 - **Powers**: `pure` (lifting values) and `<*>` (lifting application).
 - **Applicative Laws**: Predictable sequencing.
 - **Section 2.2: Automated Law Testing**: Using `testBatch` for Applicatives.
 
-### Section 2.3: Upgrading the Atoms
+#### Section 2.3: Upgrading the Atoms
 - **`Proxy`**: Trivial upgrade.
 - **`Const r` (The Monoid Twist)**: Why `Applicative` necessitates `mempty` and `mappend`.
 - **`Identity`**: Trivial application.
 
-## Chapter 3: The Monadic Conclusion
-### Section 3.1: Foundations
+### Chapter 3: The Monadic Conclusion
+#### Section 3.1: Foundations
 - **The Monadic Triad**: Bind, Join, Kleisli.
 - **Categorical Mu**: `join` as the foundational flattening operation.
 - **Section 3.2: Automated Law Testing**: Using `testBatch` for Monads.
 
-### Section 3.3: The Final Evolution
+#### Section 3.3: The Final Evolution
 - **`Proxy` & `Identity`**: Trivial upgrades.
 - **`Const r` (The Monad Barrier)**: Why the evolution stops; violating the Left Identity law.
 
-## Chapter 4: Deep Dive into Bifunctors
-### Section 4.1: The True Nature of Bifunctors
-- **Product Categories**: A Bifunctor is just a normal functor from a product category $\mathcal{C} \times \mathcal{D} \to \mathcal{E}$.
-- **Haskell implementation**: Mapping a pair of morphisms (`bimap`) from $\mathbf{Hask} \times \mathbf{Hask} \to \mathbf{Hask}$.
-
-### Section 4.2: The Laws of Bifunctors
-- **Identity**: `bimap id id == id`.
-- **Composition**: `bimap (f . g) (h . i) == bimap f h . bimap g i`.
-- **Equivalences**: The relationship between `bimap`, `first`, and `second`.
-
-## Chapter 5: Monoidal Categories
-### Section 5.1: The Pentagon and Triangle Laws
-- **The Tensor Product**: Why `Either` and `(,)` are special Bifunctors.
-- **Coherence Conditions**: Associativity (Pentagon) and Unit (Triangle) laws.
-- *(Future section for deep dive into formal tensor products).*
-
-## Conclusion: The Tale of Three Minimals
+### Conclusion: The Tale of Three Minimals
 - **Spectrum of Necessity**: How Zero, Context, and One define the logic of types.
 - **The Alchemy of ADTs**: Discovering the universe from atoms.
 
-## Annex: Proofs and Derivations
-- **Summary & Bundle Taxonomy**:
-  - **Final Summary**: Shape and Preservation.
-  - **Type Bundle Taxonomy**: When to use `type`, `newtype`, or `data`.
-- **Monad Equivalence**: Bind/Join/Kleisli.
-- **Uniqueness Proof**: Formal mapping proof for `Proxy`.
-- **Identity Implies Composition**: Formal proof of the parametricity shortcut.
-- **Parametricity**: A deep dive into Natural Transformations, Ends, and Relational Fibrations.
+---
 
-## Chapter 6: Other Minimals
-### Section 6.1: Minimal Monoid
+## Part 3: The Aggregators (docs/03_the_aggregators.md)
+
+### Chapter 6: Other Minimals
+#### Section 6.1: Minimal Monoid
 - **Definition**: Unpacking `mempty` and the binary operation (`mappend` or `<>`).
 - **The Monoid Laws**: Associativity, Left Identity, and Right Identity.
   - **Developer Responsibility & Testing**: Using `testBatch` to automate equality testing (unlike Bifunctor natural identities which use isomorphism).
@@ -149,8 +134,49 @@ This document is a rich structural breakdown of the "Minimal Functors" post, ser
 - **The Sum Monoid**: A practical numeric monoid (`mempty = 0`, `<> = +`).
 - **Aggregation with `foldMap`**: How to map elements to a Monoid and fold them securely without requiring the full Monad machinery.
 
-## Annex A: Proof of 2-Inhabitant Associativity
+### Chapter 7: Minimal Foldable and the Foldable Laws
+#### Section 7.1: The Absolute Minimum Foldable
+- **The Empty Foldable (`Proxy`)**: How to fold a structure containing exactly zero elements (returns `mempty`).
+- **The Single-Element Foldable (`Identity`)**: Trivial traversal (returns `f x`).
+- **The Homomorphism**: Understanding `toList` as the unifying concept of all foldables.
+
+#### Section 7.2: The Architecture of foldMap
+- **Parametricity Constraints**: How the abstract type signature `(a -> m) -> t a -> m` theoretically permits lawless right-to-left traversals.
+- **The Foldable Laws**: Forcing the structure to behave predictably.
+  - Consistency equalities: Enforcing that `foldMap` is perfectly isomorphic to sequential `foldr` and `foldl`.
+- **Destructive Traversals**: The realization that `foldMap` is literally just `traverse` using the `Const` Applicative Functor.
+
+---
+
+## Part 4: The Deep Math (docs/04_the_deep_math.md)
+
+### Chapter 4: Deep Dive into Bifunctors
+#### Section 4.1: The True Nature of Bifunctors
+- **Product Categories**: A Bifunctor is just a normal functor from a product category $\mathcal{C} \times \mathcal{D} \to \mathcal{E}$.
+- **Haskell implementation**: Mapping a pair of morphisms (`bimap`) from $\mathbf{Hask} \times \mathbf{Hask} \to \mathbf{Hask}$.
+
+#### Section 4.2: The Laws of Bifunctors
+- **Identity**: `bimap id id == id`.
+- **Composition**: `bimap (f . g) (h . i) == bimap f h . bimap g i`.
+- **Equivalences**: The relationship between `bimap`, `first`, and `second`.
+
+### Chapter 5: Monoidal Categories
+#### Section 5.1: The Pentagon and Triangle Laws
+- **The Tensor Product**: Why `Either` and `(,)` are special Bifunctors.
+- **Coherence Conditions**: Associativity (Pentagon) and Unit (Triangle) laws.
+- *(Future section for deep dive into formal tensor products).*
+
+### Annex: Proofs and Derivations
+- **Summary & Bundle Taxonomy**:
+  - **Final Summary**: Shape and Preservation.
+  - **Type Bundle Taxonomy**: When to use `type`, `newtype`, or `data`.
+- **Monad Equivalence**: Bind/Join/Kleisli.
+- **Uniqueness Proof**: Formal mapping proof for `Proxy`.
+- **Identity Implies Composition**: Formal proof of the parametricity shortcut.
+- **Parametricity**: A deep dive into Natural Transformations, Ends, and Relational Fibrations.
+
+### Annex A: Proof of 2-Inhabitant Associativity
 - **The Cayley Table Proof**: Mathematical proof showing that once a two-sided identity element is locked in for a 2-inhabitant type, the remaining $2 \times 2$ grid leaves no structural room for associativity to fail.
 
-## Bibliography
+### Bibliography
 - Reading list: Wadler, Moggi, Danielsson, Milewski.
