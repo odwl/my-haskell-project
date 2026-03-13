@@ -178,7 +178,7 @@ The smallest possible Functor holds absolutely the minimum amount of data: **non
 ```haskell
 data Proxy a = Proxy
 ```
-`Proxy` maps any phantom type `a` to a constructor that contains zero term-level data. The type `a` exists only at compile time; at runtime, the box is completely empty.
+The key here is that there is only one possible way to construct a `Proxy a`: using the empty constructor that produces an empty `Proxy`. It maps any phantom type `a` to a constructor that contains zero term-level data. The type `a` exists only at compile time; at runtime, the box is completely empty.
 
 **Functor Implementation**:
 ```haskell
@@ -189,7 +189,7 @@ instance Functor Proxy where
 
 **Law Verification**:
 *   *Identity*: `fmap id Proxy == Proxy == id Proxy`
-*   *Composition*: `fmap (f . g) Proxy == Proxy == fmap f Proxy == fmap f (fmap g Proxy)`
+*   *Composition*: Guaranteed automatically by parametricity ("Theorems for free!") since the Identity law is satisfied.
 
 *(Note: As proven by Wadler's "Theorems for free!", satisfying the Identity law automatically guarantees the Composition law for any parametrically polymorphic functor. We explicitly verify both here and throughout this section purely for the sake of a complete, explicit proof).*
 
