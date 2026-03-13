@@ -108,3 +108,27 @@ You can now generate:
 3.  **Contravariance**: `a -> ()`
 
 You have officially left simple algebra and entered calculus!
+
+### The Atoms of the Exponential
+What atoms does the Exponential conceptually generate when it interacts with the $0$ and $1$ atoms? Because it is asymmetrical, we must check both sides:
+
+**1. The "Base" is 1 ($1^X$)**
+What is the type `a -> ()`? 
+No matter what `a` you give it, it must return `()`. There is exactly $1$ possible implementation: `\_ -> ()`. 
+Therefore, `a -> ()` is isomorphic to **`Proxy` (The $1$ Atom)**.
+
+**2. The "Base" is 0 ($0^X$)**
+What is the type `a -> Void`?
+You can only implement this if `a` is also `Void` (or if it crashes). This corresponds to **Contravariant computation**, specifically the `Op` functor.
+
+**3. The "Exponent" is 1 ($X^1$)**
+What is the type `() -> a`?
+To implement this, you just need an `a`. The `()` provides no information. 
+Therefore, `() -> a` is isomorphic to **`Identity` (The $X$ Atom)**.
+
+**4. The "Exponent" is 0 ($X^0$)**
+What is the type `Void -> a`?
+Because you can never supply a `Void`, the function can never be run. How many functions of this type exist? Exactly one: the empty function (`absurd`).
+Therefore, `Void -> a` is isomorphic to **`Proxy` (The $1$ Atom)**.
+
+*(Notice what is beautifully mathematically missing? You cannot organically generate the $0$ Atom (`Zero`) using Exponentials! Exponentials strictly map to $1$ or $X$.)*
