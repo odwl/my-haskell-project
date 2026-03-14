@@ -16,7 +16,9 @@ With that in mind, the first chapter will focus on the minimal types of the simp
 
 ## Chapter 1: Types of Kind `*`
 
-These are standard, concrete types that take no parameters.
+These are standard, concrete types that take no parameters. A type of kind `*` can contain any finite number of inhabitants (and here we will focus specifically on types containing exactly 0, 1, or 2 inhabitants) or a countably infinite number of inhabitants (we will also later have a section devoted to minimal countably infinite types).
+
+Furthermore, it is a fundamental property of type theory that any finite types with exactly $n$ inhabitants are strictly **isomorphic** to each other. Because they have the exact same number of possible distinct runtime values, they can be perfectly mapped back and forth without losing any information. For example, the `Bool` type (which has 2 inhabitants: `True` and `False`) is perfectly isomorphic to the type `Either () ()` (which also has 2 inhabitants: `Left ()` and `Right ()`).
 
 ### 1. 0 Inhabitants (Uninhabited Type)
 
