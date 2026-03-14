@@ -11,7 +11,7 @@
       - [Exercise 1: Implementing the Impossible](#exercise-1-implementing-the-impossible)
     - [3. Common Idioms](#3-common-idioms)
       - [1. Type-Level Guarantees](#1-type-level-guarantees)
-      - [Exercise 2: Traversing Without Failure](#exercise-2-traversing-without-failure)
+      - [Exercise 2: The Mirror Image](#exercise-2-the-mirror-image)
       - [2. Type-Level Phantom Types for Type Safety](#2-type-level-phantom-types-for-type-safety)
     - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
       - [Exercise 3: Refactoring Unsafe Extractions](#exercise-3-refactoring-unsafe-extractions)
@@ -40,6 +40,8 @@
   - [3. 2 Inhabitants](#3-2-inhabitants)
     - [1. Custom Parameterized Tags](#1-custom-parameterized-tags)
     - [2. `Const Bool a`](#2-const-bool-a)
+  - [4. Advanced Parameterized Types Exercises](#4-advanced-parameterized-types-exercises)
+    - [Exercise 8: Traversing Without Failure (Bonus)](#exercise-8-traversing-without-failure-bonus)
 - [Annex ](#annex-)
   - [The Secret Inhabitant: Bottom (`_|_`)](#the-secret-inhabitant-bottom-__)
   - [Bibliography](#bibliography)
@@ -176,21 +178,17 @@ In fact, a dedicated `collapseLeft` function is almost never explicitly defined 
 collapseLeft :: Either Void a -> a
 collapseLeft = either absurd id
 ```
-##### Exercise 2: Traversing Without Failure
-The `traverse` function is commonly used to map a fallible function over a sequence of elements:
-`traverse :: Applicative f => (a -> f b) -> [a] -> f [b]`
-When specialized to `Either e`, its signature effectively becomes:
-`traverse :: (a -> Either e b) -> [a] -> Either e [b]`
-Imagine you have a list of valid inputs `[a]`, and a specific function `process :: a -> Either Void b` that is *mathematically guaranteed* to succeed (perhaps reusing a parser or computation that theoretically *could* fail on some data, but not on this specific data).
-How can you use `either absurd id` to write a function `processAll :: [a] -> [b]` that completely sheds the `Either` wrapper from the resulting list?
+##### Exercise 2: The Mirror Image
+We just saw how to extract the value from `Either Void a` using `either absurd id`. Imagine you have the structurally reversed type `Either a Void`. This often happens when libraries parameterize their error types differently.
+Without using any manual pattern matching (like `case`), how would you use the standard `either` and `absurd` functions to extract the value `a` from an `Either a Void`?
 
 <details>
 <summary><b>View Solution</b></summary>
-Because `process` returns `Either Void b`, mapping it via `traverse process` will return an `Either Void [b]`. Since the type system proves the sequence of computations cannot possibly fail, we can safely extract our final list of results using the exact same idiom!
+Because the impossible `Void` is now on the right side, we simply pass `absurd` as the second argument to `either` to securely handle the right branch, and `id` to the first to return our valid error/value!
 
 ```haskell
-processAll :: [a] -> [b]
-processAll xs = either absurd id (traverse process xs)
+collapseRight :: Either a Void -> a
+collapseRight = either id absurd
 ```
 </details>
 
@@ -423,6 +421,27 @@ import Data.Functor.Const (Const(..))
 ```
 
 ---
+
+### 4. Advanced Parameterized Types Exercises
+
+#### Exercise 8: Traversing Without Failure (Bonus)
+The `traverse` function is commonly used to map a fallible function over a sequence of elements:
+`traverse :: Applicative f => (a -> f b) -> [a] -> f [b]`
+When specialized to `Either e`, its signature effectively becomes:
+`traverse :: (a -> Either e b) -> [a] -> Either e [b]`
+Imagine you have a list of valid inputs `[a]`, and a specific function `process :: a -> Either Void b` that is *mathematically guaranteed* to succeed (perhaps reusing a parser or computation that theoretically *could* fail on some data, but not on this specific data).
+How can you use `either absurd id` to write a function `processAll :: [a] -> [b]` that completely sheds the `Either` wrapper from the resulting list?
+
+<details>
+<summary><b>View Solution</b></summary>
+Because `process` returns `Either Void b`, mapping it via `traverse process` will return an `Either Void [b]`. Since the type system proves the sequence of computations cannot possibly fail, we can safely extract our final list of results using the exact same idiom!
+
+```haskell
+processAll :: [a] -> [b]
+processAll xs = either absurd id (traverse process xs)
+```
+</details>
+
 
 ## Annex 
 
