@@ -11,10 +11,10 @@
       - [Exercise 1: Implementing the Impossible](#exercise-1-implementing-the-impossible)
     - [3. Common Idioms](#3-common-idioms)
       - [1. Type-Level Guarantees](#1-type-level-guarantees)
-      - [Exercise 2: The Mirror Image](#exercise-2-the-mirror-image)
+      - [Exercise 2: Avoiding `fromRight` and Partiality](#exercise-2-avoiding-fromright-and-partiality)
+      - [Exercise 3: Safe List Processing](#exercise-3-safe-list-processing)
       - [2. Type-Level Phantom Types for Type Safety](#2-type-level-phantom-types-for-type-safety)
     - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
-      - [Exercise 3: Refactoring Unsafe Extractions](#exercise-3-refactoring-unsafe-extractions)
       - [Exercise 4: Phantom Status](#exercise-4-phantom-status)
       - [Exercise 5: A Tree Without Leaves](#exercise-5-a-tree-without-leaves)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
@@ -178,18 +178,41 @@ In fact, a dedicated `collapseLeft` function is almost never explicitly defined 
 collapseLeft :: Either Void a -> a
 collapseLeft = either absurd id
 ```
-##### Exercise 2: The Mirror Image
-We just saw how to extract the value from `Either Void a` using `either absurd id`. Imagine you have the structurally reversed type `Either a Void`. This often happens when libraries parameterize their error types differently.
-Without using any manual pattern matching (like `case`), how would you use the standard `either` and `absurd` functions to extract the value `a` from an `Either a Void`?
+##### Exercise 2: Avoiding `fromRight` and Partiality
+Imagine you inherit a codebase where a previous developer used `Data.Either.fromRight` to extract a value from a guaranteed computation by passing a runtime `error` as the default value:
+```haskell
+import Data.Either (fromRight)
+
+unsafeExtract :: Either Void a -> a
+unsafeExtract comp = fromRight (error "This should be impossible!") comp
+```
+Is this an anti-pattern? Why is this approach dangerous even if the `Left` branch is `Void`, and how can you write a new `safeExtract` function in a single line using standard library combinators, completely removing the `error`?
 
 <details>
 <summary><b>View Solution</b></summary>
-Because the impossible `Void` is now on the right side, we simply pass `absurd` as the second argument to `either` to securely handle the right branch, and `id` to the first to return our valid error/value!
+Yes, this is an anti-pattern! By relying on `error` as a default value, the developer bypassed the type-checker and introduced a potential program crash (a bottom value, `_|_`) if the code was ever refactored to something other than `Void`!
+
+You can replace the entirely unsafe helper with the idiomatic mathematical proof we learned! By passing `absurd` to the `Left` handler, we safely prove to the compiler that the left branch is unreachable, which would instantly fail to compile if anyone ever changed `Void` to a real type later on.
 
 ```haskell
-collapseRight :: Either a Void -> a
-collapseRight = either id absurd
+safeExtract :: Either Void a -> a
+safeExtract = either absurd id
 ```
+</details>
+
+##### Exercise 3: Safe List Processing
+Suppose a trusted API parser guarantees that a deeply-nested JSON payload sequence will never return an error branch, returning `[Either Void User]`. Using the idiom we just learned, how can you elegantly extract a clean `[User]` list?
+
+<details>
+<summary><b>View Solution</b></summary>
+Since `either absurd id` is a basic, total function `Either Void a -> a`, we just pass it to `map` (or `fmap`) to unwrap every single element! Because it leverages absolute mathematical proofs, it's significantly safer than `Data.Either.rights`, which filters elements without statically proving none were lost.
+
+```haskell
+extractUsers :: [Either Void User] -> [User]
+extractUsers = map (either absurd id)
+```
+
+*(Tip: If the type is ever flipped so the impossible `Void` is on the right side, like `Either a Void`, you can simply flip the handlers to extract your valid value: `either id absurd`!)*
 </details>
 
 ##### 2. Type-Level Phantom Types for Type Safety
@@ -217,28 +240,6 @@ fiveEuros = Money 5.0
 Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
 
 #### 4. Exercises: Building the Impossible
-
-
-
-##### Exercise 3: Refactoring Unsafe Extractions
-Imagine you inherit a codebase that uses dangerous partial functions to extract a value from a guaranteed computation:
-```haskell
-unsafeExtract :: Either Void a -> a
-unsafeExtract comp = case comp of
-  Right x -> x
-  Left _  -> error "This should be impossible!"
-```
-How can you rewrite `unsafeExtract` into a safe, total function in a single line using standard library combinators, completely removing the `error`?
-
-<details>
-<summary><b>View Solution</b></summary>
-You can replace the entirely unsafe manual pattern match with the idiomatic mathematical proof we learned! By passing `absurd` to the `Left` handler, we safely prove to the compiler that the left branch is unreachable.
-
-```haskell
-unsafeExtract :: Either Void a -> a
-unsafeExtract = either absurd id
-```
-</details>
 
 ##### Exercise 4: Phantom Status
 Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
@@ -458,6 +459,24 @@ In mathematical logic, it is impossible to return a value from a function withou
 If you wrote `createNever :: a -> Never`, you could technically "implement" it by writing `createNever x = undefined` or `createNever x = createNever x`. It would compile and satisfy the type checker, but it's fundamentally cheating because it avoids returning altogether by crashing or looping forever! Because `_|_` inhabits every type, you can use it to satisfy any signature, even impossible ones.
 
 However, Haskellers typically reason about their code by assuming it terminates and doesn't crash, treating it as if it were a total language. This approach is formally justified in the well-known paper *"Fast and Loose Reasoning is Morally Correct"* [2].
+
+#### Interacting with Bottom safely using `IO`
+
+Because pure functions in Haskell must evaluate consistently, you **cannot** catch a crash (a bottom value like `error`) in pure code. Doing so would make the pure function's behavior depend on exactly *when* the crash was evaluated, breaking referential transparency.
+
+If you absolutely must interact with legacy code that might crash, you must acknowledge that observing a crash is a side effect. Therefore, catching it must happen in the `IO` monad! You can use `Control.Exception.try` combined with `Control.Exception.evaluate` (which forces the pure computation to run so its exceptions can be caught) to wrap a dangerous pure function into a safe `Either`:
+
+```haskell
+import Control.Exception (try, SomeException, evaluate)
+
+legacyCrashingCall :: String -> Book
+legacyCrashingCall = undefined -- Imagine this throws an error
+
+-- We must wrap it in IO to observe the crash safely
+safeWrapper :: String -> IO (Either SomeException Book)
+safeWrapper title = try (evaluate (legacyCrashingCall title))
+```
+By doing this, a complete crash (`_|_`) is safely intercepted and converted into a `Left SomeException` within the `IO` boundary.
 
 ---
 
