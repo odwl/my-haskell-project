@@ -117,6 +117,8 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 1. **Type-Level Guarantees - `Either Void a`**
 One of the most frequent patterns when dealing with impossible states is safely extracting a value from a sum type where one branch can never happen. This section will demonstrate how to elegantly establish and resolve these type-level guarantees by leveraging the `Either Void a` structure alongside the `either absurd id` idiom. *(Note: you can seamlessly apply the exact same logic to the right side using `Either a Void` and `either id absurd`!)*
 
+By encoding the impossibility of failure directly into the type signature (e.g. `Either Void a`), you mathematically prove a computation is *guaranteed* to succeed! This approach is a far safer alternative to relying on notorious partial functions—like `head`, `fromJust`, `read`, or the list index operator `!!`—that will crash your entire program at runtime if handed unexpected input.
+
 > [!NOTE]
 > If we have an `Either Void a`, we know the `Left` branch is impossible. The compiler is actually smart enough to know that since `Void` cannot exist, the *entire `Left` constructor* also cannot exist because it demands a `Void` at runtime! If you enable the `EmptyCase` extension (or use newer compiler versions with it built-in), you can pattern match exclusively on the `Right` side. You can completely omit the `Left` case, and the compiler will cleanly accept it *without* issuing any "incomplete pattern match" warnings!
 
@@ -169,17 +171,7 @@ vacuous = fmap absurd
 
 Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler.
 
-##### Example 1: Reusing Fallible Abstractions Safely
-
-Imagine a library requires a computation to return an `Either e a` (a much safer alternative to notorious partial functions like `head` or `fromJust` that can crash your program) because operations *sometimes* fail. By setting the error type `e` to `Void`, you can reuse the exact same library infrastructure to mathematically prove a computation is *guaranteed* to succeed!
-```haskell
-import Data.Void (Void, absurd)
-
-safeComputation :: Either Void Int
-safeComputation = Right 42
-```
-The caller doesn't need to read documentation to guess if the function might throw an error. Because of the `Void` error type, they can confidently apply the inline `either absurd id` idiom we just learned to extract the value safely!
-##### Example 2: Phantom Types for Type Safety
+##### Example 1: Phantom Types for Type Safety
 
 Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
 
@@ -206,7 +198,22 @@ Because `USD` and `EUR` have no constructors, we never intended to instantiate t
 It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
 
 
-**Exercise 2: Refactoring Unsafe Extractions**
+**Exercise 2: A Safe `head`**
+The standard library's `head :: [a] -> a` function is notorious for crashing if given an empty list because it lacks a value to return. How could you write a total, non-crashing `safeHead` function using `Either`? What minimal type is the most appropriate for the `Left` error branch if you don't actually need to provide an error message?
+
+<details>
+<summary><b>View Solution</b></summary>
+When we simply want to signal that a computation failed without attaching any explanation, the Unit type `()` (which has exactly 1 inhabitant) is the perfect minimal error type!
+
+```haskell
+safeHead :: [a] -> Either () a
+safeHead []    = Left ()
+safeHead (x:_) = Right x
+```
+*(Note: Haskell's `Maybe a` is effectively isomorphic to `Either () a` and is historically preferred for this exact scenario!)*
+</details>
+
+**Exercise 3: Refactoring Unsafe Extractions**
 Imagine you inherit a codebase that uses dangerous partial functions to extract a value from a guaranteed computation:
 ```haskell
 unsafeExtract :: Either Void a -> a
@@ -226,7 +233,7 @@ unsafeExtract = either absurd id
 ```
 </details>
 
-**Exercise 3: Phantom Status**
+**Exercise 4: Phantom Status**
 Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
 
 <details>
@@ -234,7 +241,7 @@ Imagine a `Document status` type where `status` can be `Draft` or `Published` (b
 Because `publish` explicitly requires a `Document Draft`, providing a `Document Published` will result in a compile-time type mismatch error. This guarantees at compile time that we only publish drafts, and prevents re-publishing already published documents!
 </details>
 
-**Exercise 4: A Tree Without Leaves**
+**Exercise 5: A Tree Without Leaves**
 Consider a simple parameterised binary tree:
 ```haskell
 data Tree a = Leaf a | Node (Tree a) (Tree a)
