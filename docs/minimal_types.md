@@ -20,8 +20,9 @@
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
     - [1. Custom Unit Types](#1-custom-unit-types)
     - [2. The Standard Unit `()`](#2-the-standard-unit-)
-    - [3. Other Library Unit Types](#3-other-library-unit-types)
-    - [4. Exercises: The Power of One](#4-exercises-the-power-of-one)
+    - [3. The "0-Tuple" Intuition](#3-the-0-tuple-intuition)
+    - [4. Other Library Unit Types](#4-other-library-unit-types)
+    - [5. Exercises: The Power of One](#5-exercises-the-power-of-one)
       - [Exercise 7: A Safe `head`](#exercise-7-a-safe-head)
       - [Exercise 8: Avoiding `fromJust` with `Either`](#exercise-8-avoiding-fromjust-with-either)
   - [3. 2 Inhabitants (Boolean Type)](#3-2-inhabitants-boolean-type)
@@ -151,6 +152,8 @@ absurd v = case v of {}
 vacuous :: Functor f => f Never -> f a
 vacuous = fmap absurd
 ```
+
+*(Note on safety: Why does `vacuous` not crash if calling `absurd` crashes? Because `absurd` only crashes if you actually give it a `Never` value! If an `f Never` exists at runtime, the structure `f` must logically be "empty" of values—such as `Nothing`, an empty list `[]`, or a `Right`. Consequently, `fmap` traverses the container but never actually finds a `Never` value to apply `absurd` to, meaning the code safely evaluates without crashing!)*
 </details>
 
 #### 3. Common Idioms
@@ -236,8 +239,6 @@ extractUsers = map (either absurd id)
 ```
 </details>
 
-</details>
-
 ##### 2. Type-Level Phantom Types for Type Safety
 
 In many mainstream languages like Java, C++, or Python, developers often rely on `const` modifiers, `final` keywords, or empty "marker interfaces" to tag data and enforce invariants at compile-time. Haskell achieves a much more powerful and flexible version of this exact same concept using **Phantom Types**. 
@@ -281,6 +282,8 @@ If we use the `Void` type as the type parameter `a` to declare the type `Tree Vo
 <details>
 <summary><b>View Solution</b></summary>
 Because it is impossible to instantiate a `Void`, we can never use the `Leaf` constructor (which requires a `Void` value). This means any valid value of type `Tree Void` can *only* be constructed using `Node`s. Therefore, a `Tree Void` must be an **infinitely deep tree** containing no leaves!
+
+*(Bonus thought: Any attempt to manually construct a finite `Tree Void` in Haskell would require "cheating" the type system by explicitly placing a bottom (`_|_`) value, such as `undefined` or `error`, in the `Leaf` position!)*
 </details>
 
 ### 2. 1 Inhabitant (Unit Type)
@@ -305,14 +308,28 @@ myUnit :: ()
 myUnit = ()
 ```
 
-#### 3. Other Library Unit Types
+#### 3. The "0-Tuple" Intuition
+It is highly insightful to understand *why* the unit type is written with empty parentheses `()`. In type algebra, tuples represent multiplication (Product types). For example:
+- A pair `(a, b)` has an inhabitant cardinality of $n \times m$.  
+- A triple `(a, b, c)` has an inhabitant cardinality of $n \times m \times p$.
+
+If we extend this pattern downwards to an "empty tuple" `()`, it formally represents the **empty product**. In mathematics, the empty product evaluates exactly to **1**. This beautifully explains why `()` has exactly 1 inhabitant and fits perfectly into our mathematical theme! 
+
+Another brilliant consequence of this relates to function arity. By currying and uncurrying, an $n$-ary Haskell function is perfectly isomorphic to a function taking an $n$-tuple.
+- A 3-ary function `a -> b -> c -> res` is equivalent to taking a 3-tuple `(a, b, c) -> res`.
+- A 2-ary function `a -> b -> res` is equivalent to taking a 2-tuple `(a, b) -> res`.
+- A 1-ary function simply takes its single argument `a -> res`.
+
+So what is a **0-ary** function (a function taking zero arguments)? If we represent a 0-ary function as taking a tuple, it *must* take a 0-tuple, which is exactly the unit type: `() -> res`. This is why we often use `()` to denote an action that takes no meaningful input but instead returns a result or performs a side-effect!
+
+#### 4. Other Library Unit Types
 While `()` is standard, Haskell libraries often use specialized 1-inhabitant types for specific contexts:
 - **`Data.Functor.Identity`**: The `Identity ()` type has only one inhabitant (`Identity ()`). It is used as a base functor that doesn't add any effects.
 - **Type Equality `(:~:)`**: From `Data.Type.Equality`, a value of type `a :~: a` has exactly one inhabitant, `Refl`, representing a proof that two types are equal.
 
 Because `Acknowledged`, `()`, `Identity ()`, and `a :~: a` all have an identical cardinality of 1 (a single constructor), they are all formally **isomorphic** to one another.
 
-#### 4. Exercises: The Power of One
+#### 5. Exercises: The Power of One
 
 ##### Exercise 7: A Safe `head`
 The standard library's `head :: [a] -> a` function is notorious for crashing if given an empty list because it lacks a value to return. How could you write a total, non-crashing `safeHead` function using `Either`? What minimal type is the most appropriate for the `Left` error branch if you don't actually need to provide an error message?
@@ -354,7 +371,9 @@ data Bool = False | True
 ```
 
 #### 2. Using `Either () ()`
-In type algebra, a sum type adds the inhabitants of its branches. Since `()` has 1 inhabitant, `Either () ()` has exactly 1 + 1 = 2 inhabitants: `Left ()` and `Right ()`. It is structurally isomorphic to `Bool`.
+Just as tuples `(a, b)` represent **multiplication** (Product types) in type algebra, `Either a b` represents **addition** (Sum types). A sum type simply adds the number of inhabitants of its branches. 
+
+Since `()` has exactly 1 inhabitant, `Either () ()` has $1 + 1 = 2$ inhabitants: `Left ()` and `Right ()`. It is perfectly structurally isomorphic to `Bool`.
 ```haskell
 type IsTrue = Either () ()
 ```
@@ -473,7 +492,6 @@ import Data.Functor.Const (Const(..))
 
 ---
 
-### 4. Advanced Parameterized Types Exercises
 
 ## Annex 
 
