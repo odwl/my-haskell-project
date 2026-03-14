@@ -1,3 +1,5 @@
+{-# LANGUAGE EmptyCase #-}
+
 module Lambda.ListAverage where
 
 import Control.Monad (foldM, (>=>))
@@ -14,7 +16,38 @@ sumCase :: [Double] -> Double
 sumCase [] = 0
 sumCase (x : xs) = x + sumCase xs
 
+-----------------------------------
+-- Minimum Void
+-----------------------------------
+data Never
+
+absurd :: Never -> a
+absurd v = case v of {}
+
+vacuous :: (Functor f) => f Never -> f a
+vacuous = fmap absurd
+
+-----------------------------------
+-- Minimum Foldable
+-----------------------------------
+-- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
+
+data VoidFoldable a
+
+instance Foldable VoidFoldable where
+  foldMap _ v = case v of {}
+
+-- My sum foldable.
+newtype MySum a = MySum a deriving (Eq, Show)
+
+instance Foldable MySum where
+  foldMap f (MySum a) = f a
+
+-- instance Functor MySum where
+--   fmap f (MySum a) = MySum (f a)
+
 -- | Returns the sum of all elements using fold
+-- foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
 {-# ANN sumFold "HLint: ignore Use sum" #-}
 sumFold :: [Double] -> Double
 sumFold = foldl (+) 0
@@ -47,7 +80,7 @@ sumFoldM = getSum . foldM (\acc x -> return (acc + x)) 0
 -- foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
 -- (>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c
 sumKleisli :: [Double] -> Double
-sumKleisli xs = getSum $ foldr (>=>) return (map (\x acc -> Sum (acc + x)) xs) 0
+sumKleisli xs = getSum $ foldr ((>=>) . (\x acc -> Sum (acc + x))) return xs 0
 
 -- | Returns the length of the list using fold
 lenFold :: [Double] -> Double
