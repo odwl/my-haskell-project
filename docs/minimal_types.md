@@ -81,6 +81,10 @@ A 1-inhabitant type has exactly one possible value. Inspecting the value tells y
 You can easily define your own single-inhabitant types if you want them to carry a specific semantic meaning in your application rather than using generic units.
 ```haskell
 data Acknowledged = Acknowledged
+
+-- We can instantiate it using its single constructor:
+myAck :: Acknowledged
+myAck = Acknowledged
 ```
 
 #### 2. The Standard Unit `()`
