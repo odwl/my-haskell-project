@@ -57,10 +57,12 @@ There are also a few other ways to implement this without explicitly writing `ca
 1. **Using `LambdaCase`**: With `{-# LANGUAGE LambdaCase #-}`, you can drop the variable name and write `\case {}`.
 2. **Using standard library tools (`absurd`)**: If you use the standard library's `Void` type instead of a custom `Never`, the library provides a function called `absurd :: Void -> a`. Because `absurd` can return *any* type `a`, you can simply use it to return `Void` right back! `f _ imposs _ = absurd imposs`.
 
+*(For the deep technical details on how the compiler handles matching on uninhabited types, refer to the [GHC User Guide on EmptyCase](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html)).*
+
 However, we rarely need to write our own custom empty types because Haskell's standard library provides a built-in one!
 
 #### 2. `Data.Void`
-Haskell provides a standard empty type called `Void` in the `Data.Void` module.
+Haskell provides a standard empty type called `Void` in the `Data.Void` module (see the [Hackage `Data.Void` documentation](https://hackage.haskell.org/package/base/docs/Data-Void.html)).
 ```haskell
 import Data.Void (Void)
 -- Void has 0 constructors.
