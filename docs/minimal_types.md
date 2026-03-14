@@ -75,6 +75,16 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 - `absurd :: Void -> a`: Since it is impossible to ever actually have a value of type `Void`, a function taking it can return *any* type `a`. This is used to exhaustively handle impossible code branches (see the Annex).
 - `vacuous :: Functor f => f Void -> f a`: If you map over a functor that "contains" `Void` (which means it's structurally empty, like `Right` on an `Either Void a`), you can safely cast it to contain any type `a` instead.
 
+**Common Idioms:**
+One of the most frequent patterns when dealing with impossible states is collapsing a sum type where one branch can never happen.
+```haskell
+-- Logic: If it's a Left, it contains a Void (impossible).
+--        If it's a Right, it contains an 'a' (the value we want).
+collapse :: Either Void a -> a
+collapse (Left v)  = absurd v  -- Use the "impossible" handler
+collapse (Right x) = x         -- Just return the value
+```
+
 #### 3. The Usefulness of Uninhabited Types
 
 Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler.
