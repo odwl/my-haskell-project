@@ -12,7 +12,7 @@ Just as **types** classify **values** (e.g., `True` is a value of type `Bool`), 
 - **`*` (pronounced "Type")**: This is the kind of a concrete type that can actually hold values at runtime. For example, `Int`, `Bool`, `String`, and `Maybe Int` are all of kind `*`.
 - **`* -> *`**: This is the kind of a *type constructor* that takes one concrete type and returns a new concrete type. For example, `[]` (List) and `Maybe` are of kind `* -> *` because they need a type argument (like `Int`) to become a concrete type (`[Int]` or `Maybe Int`) of kind `*`.
 
-With that in mind, let's look at the minimal types!
+With that in mind, the first chapter will focus on the minimal types of the simplest kind `*` while the second chapter will be devoted to the minimal types of the second simplest kind `* -> *`.
 
 ## Chapter 1: Types of Kind `*`
 
@@ -106,6 +106,52 @@ data SwitchState = On | Off
 data AccessLevel = Admin | User
 ```
 
+### 4. The Usefulness of Uninhabited Types
+
+Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler.
+
+#### Example 1: Proving Unreachability
+
+Imagine a function that performs a computation that either yields a value of type `a` or fails with an error string:
+```haskell
+import Data.Void (Void, absurd)
+
+type Result e a = Either e a
+```
+What if we have a computation that is *guaranteed* to succeed and never throw an error? We can enforce this at the type level using `Void`:
+```haskell
+safeComputation :: Result Void Int
+safeComputation = Right 42
+```
+Because the `Left` branch requires a `Void`, the caller *knows with absolute certainty* that `safeComputation` will only ever return `Right`. If the caller pattern matches on it, they can safely ignore the `Left` case using `absurd`:
+```haskell
+extractSafe :: Result Void a -> a
+extractSafe (Right val) = val
+extractSafe (Left v) = absurd v -- The compiler knows this branch is unreachable
+```
+
+#### Example 2: Phantom Types for Type Safety
+
+Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
+
+```haskell
+data USD -- 0 inhabitants
+data EUR -- 0 inhabitants
+
+newtype Money currency = Money Double
+
+fiveDollars :: Money USD
+fiveDollars = Money 5.0
+
+fiveEuros :: Money EUR
+fiveEuros = Money 5.0
+
+-- This will result in a compile-time error:
+-- error: Couldn't match type ‘EUR’ with ‘USD’
+-- illegalSum = fiveDollars `addMoney` fiveEuros
+```
+Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
+
 ---
 
 ## Chapter 2: Parameterized Types of Kind `* -> *`
@@ -187,53 +233,7 @@ import Data.Functor.Const (Const(..))
 
 ---
 
-## Annex: The Usefulness of Uninhabited Types
-
-Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler.
-
-### Example 1: Proving Unreachability
-
-Imagine a function that performs a computation that either yields a value of type `a` or fails with an error string:
-```haskell
-import Data.Void (Void, absurd)
-
-type Result e a = Either e a
-```
-What if we have a computation that is *guaranteed* to succeed and never throw an error? We can enforce this at the type level using `Void`:
-```haskell
-safeComputation :: Result Void Int
-safeComputation = Right 42
-```
-Because the `Left` branch requires a `Void`, the caller *knows with absolute certainty* that `safeComputation` will only ever return `Right`. If the caller pattern matches on it, they can safely ignore the `Left` case using `absurd`:
-```haskell
-extractSafe :: Result Void a -> a
-extractSafe (Right val) = val
-extractSafe (Left v) = absurd v -- The compiler knows this branch is unreachable
-```
-
-### Example 2: Phantom Types for Type Safety
-
-Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
-
-```haskell
-data USD -- 0 inhabitants
-data EUR -- 0 inhabitants
-
-newtype Money currency = Money Double
-
-fiveDollars :: Money USD
-fiveDollars = Money 5.0
-
-fiveEuros :: Money EUR
-fiveEuros = Money 5.0
-
--- This will result in a compile-time error:
--- error: Couldn't match type ‘EUR’ with ‘USD’
--- illegalSum = fiveDollars `addMoney` fiveEuros
-```
-Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
-
----
+## Annex 
 
 ### The Secret Inhabitant: Bottom (`_|_`)
 
@@ -263,12 +263,15 @@ However, Haskellers typically reason about their code by assuming it terminates 
 
 It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
 
-**Exercise 1: Implement `absurd`**
-Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
+**Exercise 1: Implementing the Impossible**
+
+1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
+2. Now, using your defined `absurd` function, how would you implement `vacuous :: Functor f => f Never -> f a`?
 
 <details>
-<summary><b>View Solution</b></summary>
-By enabling the `EmptyCase` language extension, we can pattern match on the impossible value. Since the compiler sees there are 0 constructors for `Never`, we don't even have to provide a right-hand side for the case expression!
+<summary><b>View Solutions</b></summary>
+
+**1.** By enabling the `EmptyCase` language extension, we can pattern match on the impossible value. Since the compiler sees there are 0 constructors for `Never`, we don't even have to provide a right-hand side for the case expression!
 
 ```haskell
 {-# LANGUAGE EmptyCase #-}
@@ -278,14 +281,8 @@ data Never
 absurd :: Never -> a
 absurd v = case v of {}
 ```
-</details>
 
-**Exercise 2: Implement `vacuous`**
-Now, using your defined `absurd` function, how would you implement `vacuous :: Functor f => f Never -> f a`?
-
-<details>
-<summary><b>View Solution</b></summary>
-Because `absurd` can turn a `Never` into any type `a`, all we need to do is map it over the functor!
+**2.** Because `absurd` can turn a `Never` into any type `a`, all we need to do is map it over the functor!
 
 ```haskell
 vacuous :: Functor f => f Never -> f a
@@ -293,7 +290,7 @@ vacuous = fmap absurd
 ```
 </details>
 
-**Exercise 3: Unreachable branches**
+**Exercise 2: Unreachable branches**
 Define a function `requireRight :: Either Void a -> a` that extracts the value safely without using `error` or getting non-exhaustive pattern warnings.
 
 <details>
@@ -306,7 +303,7 @@ requireRight (Left v)  = absurd v
 ```
 </details>
 
-**Exercise 4: Phantom Status**
+**Exercise 3: Phantom Status**
 Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
 
 <details>
@@ -314,7 +311,7 @@ Imagine a `Document status` type where `status` can be `Draft` or `Published` (b
 Because `publish` explicitly requires a `Document Draft`, providing a `Document Published` will result in a compile-time type mismatch error. This guarantees at compile time that we only publish drafts, and prevents re-publishing already published documents!
 </details>
 
-**Exercise 5: A Tree Without Leaves**
+**Exercise 4: A Tree Without Leaves**
 Consider a simple parameterised binary tree:
 ```haskell
 data Tree a = Leaf a | Node (Tree a) (Tree a)
