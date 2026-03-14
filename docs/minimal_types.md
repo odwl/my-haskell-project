@@ -69,7 +69,7 @@ import Data.Void (Void)
 -- myVoid :: Void
 -- myVoid = ???
 ```
-Because this is the standard empty type, `Data.Void` also provides powerful tools for working with impossible values:
+Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type, they are strictly **isomorphic**. However, `Data.Void` is overwhelmingly preferred in practice because it is the standard empty type and comes bundled with powerful tooling for working with impossible values:
 - `absurd :: Void -> a`: Since it is impossible to ever actually have a value of type `Void`, a function taking it can return *any* type `a`. This is used to exhaustively handle impossible code branches (see the Annex).
 - `vacuous :: Functor f => f Void -> f a`: If you map over a functor that "contains" `Void` (which means it's structurally empty, like `Right` on an `Either Void a`), you can safely cast it to contain any type `a` instead.
 
