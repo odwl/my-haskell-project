@@ -181,16 +181,23 @@ vacuous = fmap absurd
 ```
 </details>
 
-**Exercise 2: Unreachable branches**
-Define a function `requireRight :: Either Void a -> a` that extracts the value safely without using `error` or getting non-exhaustive pattern warnings.
+**Exercise 2: Refactoring Unsafe Extractions**
+Imagine you inherit a codebase that uses dangerous partial functions to extract a value from a guaranteed computation:
+```haskell
+unsafeExtract :: Either Void a -> a
+unsafeExtract comp = case comp of
+  Right x -> x
+  Left _  -> error "This should be impossible!"
+```
+How can you rewrite `unsafeExtract` into a safe, total function in a single line using standard library combinators, completely removing the `error`?
 
 <details>
 <summary><b>View Solution</b></summary>
+You can replace the entirely unsafe manual pattern match with the idiomatic mathematical proof we learned! By passing `absurd` to the `Left` handler, we safely prove to the compiler that the left branch is unreachable.
 
 ```haskell
-requireRight :: Either Void a -> a
-requireRight (Right x) = x
-requireRight (Left v)  = absurd v
+unsafeExtract :: Either Void a -> a
+unsafeExtract = either absurd id
 ```
 </details>
 
