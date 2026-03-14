@@ -30,6 +30,10 @@ An uninhabited type (or empty type) is a type that has absolutely no data constr
 You can construct your own empty type with no constructors simply by providing no right-hand side.
 ```haskell
 data Never
+
+-- This is impossible! There is no constructor to provide.
+-- myNever :: Never
+-- myNever = ???
 ```
 *(Note for beginners: The name `Never` is completely arbitrary! You could name this `Void`, `Empty`, `MyImpossibleType`, or anything else; the compiler only cares that it lacks data constructors.)*
 
@@ -60,6 +64,10 @@ Haskell provides a standard empty type called `Void` in the `Data.Void` module.
 ```haskell
 import Data.Void (Void)
 -- Void has 0 constructors.
+
+-- Like Never, it cannot be instantiated.
+-- myVoid :: Void
+-- myVoid = ???
 ```
 Because this is the standard empty type, `Data.Void` also provides powerful tools for working with impossible values:
 - `absurd :: Void -> a`: Since it is impossible to ever actually have a value of type `Void`, a function taking it can return *any* type `a`. This is used to exhaustively handle impossible code branches (see the Annex).
