@@ -138,6 +138,24 @@ In fact, a dedicated `collapseLeft` function is almost never explicitly defined 
 collapseLeft :: Either Void a -> a
 collapseLeft = either absurd id
 ```
+**Exercise 1: Traversing Without Failure**
+The `traverse` function is commonly used to map a fallible function over a sequence of elements:
+`traverse :: Applicative f => (a -> f b) -> [a] -> f [b]`
+When specialized to `Either e`, its signature effectively becomes:
+`traverse :: (a -> Either e b) -> [a] -> Either e [b]`
+Imagine you have a list of valid inputs `[a]`, and a specific function `process :: a -> Either Void b` that is *mathematically guaranteed* to succeed (perhaps reusing a parser or computation that theoretically *could* fail on some data, but not on this specific data).
+How can you use `either absurd id` to write a function `processAll :: [a] -> [b]` that completely sheds the `Either` wrapper from the resulting list?
+
+<details>
+<summary><b>View Solution</b></summary>
+Because `process` returns `Either Void b`, mapping it via `traverse process` will return an `Either Void [b]`. Since the type system proves the sequence of computations cannot possibly fail, we can safely extract our final list of results using the exact same idiom!
+
+```haskell
+processAll :: [a] -> [b]
+processAll xs = either absurd id (traverse process xs)
+```
+</details>
+
 **Type-Level Phantom Types for Type Safety**
 
 Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
@@ -162,7 +180,7 @@ Because `USD` and `EUR` have no constructors, we never intended to instantiate t
 
 #### 4. Exercises: Building the Impossible
 
-**Exercise 1: Implementing the Impossible**
+**Exercise 2: Implementing the Impossible**
 It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
 
 1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
@@ -190,24 +208,6 @@ vacuous = fmap absurd
 ```
 </details>
 
-
-**Exercise 2: Traversing Without Failure**
-The `traverse` function is commonly used to map a fallible function over a sequence of elements:
-`traverse :: Applicative f => (a -> f b) -> [a] -> f [b]`
-When specialized to `Either e`, its signature effectively becomes:
-`traverse :: (a -> Either e b) -> [a] -> Either e [b]`
-Imagine you have a list of valid inputs `[a]`, and a specific function `process :: a -> Either Void b` that is *mathematically guaranteed* to succeed (perhaps reusing a parser or computation that theoretically *could* fail on some data, but not on this specific data).
-How can you use `either absurd id` to write a function `processAll :: [a] -> [b]` that completely sheds the `Either` wrapper from the resulting list?
-
-<details>
-<summary><b>View Solution</b></summary>
-Because `process` returns `Either Void b`, mapping it via `traverse process` will return an `Either Void [b]`. Since the type system proves the sequence of computations cannot possibly fail, we can safely extract our final list of results using the exact same idiom!
-
-```haskell
-processAll :: [a] -> [b]
-processAll xs = either absurd id (traverse process xs)
-```
-</details>
 
 **Exercise 3: Refactoring Unsafe Extractions**
 Imagine you inherit a codebase that uses dangerous partial functions to extract a value from a guaranteed computation:
