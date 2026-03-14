@@ -315,12 +315,13 @@ It is highly insightful to understand *why* the unit type is written with empty 
 
 If we extend this pattern downwards to an "empty tuple" `()`, it formally represents the **empty product**. In mathematics, the empty product evaluates exactly to **1**. This beautifully explains why `()` has exactly 1 inhabitant and fits perfectly into our mathematical theme! 
 
-Another brilliant consequence of this relates to function arity. By currying and uncurrying, an $n$-ary Haskell function is perfectly isomorphic to a function taking an $n$-tuple.
-- A 3-ary function `a -> b -> c -> res` is equivalent to taking a 3-tuple `(a, b, c) -> res`.
-- A 2-ary function `a -> b -> res` is equivalent to taking a 2-tuple `(a, b) -> res`.
-- A 1-ary function simply takes its single argument `a -> res`.
+Another brilliant consequence of this relates to function arity. Mathematically, an $n$-ary function requires $n$ elements to provide one result.
+- A **2-ary** function takes 2 inputs to provide 1 output, written as `(a, a) -> a` or curried as `a -> a -> a`. (Examples: `(+)` or `(*)`).
+- A **1-ary** function takes 1 input to provide 1 output, written as `(a) -> a` or simply `a -> a`. (Examples: `not` or `negate`).
 
-So what is a **0-ary** function (a function taking zero arguments)? If we represent a 0-ary function as taking a tuple, it *must* take a 0-tuple, which is exactly the unit type: `() -> res`. This is why we often use `()` to denote an action that takes no meaningful input but instead returns a result or performs a side-effect!
+So what is a **0-ary** function? It must provide an output out of *no* input. It is equivalent to choosing an element from a set with no prior information. Mathematically, this is modeled via a function from a **singleton set** (a set with exactly one element, like `{*}`) to a target type `a`. The function `f : {*} -> a` simply picks exactly one value of type `a` when you evaluate `f(*)`. 
+
+In Haskell, that singleton set is the unit type `()`. Therefore, a 0-ary computation has the exact signature `() -> a`. This beautifully explains why we use `()` to represent an action or computation that requires no meaningful input to provide a result!
 
 #### 4. Other Library Unit Types
 While `()` is standard, Haskell libraries often use specialized 1-inhabitant types for specific contexts:
