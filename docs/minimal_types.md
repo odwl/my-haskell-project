@@ -302,3 +302,15 @@ Imagine a `Document status` type where `status` can be `Draft` or `Published` (b
 <summary><b>View Solution</b></summary>
 Because `publish` explicitly requires a `Document Draft`, providing a `Document Published` will result in a compile-time type mismatch error. This guarantees at compile time that we only publish drafts, and prevents re-publishing already published documents!
 </details>
+
+**Exercise 5: A Tree Without Leaves**
+Consider a simple parameterised binary tree:
+```haskell
+data Tree a = Leaf a | Node (Tree a) (Tree a)
+```
+If we use the `Void` type as the type parameter `a` to declare the type `Tree Void`, what happens when we try to construct a value of this type? What does this imply about the shape of the tree?
+
+<details>
+<summary><b>View Solution</b></summary>
+Because it is impossible to instantiate a `Void`, we can never use the `Leaf` constructor (which requires a `Void` value). This means any valid value of type `Tree Void` can *only* be constructed using `Node`s. Therefore, a `Tree Void` must be an **infinitely deep tree** containing no leaves!
+</details>
