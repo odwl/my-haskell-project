@@ -1,6 +1,8 @@
 # Minimal Types
 **Author:** Olivier De Wolf, odewolf@gmail.com
 
+## Introduction
+
 In type theory and functional programming, we can classify types by the number of distinct values (inhabitants) they can hold at runtime. Let's call "minimal types" the types that have very few inhabitants (that is, possible distinct values). Understanding these "minimal types" provides a strong foundation for building robust and mathematically sound abstractions.
 
 While minimal types are omnipresent in pure functional languages like Haskell, they can often feel counter-intuitive or overly abstract to newcomers. Why would we want a type that holds zero values? What is the point of a type with exactly one? This document aims to demystify these concepts by exploring the simplest possible types and demonstrating their immense practical value. To aid in your learning journey, a hands-on exercise section has been provided at the end of this guide.
@@ -77,7 +79,8 @@ data Acknowledged = Acknowledged
 The most common 1-inhabitant type in Haskell is `()` (pronounced "unit"). Its only value is also written as `()`.
 ```haskell
 -- The type is (), the value is ()
-doSomething :: IO ()
+myUnit :: ()
+myUnit = ()
 ```
 
 #### 3. Other Library Unit Types
