@@ -100,6 +100,8 @@ While `()` is standard, Haskell libraries often use specialized 1-inhabitant typ
 - **`Data.Functor.Identity`**: The `Identity ()` type has only one inhabitant (`Identity ()`). It is used as a base functor that doesn't add any effects.
 - **Type Equality `(:~:)`**: From `Data.Type.Equality`, a value of type `a :~: a` has exactly one inhabitant, `Refl`, representing a proof that two types are equal.
 
+Because `Acknowledged`, `()`, `Identity ()`, and `a :~: a` all have an identical cardinality of 1 (a single constructor), they are all formally **isomorphic** to one another.
+
 ### 3. 2 Inhabitants (Boolean Type)
 
 A 2-inhabitants type represents a binary choice. It contains exactly two distinct values.
