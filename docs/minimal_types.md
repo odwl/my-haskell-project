@@ -5,6 +5,15 @@ In type theory and functional programming, we can classify types by the number o
 
 While minimal types are omnipresent in pure functional languages like Haskell, they can often feel counter-intuitive or overly abstract to newcomers. Why would we want a type that holds zero values? What is the point of a type with exactly one? This document aims to demystify these concepts by exploring the simplest possible types and demonstrating their immense practical value. To aid in your learning journey, a hands-on exercise section has been provided at the end of this guide.
 
+## A Quick Primer: What is a "Kind"?
+
+Before we dive into counting inhabitants, we need to clarify what we mean by "Kind". 
+Just as **types** classify **values** (e.g., `True` is a value of type `Bool`), **kinds** classify **types**.
+- **`*` (pronounced "Type")**: This is the kind of a concrete type that can actually hold values at runtime. For example, `Int`, `Bool`, `String`, and `Maybe Int` are all of kind `*`.
+- **`* -> *`**: This is the kind of a *type constructor* that takes one concrete type and returns a new concrete type. For example, `[]` (List) and `Maybe` are of kind `* -> *` because they need a type argument (like `Int`) to become a concrete type (`[Int]` or `Maybe Int`) of kind `*`.
+
+With that in mind, let's look at the minimal types!
+
 ## Chapter 1: Types of Kind `*`
 
 These are standard, concrete types that take no parameters.
