@@ -93,7 +93,8 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 1. **Type-Level Guarantees - `Either Void a`**
 One of the most frequent patterns when dealing with impossible states is safely extracting a value from a sum type where one branch can never happen. This section will demonstrate how to elegantly establish and resolve these type-level guarantees by leveraging the `Either Void a` structure alongside the `either absurd id` idiom. *(Note: you can seamlessly apply the exact same logic to the right side using `Either a Void` and `either id absurd`!)*
 
-If we have an `Either Void a`, we know the `Left` branch is impossible. The compiler is actually smart enough to know that since `Void` cannot exist, the *entire `Left` constructor* also cannot exist because it demands a `Void` at runtime! If you enable the `EmptyCase` extension (or use newer compiler versions with it built-in), you can pattern match exclusively on the `Right` side. You can completely omit the `Left` case, and the compiler will cleanly accept it *without* issuing any "incomplete pattern match" warnings!
+> [!NOTE]
+> If we have an `Either Void a`, we know the `Left` branch is impossible. The compiler is actually smart enough to know that since `Void` cannot exist, the *entire `Left` constructor* also cannot exist because it demands a `Void` at runtime! If you enable the `EmptyCase` extension (or use newer compiler versions with it built-in), you can pattern match exclusively on the `Right` side. You can completely omit the `Left` case, and the compiler will cleanly accept it *without* issuing any "incomplete pattern match" warnings!
 
 ```haskell
 {-# LANGUAGE EmptyCase #-}
