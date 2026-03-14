@@ -118,26 +118,17 @@ collapseLeft = either absurd id
 
 Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler.
 
-##### Example 1: Proving Unreachability
+##### Example 1: Reusing Fallible Abstractions Safely
 
-Imagine a function that performs a computation that either yields a value of type `a` or fails with an error string:
+Imagine a library requires a computation to return a generic `Result e a = Either e a` because operations *sometimes* fail. By setting the error type `e` to `Void`, you can reuse the exact same library infrastructure to mathematically prove a computation is *guaranteed* to succeed!
 ```haskell
 import Data.Void (Void, absurd)
 
 type Result e a = Either e a
-```
-What if we have a computation that is *guaranteed* to succeed and never throw an error? We can enforce this at the type level using `Void`:
-```haskell
 safeComputation :: Result Void Int
 safeComputation = Right 42
 ```
-Because the `Left` branch requires a `Void`, the caller *knows with absolute certainty* that `safeComputation` will only ever return `Right`. To extract the value, we can directly reuse the `collapseLeft` idiom (or its smart pattern match version) from above!
-```haskell
--- This is exactly equivalent to applying collapseLeft!
-finalValue :: Int
-finalValue = either absurd id safeComputation
-```
-
+The caller doesn't need to read documentation to guess if the function might throw an error. Because of the `Void` error type, they can confidently apply the inline `either absurd id` idiom we just learned to extract the value safely!
 ##### Example 2: Phantom Types for Type Safety
 
 Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
