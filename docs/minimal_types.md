@@ -245,6 +245,8 @@ However, Haskellers typically reason about their code by assuming it terminates 
 1. Howard, W. A. (1980). *The formulae-as-types notion of construction*. In To H. B. Curry: Essays on Combinatory Logic, Lambda Calculus and Formalism (pp. 479-490). Academic Press. (The seminal work establishing the Curry-Howard correspondence connecting uninhabited types to logical falsity).
 2. Danielsson, N. A., Hughes, J., Jansson, P., & Gibbons, J. (2006). *Fast and Loose Reasoning is Morally Correct*. ACM SIGPLAN Notices, 41(1), 273-284. (A formal justification for reasoning about Haskell programs while ignoring `_|_`).
 3. Leijen, D., & Meijer, E. (1999). *Domain Specific Embedded Compilers*. ACM SIGPLAN Notices, 35(1), 109-122. (An early and influential paper showcasing the use of Phantom Types in Haskell).
+4. King, A. (2019). *[Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)*. (A highly influential post demonstrating how to use the type system, including uninhabited types, to prove properties and prevent invalid states).
+5. Diehl, S. *[What I Wish I Knew When Learning Haskell](https://smunix.github.io/dev.stephendiehl.com/hask/tutorial.pdf)*. (A comprehensive guide to practical Haskell, covering many advanced type-level mechanics including `Void` and phantom types).
 
 ---
 
