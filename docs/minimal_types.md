@@ -73,6 +73,52 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 - `absurd :: Void -> a`: Since it is impossible to ever actually have a value of type `Void`, a function taking it can return *any* type `a`. This is used to exhaustively handle impossible code branches (see the Annex).
 - `vacuous :: Functor f => f Void -> f a`: If you map over a functor that "contains" `Void` (which means it's structurally empty, like `Right` on an `Either Void a`), you can safely cast it to contain any type `a` instead.
 
+#### 3. The Usefulness of Uninhabited Types
+
+Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler.
+
+##### Example 1: Proving Unreachability
+
+Imagine a function that performs a computation that either yields a value of type `a` or fails with an error string:
+```haskell
+import Data.Void (Void, absurd)
+
+type Result e a = Either e a
+```
+What if we have a computation that is *guaranteed* to succeed and never throw an error? We can enforce this at the type level using `Void`:
+```haskell
+safeComputation :: Result Void Int
+safeComputation = Right 42
+```
+Because the `Left` branch requires a `Void`, the caller *knows with absolute certainty* that `safeComputation` will only ever return `Right`. If the caller pattern matches on it, they can safely ignore the `Left` case using `absurd`:
+```haskell
+extractSafe :: Result Void a -> a
+extractSafe (Right val) = val
+extractSafe (Left v) = absurd v -- The compiler knows this branch is unreachable
+```
+
+##### Example 2: Phantom Types for Type Safety
+
+Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
+
+```haskell
+data USD -- 0 inhabitants
+data EUR -- 0 inhabitants
+
+newtype Money currency = Money Double
+
+fiveDollars :: Money USD
+fiveDollars = Money 5.0
+
+fiveEuros :: Money EUR
+fiveEuros = Money 5.0
+
+-- This will result in a compile-time error:
+-- error: Couldn't match type ‘EUR’ with ‘USD’
+-- illegalSum = fiveDollars `addMoney` fiveEuros
+```
+Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
+
 ### 2. 1 Inhabitant (Unit Type)
 
 A 1-inhabitant type has exactly one possible value. Inspecting the value tells you nothing new—it simply conveys "this computation finished" or acts as a structural placeholder.
@@ -124,52 +170,6 @@ Instead of using `Bool` everywhere (which can lead to "boolean blindness"), it's
 data SwitchState = On | Off
 data AccessLevel = Admin | User
 ```
-
-### 4. The Usefulness of Uninhabited Types
-
-Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler.
-
-#### Example 1: Proving Unreachability
-
-Imagine a function that performs a computation that either yields a value of type `a` or fails with an error string:
-```haskell
-import Data.Void (Void, absurd)
-
-type Result e a = Either e a
-```
-What if we have a computation that is *guaranteed* to succeed and never throw an error? We can enforce this at the type level using `Void`:
-```haskell
-safeComputation :: Result Void Int
-safeComputation = Right 42
-```
-Because the `Left` branch requires a `Void`, the caller *knows with absolute certainty* that `safeComputation` will only ever return `Right`. If the caller pattern matches on it, they can safely ignore the `Left` case using `absurd`:
-```haskell
-extractSafe :: Result Void a -> a
-extractSafe (Right val) = val
-extractSafe (Left v) = absurd v -- The compiler knows this branch is unreachable
-```
-
-#### Example 2: Phantom Types for Type Safety
-
-Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
-
-```haskell
-data USD -- 0 inhabitants
-data EUR -- 0 inhabitants
-
-newtype Money currency = Money Double
-
-fiveDollars :: Money USD
-fiveDollars = Money 5.0
-
-fiveEuros :: Money EUR
-fiveEuros = Money 5.0
-
--- This will result in a compile-time error:
--- error: Couldn't match type ‘EUR’ with ‘USD’
--- illegalSum = fiveDollars `addMoney` fiveEuros
-```
-Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
 
 ---
 
