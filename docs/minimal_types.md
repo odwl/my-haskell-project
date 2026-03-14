@@ -120,12 +120,11 @@ Uninhabited (Empty) types might seem useless at first glance since you can never
 
 ##### Example 1: Reusing Fallible Abstractions Safely
 
-Imagine a library requires a computation to return a generic `Result e a = Either e a` because operations *sometimes* fail. By setting the error type `e` to `Void`, you can reuse the exact same library infrastructure to mathematically prove a computation is *guaranteed* to succeed!
+Imagine a library requires a computation to return an `Either e a` because operations *sometimes* fail. By setting the error type `e` to `Void`, you can reuse the exact same library infrastructure to mathematically prove a computation is *guaranteed* to succeed!
 ```haskell
 import Data.Void (Void, absurd)
 
-type Result e a = Either e a
-safeComputation :: Result Void Int
+safeComputation :: Either Void Int
 safeComputation = Right 42
 ```
 The caller doesn't need to read documentation to guess if the function might throw an error. Because of the `Void` error type, they can confidently apply the inline `either absurd id` idiom we just learned to extract the value safely!
