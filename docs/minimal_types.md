@@ -89,31 +89,28 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 - `vacuous :: Functor f => f Void -> f a`: If you map over a functor that "contains" `Void` (which means it's structurally empty, like `Right` on an `Either Void a`), you can safely cast it to contain any type `a` instead.
 
 **Common Idioms:**
+
+1. **Collapsing Impossible Sum Types**
 One of the most frequent patterns when dealing with impossible states is safely extracting a value from a sum type where one branch can never happen. 
 
-Instead of writing custom pattern-matching functions, it is highly idiomatic to use the standard library's `either` function combined with `id` and `absurd` to collapse the "impossible" branch:
+If we have an `Either Void a`, we know the `Left` branch is impossible. The compiler is actually smart enough to know that since `Void` cannot exist, the *entire `Left` constructor* also cannot exist because it demands a `Void` at runtime! If you enable the `EmptyCase` extension (or use newer compiler versions with it built-in), you can pattern match exclusively on the `Right` side. You can completely omit the `Left` case, and the compiler will cleanly accept it *without* issuing any "incomplete pattern match" warnings!
 
-```haskell
--- If the Left branch is impossible:
-collapseLeft :: Either Void a -> a
-collapseLeft = either absurd id
-
--- If the Right branch is impossible:
-collapseRight :: Either a Void -> a
-collapseRight = either id absurd
-```
-By doing this, you are providing a mathematical proof to the compiler that only one side is possible, allowing safe extraction without ever using dangerous partial functions like `fromRight` or `fromLeft`.
-
-**Can the compiler figure this out for us?**
-Yes! The compiler is actually smart enough to know that since `Void` cannot exist, the *entire `Left` constructor* also cannot exist because it demands a `Void` at runtime. 
-If you enable the `EmptyCase` extension (or use newer compiler versions with it built-in), you can pattern match exclusively on the `Right` side. You can completely omit the `Left` case, and the compiler will cleanly accept it *without* issuing any "incomplete pattern match" warnings!
 ```haskell
 {-# LANGUAGE EmptyCase #-}
--- Only the Right branch is mandatory here!
-collapseLeftSmart :: Either Void a -> a
-collapseLeftSmart (Right x) = x
--- The compiler mathematically proves Left is impossible and doesn't require us to write it.
+collapseLeft :: Either Void a -> a
+collapseLeft (Right x) = x
+-- The compiler mathematically proves Left is impossible and doesn't require us to write it!
 ```
+
+Instead of writing custom pattern-matching functions like this, it is highly idiomatic in general to just use the standard library's `either` function combined with `id` and `absurd` to collapse the "impossible" branch. This provides a mathematical proof to the compiler allowing safe extraction without ever using dangerous partial functions like `fromRight`:
+
+```haskell
+collapseLeft :: Either Void a -> a
+collapseLeft = either absurd id
+```
+
+*(You can obviously deduce the analog for collapsing the right side of `Either a Void -> a` by using `either id absurd` without us needing to explicitly write out the code!)*
+
 
 #### 3. The Usefulness of Uninhabited Types
 
