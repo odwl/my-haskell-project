@@ -119,6 +119,70 @@ fiveEuros = Money 5.0
 ```
 Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
 
+#### 4. Exercises: Building the Impossible
+
+It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
+
+**Exercise 1: Implementing the Impossible**
+
+1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
+2. Now, using your defined `absurd` function, how would you implement `vacuous :: Functor f => f Never -> f a`?
+
+<details>
+<summary><b>View Solutions</b></summary>
+
+**1.** By enabling the `EmptyCase` language extension, we can pattern match on the impossible value. Since the compiler sees there are 0 constructors for `Never`, we don't even have to provide a right-hand side for the case expression!
+
+```haskell
+{-# LANGUAGE EmptyCase #-}
+
+data Never
+
+absurd :: Never -> a
+absurd v = case v of {}
+```
+
+**2.** Because `absurd` can turn a `Never` into any type `a`, all we need to do is map it over the functor!
+
+```haskell
+vacuous :: Functor f => f Never -> f a
+vacuous = fmap absurd
+```
+</details>
+
+**Exercise 2: Unreachable branches**
+Define a function `requireRight :: Either Void a -> a` that extracts the value safely without using `error` or getting non-exhaustive pattern warnings.
+
+<details>
+<summary><b>View Solution</b></summary>
+
+```haskell
+requireRight :: Either Void a -> a
+requireRight (Right x) = x
+requireRight (Left v)  = absurd v
+```
+</details>
+
+**Exercise 3: Phantom Status**
+Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
+
+<details>
+<summary><b>View Solution</b></summary>
+Because `publish` explicitly requires a `Document Draft`, providing a `Document Published` will result in a compile-time type mismatch error. This guarantees at compile time that we only publish drafts, and prevents re-publishing already published documents!
+</details>
+
+**Exercise 4: A Tree Without Leaves**
+Consider a simple parameterised binary tree:
+```haskell
+data Tree a = Leaf a | Node (Tree a) (Tree a)
+```
+If we use the `Void` type as the type parameter `a` to declare the type `Tree Void`, what happens when we try to construct a value of this type? What does this imply about the shape of the tree?
+
+<details>
+<summary><b>View Solution</b></summary>
+Because it is impossible to instantiate a `Void`, we can never use the `Leaf` constructor (which requires a `Void` value). This means any valid value of type `Tree Void` can *only* be constructed using `Node`s. Therefore, a `Tree Void` must be an **infinitely deep tree** containing no leaves!
+</details>
+
 ### 2. 1 Inhabitant (Unit Type)
 
 A 1-inhabitant type has exactly one possible value. Inspecting the value tells you nothing new—it simply conveys "this computation finished" or acts as a structural placeholder.
@@ -276,68 +340,4 @@ However, Haskellers typically reason about their code by assuming it terminates 
 4. King, A. (2019). *[Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)*. (A highly influential post demonstrating how to use the type system, including uninhabited types, to prove properties and prevent invalid states).
 5. Diehl, S. *[What I Wish I Knew When Learning Haskell](https://smunix.github.io/dev.stephendiehl.com/hask/tutorial.pdf)*. (A comprehensive guide to practical Haskell, covering many advanced type-level mechanics including `Void` and phantom types).
 
----
-
-### Exercises: Building the Impossible
-
-It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
-
-**Exercise 1: Implementing the Impossible**
-
-1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
-2. Now, using your defined `absurd` function, how would you implement `vacuous :: Functor f => f Never -> f a`?
-
-<details>
-<summary><b>View Solutions</b></summary>
-
-**1.** By enabling the `EmptyCase` language extension, we can pattern match on the impossible value. Since the compiler sees there are 0 constructors for `Never`, we don't even have to provide a right-hand side for the case expression!
-
-```haskell
-{-# LANGUAGE EmptyCase #-}
-
-data Never
-
-absurd :: Never -> a
-absurd v = case v of {}
-```
-
-**2.** Because `absurd` can turn a `Never` into any type `a`, all we need to do is map it over the functor!
-
-```haskell
-vacuous :: Functor f => f Never -> f a
-vacuous = fmap absurd
-```
-</details>
-
-**Exercise 2: Unreachable branches**
-Define a function `requireRight :: Either Void a -> a` that extracts the value safely without using `error` or getting non-exhaustive pattern warnings.
-
-<details>
-<summary><b>View Solution</b></summary>
-
-```haskell
-requireRight :: Either Void a -> a
-requireRight (Right x) = x
-requireRight (Left v)  = absurd v
-```
-</details>
-
-**Exercise 3: Phantom Status**
-Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
-
-<details>
-<summary><b>View Solution</b></summary>
-Because `publish` explicitly requires a `Document Draft`, providing a `Document Published` will result in a compile-time type mismatch error. This guarantees at compile time that we only publish drafts, and prevents re-publishing already published documents!
-</details>
-
-**Exercise 4: A Tree Without Leaves**
-Consider a simple parameterised binary tree:
-```haskell
-data Tree a = Leaf a | Node (Tree a) (Tree a)
-```
-If we use the `Void` type as the type parameter `a` to declare the type `Tree Void`, what happens when we try to construct a value of this type? What does this imply about the shape of the tree?
-
-<details>
-<summary><b>View Solution</b></summary>
-Because it is impossible to instantiate a `Void`, we can never use the `Leaf` constructor (which requires a `Void` value). This means any valid value of type `Tree Void` can *only* be constructed using `Node`s. Therefore, a `Tree Void` must be an **infinitely deep tree** containing no leaves!
-</details>
+5. Diehl, S. *[What I Wish I Knew When Learning Haskell](https://smunix.github.io/dev.stephendiehl.com/hask/tutorial.pdf)*. (A comprehensive guide to practical Haskell, covering many advanced type-level mechanics including `Void` and phantom types).
