@@ -212,7 +212,21 @@ safeHead (x:_) = Right x
 *(Note: Haskell's `Maybe a` is effectively isomorphic to `Either () a` and is historically preferred for this exact scenario!)*
 </details>
 
-**Exercise 3: Refactoring Unsafe Extractions**
+**Exercise 3: Avoiding `fromJust` with `Either`**
+Similarly, `fromJust :: Maybe a -> a` forces an extraction and crashes if given `Nothing`. If you need to integrate a function returning a `Maybe a` into a pipeline that strictly uses `Either` to handle failures safely, how would you convert it without risking a crash?
+
+<details>
+<summary><b>View Solution</b></summary>
+We can eliminate the risk of a crash by pattern matching to convert the `Nothing` case into our 1-inhabitant minimal error type `()`, and wrapping the `Just` value into a `Right`!
+
+```haskell
+safeFromJust :: Maybe a -> Either () a
+safeFromJust Nothing  = Left ()
+safeFromJust (Just x) = Right x
+```
+</details>
+
+**Exercise 4: Refactoring Unsafe Extractions**
 Imagine you inherit a codebase that uses dangerous partial functions to extract a value from a guaranteed computation:
 ```haskell
 unsafeExtract :: Either Void a -> a
@@ -232,7 +246,7 @@ unsafeExtract = either absurd id
 ```
 </details>
 
-**Exercise 4: Phantom Status**
+**Exercise 5: Phantom Status**
 Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
 
 <details>
@@ -240,7 +254,7 @@ Imagine a `Document status` type where `status` can be `Draft` or `Published` (b
 Because `publish` explicitly requires a `Document Draft`, providing a `Document Published` will result in a compile-time type mismatch error. This guarantees at compile time that we only publish drafts, and prevents re-publishing already published documents!
 </details>
 
-**Exercise 5: A Tree Without Leaves**
+**Exercise 6: A Tree Without Leaves**
 Consider a simple parameterised binary tree:
 ```haskell
 data Tree a = Leaf a | Node (Tree a) (Tree a)
