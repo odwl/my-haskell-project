@@ -194,7 +194,9 @@ collapseRight = either id absurd
 
 ##### 2. Type-Level Phantom Types for Type Safety
 
-Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
+In many mainstream languages like Java, C++, or Python, developers often rely on `const` modifiers, `final` keywords, or empty "marker interfaces" to tag data and enforce invariants at compile-time. Haskell achieves a much more powerful and flexible version of this exact same concept using **Phantom Types**. 
+
+Empty type declarations are commonly used as tags for these phantom types. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
 
 ```haskell
 data USD -- 0 inhabitants
