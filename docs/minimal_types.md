@@ -90,7 +90,7 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 
 **Common Idioms:**
 
-1. **Collapsing Impossible Sum Types**
+1. **Type-Level Guarantees - `Either Void a`**
 One of the most frequent patterns when dealing with impossible states is safely extracting a value from a sum type where one branch can never happen. 
 
 If we have an `Either Void a`, we know the `Left` branch is impossible. The compiler is actually smart enough to know that since `Void` cannot exist, the *entire `Left` constructor* also cannot exist because it demands a `Void` at runtime! If you enable the `EmptyCase` extension (or use newer compiler versions with it built-in), you can pattern match exclusively on the `Right` side. You can completely omit the `Left` case, and the compiler will cleanly accept it *without* issuing any "incomplete pattern match" warnings!
