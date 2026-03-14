@@ -7,8 +7,7 @@
 - [Chapter 1: Types of Kind `*`](#chapter-1-types-of-kind-)
   - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
     - [1. Custom Empty Data](#1-custom-empty-data)
-    - [Functions Returning an Uninhabited Type](#functions-returning-an-uninhabited-type)
-    - [2. `Data.Void`](#2-datavoid)
+    - [2. `Data.Void` - the built-in equivalent.](#2-datavoid-the-built-in-equivalent)
     - [3. The Usefulness of Uninhabited Types](#3-the-usefulness-of-uninhabited-types)
     - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
@@ -19,8 +18,8 @@
     - [1. The Standard `Bool`](#1-the-standard-bool)
     - [2. Using `Either () ()`](#2-using-either-)
     - [3. Custom Enumerations](#3-custom-enumerations)
-- [Chapter 2: Parameterized Types of Kind `* -> *`](#chapter-2-parameterized-types-of-kind---)
-  - [1. 0 Inhabitants](#1-0-inhabitants)
+- [Chapter 2: Parameterized Types of Kind `* -> *`](#chapter-2-parameterized-types-of-kind-)
+  - [1. 0 Inhabitants ](#1-0-inhabitants-)
     - [1. Standard Parameterized Empty Data](#1-standard-parameterized-empty-data)
     - [2. Using GADT Syntax](#2-using-gadt-syntax)
     - [3. Phantom Wrapping `Data.Void`](#3-phantom-wrapping-datavoid)
@@ -31,7 +30,9 @@
   - [3. 2 Inhabitants](#3-2-inhabitants)
     - [1. Custom Parameterized Tags](#1-custom-parameterized-tags)
     - [2. `Const Bool a`](#2-const-bool-a)
-- [Annex](#annex)
+- [Annex ](#annex-)
+  - [The Secret Inhabitant: Bottom (`_|_`)](#the-secret-inhabitant-bottom-__)
+  - [Bibliography](#bibliography)
 
 ## Introduction
 
@@ -71,31 +72,8 @@ data Never
 ```
 *(Note for beginners: The name `Never` is completely arbitrary! You could name this `Void`, `Empty`, `MyImpossibleType`, or anything else; the compiler only cares that it lacks data constructors.)*
 
-#### Functions Returning an Uninhabited Type
 
-What happens if we try to write a function that *returns* our empty type `Never`?
-For a standard function like `createNever :: a -> Never`, it is **impossible** to provide a valid total implementation (for a discussion on computations that crash or loop indefinitely, see the section on "Bottom" in the Annex). Because we cannot instantiate a `Never`, we can never return one.
-
-But **importantly**, it *is* possible to implement functions returning `Never` **if one of the inputs is also impossible to provide!**
-For example, consider the signature `f :: a -> Never -> b -> Never`. Because the caller can never properly supply the second argument (`Never`), it is mathematically sound (based on the **Principle of Explosion**, or *ex falso quodlibet*, which states that from a false premise any conclusion can be drawn) to return a `Never`. This principle is a direct application of the Curry-Howard correspondence [1]. We do this by proving to the compiler that the code branch is unreachable.
-
-
-Here is how you can implement such a function using an empty case expression:
-```haskell
--- Requires {-# LANGUAGE EmptyCase #-}
-f :: a -> Never -> b -> Never
-f _ impossibleValue _ = case impossibleValue of {}
-```
-
-There are also a few other ways to implement this without explicitly writing `case ... of {}`:
-1. **Using `LambdaCase`**: With `{-# LANGUAGE LambdaCase #-}`, you can drop the variable name and write `\case {}`.
-2. **Using standard library tools (`absurd`)**: If you use the standard library's `Void` type instead of a custom `Never`, the library provides a function called `absurd :: Void -> a`. Because `absurd` can return *any* type `a`, you can simply use it to return `Void` right back! `f _ imposs _ = absurd imposs`.
-
-*(For the deep technical details on how the compiler handles matching on uninhabited types, refer to the [GHC User Guide on EmptyCase](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html)).*
-
-However, we rarely need to write our own custom empty types because Haskell's standard library provides a built-in one!
-
-#### 2. `Data.Void`
+#### 2. `Data.Void` - the built-in equivalent.
 Haskell provides a standard empty type called `Void` in the `Data.Void` module (see the [Hackage `Data.Void` documentation](https://hackage.haskell.org/package/base/docs/Data-Void.html)).
 ```haskell
 import Data.Void (Void)
@@ -108,6 +86,31 @@ import Data.Void (Void)
 Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type, they are strictly **isomorphic**. However, `Data.Void` is overwhelmingly preferred in practice because it is the standard empty type and comes bundled with powerful tooling for working with impossible values:
 - `absurd :: Void -> a`: Since it is impossible to ever actually have a value of type `Void`, a function taking it can return *any* type `a`. This is used to exhaustively handle impossible code branches (see the Annex).
 - `vacuous :: Functor f => f Void -> f a`: If you map over a functor that "contains" `Void` (which means it's structurally empty, like `Right` on an `Either Void a`), you can safely cast it to contain any type `a` instead.
+
+> [!NOTE]
+> #### Functions Returning an Uninhabited Type
+>
+> What happens if we try to write a function that *returns* our empty type `Never`?
+> For a standard function like `createNever :: a -> Never`, it is **impossible** to provide a valid total implementation (for a discussion on computations that crash or loop indefinitely, see the section on "Bottom" in the Annex). Because we cannot instantiate a `Never`, we can never return one.
+>
+> But **importantly**, it *is* possible to implement functions returning `Never` **if one of the inputs is also impossible to provide!**
+> For example, consider the signature `f :: a -> Never -> b -> Never`. Because the caller can never properly supply the second argument (`Never`), it is mathematically sound (based on the **Principle of Explosion**, or *ex falso quodlibet*, which states that from a false premise any conclusion can be drawn) to return a `Never`. This principle is a direct application of the Curry-Howard correspondence [1]. We do this by proving to the compiler that the code branch is unreachable.
+>
+>
+> Here is how you can implement such a function using an empty case expression:
+> ```haskell
+> -- Requires {-# LANGUAGE EmptyCase #-}
+> f :: a -> Never -> b -> Never
+> f _ impossibleValue _ = case impossibleValue of {}
+> ```
+>
+> There are also a few other ways to implement this without explicitly writing `case ... of {}`:
+> 1. **Using `LambdaCase`**: With `{-# LANGUAGE LambdaCase #-}`, you can drop the variable name and write `\case {}`.
+> 2. **Using standard library tools (`absurd`)**: If you use the standard library's `Void` type instead of a custom `Never`, the library provides a function called `absurd :: Void -> a`. Because `absurd` can return *any* type `a`, you can simply use it to return `Void` right back! `f _ imposs _ = absurd imposs`.
+>
+> *(For the deep technical details on how the compiler handles matching on uninhabited types, refer to the [GHC User Guide on EmptyCase](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html)).*
+>
+> However, we rarely need to write our own custom empty types because Haskell's standard library provides a built-in one!
 
 **Common Idioms:**
 
@@ -134,6 +137,33 @@ collapseLeft :: Either Void a -> a
 collapseLeft = either absurd id
 ```
 
+
+**Exercise 1: Implementing the Impossible**
+
+1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
+2. Now, using your defined `absurd` function, how would you implement `vacuous :: Functor f => f Never -> f a`?
+
+<details>
+<summary><b>View Solutions</b></summary>
+
+**1.** By enabling the `EmptyCase` language extension, we can pattern match on the impossible value. Since the compiler sees there are 0 constructors for `Never`, we don't even have to provide a right-hand side for the case expression!
+
+```haskell
+{-# LANGUAGE EmptyCase #-}
+
+data Never
+
+absurd :: Never -> a
+absurd v = case v of {}
+```
+
+**2.** Because `absurd` can turn a `Never` into any type `a`, all we need to do is map it over the functor!
+
+```haskell
+vacuous :: Functor f => f Never -> f a
+vacuous = fmap absurd
+```
+</details>
 
 #### 3. The Usefulness of Uninhabited Types
 
@@ -175,32 +205,6 @@ Because `USD` and `EUR` have no constructors, we never intended to instantiate t
 
 It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
 
-**Exercise 1: Implementing the Impossible**
-
-1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
-2. Now, using your defined `absurd` function, how would you implement `vacuous :: Functor f => f Never -> f a`?
-
-<details>
-<summary><b>View Solutions</b></summary>
-
-**1.** By enabling the `EmptyCase` language extension, we can pattern match on the impossible value. Since the compiler sees there are 0 constructors for `Never`, we don't even have to provide a right-hand side for the case expression!
-
-```haskell
-{-# LANGUAGE EmptyCase #-}
-
-data Never
-
-absurd :: Never -> a
-absurd v = case v of {}
-```
-
-**2.** Because `absurd` can turn a `Never` into any type `a`, all we need to do is map it over the functor!
-
-```haskell
-vacuous :: Functor f => f Never -> f a
-vacuous = fmap absurd
-```
-</details>
 
 **Exercise 2: Refactoring Unsafe Extractions**
 Imagine you inherit a codebase that uses dangerous partial functions to extract a value from a guaranteed computation:
