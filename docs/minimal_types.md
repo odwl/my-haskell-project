@@ -8,6 +8,7 @@
   - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
     - [1. Custom Empty Data](#1-custom-empty-data)
     - [2. `Data.Void` - the built-in equivalent.](#2-datavoid-the-built-in-equivalent)
+    - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
     - [1. Custom Unit Types](#1-custom-unit-types)
     - [2. The Standard Unit `()`](#2-the-standard-unit-)
