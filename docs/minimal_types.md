@@ -8,13 +8,22 @@
   - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
     - [1. Custom Empty Data](#1-custom-empty-data)
     - [2. `Data.Void` - the built-in equivalent.](#2-datavoid-the-built-in-equivalent)
+      - [Exercise 1: Implementing the Impossible](#exercise-1-implementing-the-impossible)
     - [3. Common Idioms](#3-common-idioms)
+      - [1. Type-Level Guarantees](#1-type-level-guarantees)
+      - [Exercise 2: Traversing Without Failure](#exercise-2-traversing-without-failure)
+      - [2. Type-Level Phantom Types for Type Safety](#2-type-level-phantom-types-for-type-safety)
     - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
+      - [Exercise 3: Refactoring Unsafe Extractions](#exercise-3-refactoring-unsafe-extractions)
+      - [Exercise 4: Phantom Status](#exercise-4-phantom-status)
+      - [Exercise 5: A Tree Without Leaves](#exercise-5-a-tree-without-leaves)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
     - [1. Custom Unit Types](#1-custom-unit-types)
     - [2. The Standard Unit `()`](#2-the-standard-unit-)
     - [3. Other Library Unit Types](#3-other-library-unit-types)
     - [4. Exercises: The Power of One](#4-exercises-the-power-of-one)
+      - [Exercise 6: A Safe `head`](#exercise-6-a-safe-head)
+      - [Exercise 7: Avoiding `fromJust` with `Either`](#exercise-7-avoiding-fromjust-with-either)
   - [3. 2 Inhabitants (Boolean Type)](#3-2-inhabitants-boolean-type)
     - [1. The Standard `Bool`](#1-the-standard-bool)
     - [2. Using `Either () ()`](#2-using-either-)
@@ -112,7 +121,7 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 > *(For the deep technical details on how the compiler handles matching on uninhabited types, refer to the [GHC User Guide on EmptyCase](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html)).*
 >
 > However, we rarely need to write our own custom empty types because Haskell's standard library provides a built-in one!
-**Exercise 1: Implementing the Impossible**
+##### Exercise 1: Implementing the Impossible
 It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
 
 1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
@@ -143,7 +152,7 @@ vacuous = fmap absurd
 #### 3. Common Idioms
 Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler. Here are some very useful common idioms using uninhabited types:
 
-1. **Type-Level Guarantees**
+##### 1. Type-Level Guarantees
 One of the most frequent patterns when dealing with impossible states is safely extracting a value from a sum type where one branch can never happen. This section will demonstrate how to elegantly establish and resolve these type-level guarantees by leveraging the `Either Void a` structure alongside the `either absurd id` idiom. *(Note: you can seamlessly apply the exact same logic to the right side using `Either a Void` and `either id absurd`!)*
 
 By encoding the impossibility of failure directly into the type signature (e.g. `Either Void a`), you mathematically prove a computation is *guaranteed* to succeed! This approach is a far safer alternative to relying on notorious partial functions—like `head`, `fromJust`, `read`, or the list index operator `!!`—that will crash your entire program at runtime if handed unexpected input.
@@ -167,7 +176,7 @@ In fact, a dedicated `collapseLeft` function is almost never explicitly defined 
 collapseLeft :: Either Void a -> a
 collapseLeft = either absurd id
 ```
-**Exercise 2: Traversing Without Failure**
+##### Exercise 2: Traversing Without Failure
 The `traverse` function is commonly used to map a fallible function over a sequence of elements:
 `traverse :: Applicative f => (a -> f b) -> [a] -> f [b]`
 When specialized to `Either e`, its signature effectively becomes:
@@ -185,7 +194,7 @@ processAll xs = either absurd id (traverse process xs)
 ```
 </details>
 
-**Type-Level Phantom Types for Type Safety**
+##### 2. Type-Level Phantom Types for Type Safety
 
 Empty type declarations are commonly used as tags for **Phantom Types**. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
 
@@ -211,7 +220,7 @@ Because `USD` and `EUR` have no constructors, we never intended to instantiate t
 
 
 
-**Exercise 3: Refactoring Unsafe Extractions**
+##### Exercise 3: Refactoring Unsafe Extractions
 Imagine you inherit a codebase that uses dangerous partial functions to extract a value from a guaranteed computation:
 ```haskell
 unsafeExtract :: Either Void a -> a
@@ -231,7 +240,7 @@ unsafeExtract = either absurd id
 ```
 </details>
 
-**Exercise 4: Phantom Status**
+##### Exercise 4: Phantom Status
 Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
 
 <details>
@@ -239,7 +248,7 @@ Imagine a `Document status` type where `status` can be `Draft` or `Published` (b
 Because `publish` explicitly requires a `Document Draft`, providing a `Document Published` will result in a compile-time type mismatch error. This guarantees at compile time that we only publish drafts, and prevents re-publishing already published documents!
 </details>
 
-**Exercise 5: A Tree Without Leaves**
+##### Exercise 5: A Tree Without Leaves
 Consider a simple parameterised binary tree:
 ```haskell
 data Tree a = Leaf a | Node (Tree a) (Tree a)
@@ -282,7 +291,7 @@ Because `Acknowledged`, `()`, `Identity ()`, and `a :~: a` all have an identical
 
 #### 4. Exercises: The Power of One
 
-**Exercise 6: A Safe `head`**
+##### Exercise 6: A Safe `head`
 The standard library's `head :: [a] -> a` function is notorious for crashing if given an empty list because it lacks a value to return. How could you write a total, non-crashing `safeHead` function using `Either`? What minimal type is the most appropriate for the `Left` error branch if you don't actually need to provide an error message?
 
 <details>
@@ -297,7 +306,7 @@ safeHead (x:_) = Right x
 *(Note: Haskell's `Maybe a` is effectively isomorphic to `Either () a` and is historically preferred for this exact scenario!)*
 </details>
 
-**Exercise 7: Avoiding `fromJust` with `Either`**
+##### Exercise 7: Avoiding `fromJust` with `Either`
 Similarly, `fromJust :: Maybe a -> a` forces an extraction and crashes if given `Nothing`. If you need to integrate a function returning a `Maybe a` into a pipeline that strictly uses `Either` to handle failures safely, how would you convert it without risking a crash?
 
 <details>
