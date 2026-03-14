@@ -6,12 +6,31 @@
 - [A Quick Primer: What is a "Kind"?](#a-quick-primer-what-is-a-kind)
 - [Chapter 1: Types of Kind `*`](#chapter-1-types-of-kind-)
   - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
+    - [1. Custom Empty Data](#1-custom-empty-data)
+    - [Functions Returning an Uninhabited Type](#functions-returning-an-uninhabited-type)
+    - [2. `Data.Void`](#2-datavoid)
+    - [3. The Usefulness of Uninhabited Types](#3-the-usefulness-of-uninhabited-types)
+    - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
+    - [1. Custom Unit Types](#1-custom-unit-types)
+    - [2. The Standard Unit `()`](#2-the-standard-unit-)
+    - [3. Other Library Unit Types](#3-other-library-unit-types)
   - [3. 2 Inhabitants (Boolean Type)](#3-2-inhabitants-boolean-type)
+    - [1. The Standard `Bool`](#1-the-standard-bool)
+    - [2. Using `Either () ()`](#2-using-either-)
+    - [3. Custom Enumerations](#3-custom-enumerations)
 - [Chapter 2: Parameterized Types of Kind `* -> *`](#chapter-2-parameterized-types-of-kind---)
   - [1. 0 Inhabitants](#1-0-inhabitants)
+    - [1. Standard Parameterized Empty Data](#1-standard-parameterized-empty-data)
+    - [2. Using GADT Syntax](#2-using-gadt-syntax)
+    - [3. Phantom Wrapping `Data.Void`](#3-phantom-wrapping-datavoid)
+    - [4. Reusing Standard Library Structures](#4-reusing-standard-library-structures)
   - [2. 1 Inhabitant](#2-1-inhabitant)
+    - [1. `Data.Proxy`](#1-dataproxy)
+    - [2. `Constants` and `Generics`](#2-constants-and-generics)
   - [3. 2 Inhabitants](#3-2-inhabitants)
+    - [1. Custom Parameterized Tags](#1-custom-parameterized-tags)
+    - [2. `Const Bool a`](#2-const-bool-a)
 - [Annex](#annex)
 
 ## Introduction
@@ -120,7 +139,7 @@ Uninhabited (Empty) types might seem useless at first glance since you can never
 
 ##### Example 1: Reusing Fallible Abstractions Safely
 
-Imagine a library requires a computation to return an `Either e a` because operations *sometimes* fail. By setting the error type `e` to `Void`, you can reuse the exact same library infrastructure to mathematically prove a computation is *guaranteed* to succeed!
+Imagine a library requires a computation to return an `Either e a` (a much safer alternative to notorious partial functions like `head` or `fromJust` that can crash your program) because operations *sometimes* fail. By setting the error type `e` to `Void`, you can reuse the exact same library infrastructure to mathematically prove a computation is *guaranteed* to succeed!
 ```haskell
 import Data.Void (Void, absurd)
 
