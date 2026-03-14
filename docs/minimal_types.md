@@ -8,6 +8,7 @@
   - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
     - [1. Custom Empty Data](#1-custom-empty-data)
     - [2. `Data.Void` - the built-in equivalent.](#2-datavoid-the-built-in-equivalent)
+    - [3. Common Idioms](#3-common-idioms)
     - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
     - [1. Custom Unit Types](#1-custom-unit-types)
@@ -111,7 +112,7 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 > *(For the deep technical details on how the compiler handles matching on uninhabited types, refer to the [GHC User Guide on EmptyCase](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html)).*
 >
 > However, we rarely need to write our own custom empty types because Haskell's standard library provides a built-in one!
-**Common Idioms:**
+#### 3. Common Idioms
 Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler. Here are some very useful common idioms using uninhabited types:
 
 1. **Type-Level Guarantees**
