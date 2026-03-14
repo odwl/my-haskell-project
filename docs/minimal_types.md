@@ -76,14 +76,20 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 - `vacuous :: Functor f => f Void -> f a`: If you map over a functor that "contains" `Void` (which means it's structurally empty, like `Right` on an `Either Void a`), you can safely cast it to contain any type `a` instead.
 
 **Common Idioms:**
-One of the most frequent patterns when dealing with impossible states is collapsing a sum type where one branch can never happen.
+One of the most frequent patterns when dealing with impossible states is safely extracting a value from a sum type where one branch can never happen. 
+
+Instead of writing custom pattern-matching functions, it is highly idiomatic to use the standard library's `either` function combined with `id` and `absurd` to collapse the "impossible" branch:
+
 ```haskell
--- Logic: If it's a Left, it contains a Void (impossible).
---        If it's a Right, it contains an 'a' (the value we want).
-collapse :: Either Void a -> a
-collapse (Left v)  = absurd v  -- Use the "impossible" handler
-collapse (Right x) = x         -- Just return the value
+-- If the Left branch is impossible:
+collapseLeft :: Either Void a -> a
+collapseLeft = either absurd id
+
+-- If the Right branch is impossible:
+collapseRight :: Either a Void -> a
+collapseRight = either id absurd
 ```
+By doing this, you are providing a mathematical proof to the compiler that only one side is possible, allowing safe extraction without ever using dangerous partial functions like `fromRight` or `fromLeft`.
 
 #### 3. The Usefulness of Uninhabited Types
 
