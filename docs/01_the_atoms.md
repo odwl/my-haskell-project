@@ -79,12 +79,10 @@ testProperties "Maybe Functor" $ functor (Proxy :: Proxy Maybe)
 > While `testBatch` provides extreme confidence by checking thousands of random inputs, it is not a formal mathematical proof. Because it relies on **Property-Based Testing** (QuickCheck), it is probabilistic. 
 >
 > In Haskell, there is a fundamental difference between:
-> 1.  **Verification (Testing)**: Checking that the законы hold for *many* random cases.
+> 1.  **Verification (Testing)**: Checking that the laws hold for *many* random cases.
 > 2.  **Proof (Types/Parametricity)**: Using the compiler and Category Theory (the "Shortcut") to guarantee the laws hold for *all* cases.
 >
-> It is possible (though rare in practice) to write a "malicious" law-breaking functor that passes these tests by only failing on very specific, ungenerated inputs—a concept explored in the [Law-Breaking Functors](#5-law-breaking-functors-non-valid-functors) section.
 
-*(Moved to Section 1.6: The Parallel Functor Ecosystem)*
 
 #### 4. Almost Functors
 Many structures look like Functors but fail one of the strict Haskell criteria or the mathematical laws. 
@@ -157,6 +155,7 @@ The mathematically absolute smallest possible Functor has no constructors at all
 
 ```haskell
 {-# LANGUAGE EmptyCase #-}
+{-# LANGUAGE InstanceSigs #-}
 
 data Zero a -- No constructors! (Note: While not built-in by this name, an identical structure exists in base as `V1` from `GHC.Generics`)
 
@@ -210,7 +209,7 @@ newtype Const r a = Const r
 ```haskell
 instance Functor (Const r) where
     fmap :: (a -> b) -> Const r a -> Const r b
-    fmap _ (Const r) = Const r
+    fmap _ (Const x) = Const x
 ```
 **The "Why"**: We need to create an instance of `Const r b`. To do this, we need an instance of `r`. The mapping function `f` cannot help us because we don't have any `a` to feed it! So the only way is to extract the `r` from the passed instance of `Const r a` (via `getConst` or, as done here, simple pattern matching). There is mathematically no other choice. Note that at the Functor level, `r` requires no special structure (it doesn't need to be a `Monoid`).
 
@@ -247,7 +246,7 @@ instance Functor Identity where
 
 **Category Theory Equivalent**: This represents the Identity Functor \\(Id_{\mathbf{C}}\\). It strictly maps every object to itself (\\(X \mapsto X\\)) and every morphism to itself (\\(f \mapsto f\\)). It is the perfectly transparent container.
 
-#### 4. The Exponential: `(->) r` (The Reader)
+#### 5. The Exponential: `(->) r` (The Reader)
 *(Infinite computational data, delayed by domain `r`).*
 
 While `Either` and `(,)` represent algebra's polynomial addition ($+$) and multiplication ($\times$), functions represent exponents ($a^r$). This forms the "Reader" functor: an environment `r` waiting to produce our `a`.
@@ -734,7 +733,7 @@ If we take the **Product** ($\times$ in algebra, a Tuple in Haskell) of a consta
 
 *(Note: `Proxy * Identity ≅ ((), a) ≅ a ≅ Identity`. Proxy acts as the number $1$ in multiplication).*
 
-#### 4. The Infinite Chain: `List`
+#### 3. The Infinite Chain: `List`
 By using both Sums and Products with **Recursion**, we can build a list. A list is either empty (`Proxy`) OR a head and a tail (`Product Identity List`).
 `List a ≅ Sum Proxy (Product Identity List) a`
 **Algebraically**: $L(X) = 1 + X \times L(X)$
