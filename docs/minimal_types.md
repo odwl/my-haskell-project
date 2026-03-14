@@ -13,17 +13,18 @@
       - [1. Type-Level Guarantees](#1-type-level-guarantees)
       - [Exercise 2: Avoiding `fromRight` and Partiality](#exercise-2-avoiding-fromright-and-partiality)
       - [Exercise 3: Safe List Processing](#exercise-3-safe-list-processing)
+      - [Exercise 4: The Mirror Image](#exercise-4-the-mirror-image)
       - [2. Type-Level Phantom Types for Type Safety](#2-type-level-phantom-types-for-type-safety)
     - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
-      - [Exercise 4: Phantom Status](#exercise-4-phantom-status)
-      - [Exercise 5: A Tree Without Leaves](#exercise-5-a-tree-without-leaves)
+      - [Exercise 5: Phantom Status](#exercise-5-phantom-status)
+      - [Exercise 6: A Tree Without Leaves](#exercise-6-a-tree-without-leaves)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
     - [1. Custom Unit Types](#1-custom-unit-types)
     - [2. The Standard Unit `()`](#2-the-standard-unit-)
     - [3. Other Library Unit Types](#3-other-library-unit-types)
     - [4. Exercises: The Power of One](#4-exercises-the-power-of-one)
-      - [Exercise 6: A Safe `head`](#exercise-6-a-safe-head)
-      - [Exercise 7: Avoiding `fromJust` with `Either`](#exercise-7-avoiding-fromjust-with-either)
+      - [Exercise 7: A Safe `head`](#exercise-7-a-safe-head)
+      - [Exercise 8: Avoiding `fromJust` with `Either`](#exercise-8-avoiding-fromjust-with-either)
   - [3. 2 Inhabitants (Boolean Type)](#3-2-inhabitants-boolean-type)
     - [1. The Standard `Bool`](#1-the-standard-bool)
     - [2. Using `Either () ()`](#2-using-either-)
@@ -41,7 +42,7 @@
     - [1. Custom Parameterized Tags](#1-custom-parameterized-tags)
     - [2. `Const Bool a`](#2-const-bool-a)
   - [4. Advanced Parameterized Types Exercises](#4-advanced-parameterized-types-exercises)
-    - [Exercise 8: Traversing Without Failure (Bonus)](#exercise-8-traversing-without-failure-bonus)
+    - [Exercise 9: Traversing Without Failure (Bonus)](#exercise-9-traversing-without-failure-bonus)
 - [Annex ](#annex-)
   - [The Secret Inhabitant: Bottom (`_|_`)](#the-secret-inhabitant-bottom-__)
   - [Bibliography](#bibliography)
@@ -186,11 +187,11 @@ import Data.Either (fromRight)
 unsafeExtract :: Either Void a -> a
 unsafeExtract comp = fromRight (error "This should be impossible!") comp
 ```
-Is this an anti-pattern? Why is this approach dangerous even if the `Left` branch is `Void`, and how can you write a new `safeExtract` function in a single line using standard library combinators, completely removing the `error`?
+Why is this approach dangerous even if the `Left` branch is `Void`, and how can you write a new `safeExtract` function in a single line using standard library combinators, completely removing the `error`?
 
 <details>
 <summary><b>View Solution</b></summary>
-Yes, this is an anti-pattern! By relying on `error` as a default value, the developer bypassed the type-checker and introduced a potential program crash (a bottom value, `_|_`) if the code was ever refactored to something other than `Void`!
+By relying on `error` as a default value, the developer bypassed the type-checker and introduced a potential program crash (a bottom value, `_|_`) if the code was ever refactored to something other than `Void`!
 
 You can replace the entirely unsafe helper with the idiomatic mathematical proof we learned! By passing `absurd` to the `Left` handler, we safely prove to the compiler that the left branch is unreachable, which would instantly fail to compile if anyone ever changed `Void` to a real type later on.
 
@@ -211,8 +212,25 @@ Since `either absurd id` is a basic, total function `Either Void a -> a`, we jus
 extractUsers :: [Either Void User] -> [User]
 extractUsers = map (either absurd id)
 ```
+</details>
 
-*(Tip: If the type is ever flipped so the impossible `Void` is on the right side, like `Either a Void`, you can simply flip the handlers to extract your valid value: `either id absurd`!)*
+##### Exercise 4: The Mirror Image
+We just saw how to extract the value from `Either Void a` using `either absurd id`. Imagine you have the structurally reversed type `Either a Void`. This often happens when libraries parameterize their types differently (for example, placing the successful result on the left!).
+
+Suppose you have a legacy database function that returns a book, but guarantees it will never fail by using `Void` for the right error branch: `legacyRetrieveBook :: String -> Either Book Void`. *(Note: This is considered a "bad" signature for new code. If a pure function is guaranteed to succeed, its signature should simply be `String -> Book`! However, you will frequently encounter forms like `Either a Void` in legacy codebases when developers update a previously fallible function to be infallible, but want to avoid modifying the surrounding infrastructure that expects an `Either` structure).*
+
+Without using any manual pattern matching (like `case`), how would you use the standard `either` and `absurd` functions to implement a safe wrapper `safeRetrieveBook :: String -> Book`?
+
+<details>
+<summary><b>View Solution</b></summary>
+Because the impossible `Void` is now on the right side, we simply pass `absurd` as the second argument to `either` to securely handle the right branch, and `id` to the first to return our valid book!
+
+```haskell
+safeRetrieveBook :: String -> Book
+safeRetrieveBook title = either id absurd (legacyRetrieveBook title)
+```
+
+*(Note for the curious: What would this return if `legacyRetrieveBook` actually returned the right error branch? The answer is: it physically can't! Because `Void` has zero constructors, the underlying function can never produce a `Right` value at runtime without crashing (`_|_`). The `either id absurd` idiom simply provides a mathematical proof to the compiler that the right branch is unreachable, allowing successful compilation).*
 </details>
 
 ##### 2. Type-Level Phantom Types for Type Safety
@@ -241,7 +259,7 @@ Because `USD` and `EUR` have no constructors, we never intended to instantiate t
 
 #### 4. Exercises: Building the Impossible
 
-##### Exercise 4: Phantom Status
+##### Exercise 5: Phantom Status
 Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
 
 <details>
@@ -249,7 +267,7 @@ Imagine a `Document status` type where `status` can be `Draft` or `Published` (b
 Because `publish` explicitly requires a `Document Draft`, providing a `Document Published` will result in a compile-time type mismatch error. This guarantees at compile time that we only publish drafts, and prevents re-publishing already published documents!
 </details>
 
-##### Exercise 5: A Tree Without Leaves
+##### Exercise 6: A Tree Without Leaves
 Consider a simple parameterised binary tree:
 ```haskell
 data Tree a = Leaf a | Node (Tree a) (Tree a)
@@ -292,7 +310,7 @@ Because `Acknowledged`, `()`, `Identity ()`, and `a :~: a` all have an identical
 
 #### 4. Exercises: The Power of One
 
-##### Exercise 6: A Safe `head`
+##### Exercise 7: A Safe `head`
 The standard library's `head :: [a] -> a` function is notorious for crashing if given an empty list because it lacks a value to return. How could you write a total, non-crashing `safeHead` function using `Either`? What minimal type is the most appropriate for the `Left` error branch if you don't actually need to provide an error message?
 
 <details>
@@ -307,7 +325,7 @@ safeHead (x:_) = Right x
 *(Note: Haskell's `Maybe a` is effectively isomorphic to `Either () a` and is historically preferred for this exact scenario!)*
 </details>
 
-##### Exercise 7: Avoiding `fromJust` with `Either`
+##### Exercise 8: Avoiding `fromJust` with `Either`
 Similarly, `fromJust :: Maybe a -> a` forces an extraction and crashes if given `Nothing`. If you need to integrate a function returning a `Maybe a` into a pipeline that strictly uses `Either` to handle failures safely, how would you convert it without risking a crash?
 
 <details>
@@ -427,7 +445,7 @@ import Data.Functor.Const (Const(..))
 
 ### 4. Advanced Parameterized Types Exercises
 
-#### Exercise 8: Traversing Without Failure (Bonus)
+#### Exercise 9: Traversing Without Failure (Bonus)
 The `traverse` function is commonly used to map a fallible function over a sequence of elements:
 `traverse :: Applicative f => (a -> f b) -> [a] -> f [b]`
 When specialized to `Either e`, its signature effectively becomes:
