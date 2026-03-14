@@ -1,6 +1,19 @@
 # Minimal Types
 **Author:** Olivier De Wolf, odewolf@gmail.com
 
+## Table of Contents
+- [Introduction](#introduction)
+- [A Quick Primer: What is a "Kind"?](#a-quick-primer-what-is-a-kind)
+- [Chapter 1: Types of Kind `*`](#chapter-1-types-of-kind-)
+  - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
+  - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
+  - [3. 2 Inhabitants (Boolean Type)](#3-2-inhabitants-boolean-type)
+- [Chapter 2: Parameterized Types of Kind `* -> *`](#chapter-2-parameterized-types-of-kind---)
+  - [1. 0 Inhabitants](#1-0-inhabitants)
+  - [2. 1 Inhabitant](#2-1-inhabitant)
+  - [3. 2 Inhabitants](#3-2-inhabitants)
+- [Annex](#annex)
+
 ## Introduction
 
 In type theory and functional programming, we can classify types by the number of distinct values (inhabitants) they can hold at runtime. Let's call "minimal types" the types that have very few inhabitants (that is, possible distinct values). Understanding these "minimal types" provides a strong foundation for building robust and mathematically sound abstractions.
