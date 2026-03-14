@@ -8,7 +8,6 @@
   - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
     - [1. Custom Empty Data](#1-custom-empty-data)
     - [2. `Data.Void` - the built-in equivalent.](#2-datavoid-the-built-in-equivalent)
-    - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
     - [1. Custom Unit Types](#1-custom-unit-types)
     - [2. The Standard Unit `()`](#2-the-standard-unit-)
@@ -188,11 +187,6 @@ fiveEuros = Money 5.0
 -- illegalSum = fiveDollars `addMoney` fiveEuros
 ```
 Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
-
-#### 4. Exercises: Building the Impossible
-
-
-
 
 **Exercise 2: Traversing Without Failure**
 The `traverse` function is commonly used to map a fallible function over a sequence of elements:
