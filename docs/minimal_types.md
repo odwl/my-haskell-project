@@ -4,7 +4,7 @@
 ## Table of Contents
 - [Introduction](#introduction)
 - [A Quick Primer: What is a "Kind"?](#a-quick-primer-what-is-a-kind)
-- [Chapter 1: Types of Kind `*`](#chapter-1-types-of-kind-)
+- [Chapter 1: Types of Kind `Type`](#chapter-1-types-of-kind-type)
   - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
     - [1. Custom Empty Data](#1-custom-empty-data)
     - [2. `Data.Void` - the built-in equivalent.](#2-datavoid-the-built-in-equivalent)
@@ -12,10 +12,9 @@
     - [3. Common Idioms](#3-common-idioms)
       - [1. Type-Level Guarantees](#1-type-level-guarantees)
       - [Exercise 2: Avoiding `fromRight` and Partiality](#exercise-2-avoiding-fromright-and-partiality)
-      - [Exercise 3: Safe List Processing](#exercise-3-safe-list-processing)
-      - [Exercise 4: The Mirror Image](#exercise-4-the-mirror-image)
+      - [Exercise 3: Traversing Without Failure (Bonus)](#exercise-3-traversing-without-failure-bonus)
+      - [Exercise 4: Safe List Processing](#exercise-4-safe-list-processing)
       - [2. Type-Level Phantom Types for Type Safety](#2-type-level-phantom-types-for-type-safety)
-    - [4. Exercises: Building the Impossible](#4-exercises-building-the-impossible)
       - [Exercise 5: Phantom Status](#exercise-5-phantom-status)
       - [Exercise 6: A Tree Without Leaves](#exercise-6-a-tree-without-leaves)
   - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
@@ -27,9 +26,12 @@
       - [Exercise 8: Avoiding `fromJust` with `Either`](#exercise-8-avoiding-fromjust-with-either)
   - [3. 2 Inhabitants (Boolean Type)](#3-2-inhabitants-boolean-type)
     - [1. The Standard `Bool`](#1-the-standard-bool)
-    - [2. Using `Either () ()`](#2-using-either-)
     - [3. Custom Enumerations](#3-custom-enumerations)
-- [Chapter 2: Parameterized Types of Kind `* -> *`](#chapter-2-parameterized-types-of-kind-)
+  - [4. Uncountably Infinite Inhabitants](#4-uncountably-infinite-inhabitants)
+    - [1. Infinite Streams](#1-infinite-streams)
+    - [2. Infinite Functions](#2-infinite-functions)
+
+- [Chapter 2: Parameterized Types of Kind `Type -> Type`](#chapter-2-parameterized-types-of-kind-type---type)
   - [1. 0 Inhabitants ](#1-0-inhabitants-)
     - [1. Standard Parameterized Empty Data](#1-standard-parameterized-empty-data)
     - [2. Using GADT Syntax](#2-using-gadt-syntax)
@@ -42,7 +44,6 @@
     - [1. Custom Parameterized Tags](#1-custom-parameterized-tags)
     - [2. `Const Bool a`](#2-const-bool-a)
   - [4. Advanced Parameterized Types Exercises](#4-advanced-parameterized-types-exercises)
-    - [Exercise 9: Traversing Without Failure (Bonus)](#exercise-9-traversing-without-failure-bonus)
 - [Annex ](#annex-)
   - [The Secret Inhabitant: Bottom (`_|_`)](#the-secret-inhabitant-bottom-__)
   - [Bibliography](#bibliography)
@@ -59,14 +60,14 @@ While minimal types are omnipresent in pure functional languages like Haskell, t
 
 Before we dive into counting inhabitants, we need to clarify what we mean by "Kind". 
 Just as **types** classify **values** (e.g., `True` is a value of type `Bool`), **kinds** classify **types**.
-- **`*` (pronounced "Type")**: This is the kind of a concrete type that can actually hold values at runtime. For example, `Int`, `Bool`, `String`, and `Maybe Int` are all of kind `*`.
-- **`* -> *`**: This is the kind of a *type constructor* that takes one concrete type and returns a new concrete type. For example, `[]` (List) and `Maybe` are of kind `* -> *` because they need a type argument (like `Int`) to become a concrete type (`[Int]` or `Maybe Int`) of kind `*`.
+- **`Type`**: This is the kind of a concrete type that can actually hold values at runtime. For example, `Int`, `Bool`, `String`, and `Maybe Int` are all of kind `Type`. *(Note: Older Haskell code uses `*` for this, but modern Haskell uses `Type` imported from `Data.Kind` to avoid conflict with the multiplication operator).*
+- **`Type -> Type`**: This is the kind of a *type constructor* that takes one concrete type and returns a new concrete type. For example, `[]` (List) and `Maybe` are of kind `Type -> Type` because they need a type argument (like `Int`) to become a concrete type (`[Int]` or `Maybe Int`) of kind `Type`.
 
-With that in mind, the first chapter will focus on the minimal types of the simplest kind `*` while the second chapter will be devoted to the minimal types of the second simplest kind `* -> *`.
+With that in mind, the first chapter will focus on the minimal types of the simplest kind `Type` while the second chapter will be devoted to the minimal types of the second simplest kind `Type -> Type`.
 
-## Chapter 1: Types of Kind `*`
+## Chapter 1: Types of Kind `Type`
 
-These are standard, concrete types that take no parameters. A type of kind `*` can contain any finite number of inhabitants (and here we will focus specifically on types containing exactly 0, 1, or 2 inhabitants) or a countably infinite number of inhabitants (we will also later have a section devoted to minimal countably infinite types).
+These are standard, concrete types that take no parameters. A type of kind `Type` can contain any finite number of inhabitants (and here we will focus specifically on types containing exactly 0, 1, or 2 inhabitants) or an infinite number of inhabitants (we will also later have a section devoted to minimal countably infinite types).
 
 Furthermore, it is a fundamental property of type theory that any finite types with exactly $n$ inhabitants are strictly **isomorphic** to each other. Because they have the exact same number of possible distinct runtime values, they can be perfectly mapped back and forth without losing any information. For example, the `Bool` type (which has 2 inhabitants: `True` and `False`) is perfectly isomorphic to the type `Either () ()` (which also has 2 inhabitants: `Left ()` and `Right ()`). *(Note: As we talked about in the Annex, as long as we treat Haskell as a total language and ignore `_|_`, this isomorphism holds perfectly true in the Haskell type-checker!)*
 
@@ -179,6 +180,7 @@ In fact, a dedicated `collapseLeft` function is almost never explicitly defined 
 collapseLeft :: Either Void a -> a
 collapseLeft = either absurd id
 ```
+
 ##### Exercise 2: Avoiding `fromRight` and Partiality
 Imagine you inherit a codebase where a previous developer used `Data.Either.fromRight` to extract a value from a guaranteed computation by passing a runtime `error` as the default value:
 ```haskell
@@ -199,9 +201,29 @@ You can replace the entirely unsafe helper with the idiomatic mathematical proof
 safeExtract :: Either Void a -> a
 safeExtract = either absurd id
 ```
+
+*(Tip: If the type is ever flipped so the impossible `Void` is on the right side, like `Either a Void`, you can simply flip the handlers to extract your valid value: `either id absurd`!)*
 </details>
 
-##### Exercise 3: Safe List Processing
+##### Exercise 3: Traversing Without Failure (Bonus)
+The `traverse` function is commonly used to map a fallible function over a sequence of elements:
+`traverse :: Applicative f => (a -> f b) -> [a] -> f [b]`
+When specialized to `Either e`, its signature effectively becomes:
+`traverse :: (a -> Either e b) -> [a] -> Either e [b]`
+Imagine you have a list of valid inputs `[a]`, and a specific function `process :: a -> Either Void b` that is *mathematically guaranteed* to succeed (perhaps reusing a parser or computation that theoretically *could* fail on some data, but not on this specific data).
+How can you use `either absurd id` to write a function `processAll :: [a] -> [b]` that completely sheds the `Either` wrapper from the resulting list?
+
+<details>
+<summary><b>View Solution</b></summary>
+Because `process` returns `Either Void b`, mapping it via `traverse process` will return an `Either Void [b]`. Since the type system proves the sequence of computations cannot possibly fail, we can safely extract our final list of results using the exact same idiom!
+
+```haskell
+processAll :: [a] -> [b]
+processAll xs = either absurd id (traverse process xs)
+```
+</details>
+
+##### Exercise 4: Safe List Processing
 Suppose a trusted API parser guarantees that a deeply-nested JSON payload sequence will never return an error branch, returning `[Either Void User]`. Using the idiom we just learned, how can you elegantly extract a clean `[User]` list?
 
 <details>
@@ -214,23 +236,6 @@ extractUsers = map (either absurd id)
 ```
 </details>
 
-##### Exercise 4: The Mirror Image
-We just saw how to extract the value from `Either Void a` using `either absurd id`. Imagine you have the structurally reversed type `Either a Void`. This often happens when libraries parameterize their types differently (for example, placing the successful result on the left!).
-
-Suppose you have a legacy database function that returns a book, but guarantees it will never fail by using `Void` for the right error branch: `legacyRetrieveBook :: String -> Either Book Void`. *(Note: This is considered a "bad" signature for new code. If a pure function is guaranteed to succeed, its signature should simply be `String -> Book`! However, you will frequently encounter forms like `Either a Void` in legacy codebases when developers update a previously fallible function to be infallible, but want to avoid modifying the surrounding infrastructure that expects an `Either` structure).*
-
-Without using any manual pattern matching (like `case`), how would you use the standard `either` and `absurd` functions to implement a safe wrapper `safeRetrieveBook :: String -> Book`?
-
-<details>
-<summary><b>View Solution</b></summary>
-Because the impossible `Void` is now on the right side, we simply pass `absurd` as the second argument to `either` to securely handle the right branch, and `id` to the first to return our valid book!
-
-```haskell
-safeRetrieveBook :: String -> Book
-safeRetrieveBook title = either id absurd (legacyRetrieveBook title)
-```
-
-*(Note for the curious: What would this return if `legacyRetrieveBook` actually returned the right error branch? The answer is: it physically can't! Because `Void` has zero constructors, the underlying function can never produce a `Right` value at runtime without crashing (`_|_`). The `either id absurd` idiom simply provides a mathematical proof to the compiler that the right branch is unreachable, allowing successful compilation).*
 </details>
 
 ##### 2. Type-Level Phantom Types for Type Safety
@@ -257,7 +262,6 @@ fiveEuros = Money 5.0
 ```
 Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
 
-#### 4. Exercises: Building the Impossible
 
 ##### Exercise 5: Phantom Status
 Imagine a `Document status` type where `status` can be `Draft` or `Published` (both uninhabited types). Write a function signature `publish :: Document Draft -> Document Published` and explain why you cannot accidentally pass a `Published` document to `publish`.
@@ -362,9 +366,35 @@ data SwitchState = On | Off
 data AccessLevel = Admin | User
 ```
 
+### 4. Uncountably Infinite Inhabitants
+
+While integer types like `Integer` carry a countably infinite number of inhabitants, Haskell's laziness enables types that contain an **uncountably infinite** number of possible inhabitants (specifically $2^{\aleph_0}$, the same cardinality as the real numbers).
+
+To achieve an uncountable number of distinct values, a type must represent an infinite sequence of choices, where each step offers at least two options.
+
+#### 1. Infinite Streams
+Because Haskell evaluates lists lazily, a list like `[Bool]` can be infinitely long. The set of all possible infinite sequences of `True` and `False` forms an uncountably infinite set.
+
+```haskell
+-- Structurally infinite sequence of choices
+data Stream a = Cons a (Stream a)
+
+-- Uncountably infinite inhabitants
+type CoinFlips = Stream Bool
+```
+
+#### 2. Infinite Functions
+A mathematically pure function type mapping from a countably infinite domain (like `Integer`) to a type with at least two inhabitants (like `Bool`) is also uncountably infinite. 
+
+```haskell
+-- Uncountably infinite inhabitants
+type IntegerPredicate = Integer -> Bool
+```
+This is because every unique possible function `Integer -> Bool` represents a completely unique infinite sequence of binary choices (the outputs corresponding to the inputs `0, 1, 2...`).
+
 ---
 
-## Chapter 2: Parameterized Types of Kind `* -> *`
+## Chapter 2: Parameterized Types of Kind `Type -> Type`
 
 These are type constructors that require one type argument `a` before they become concrete types. The number of inhabitants discussed here applies *regardless* of what `a` is instantiated to (i.e. the type parameter `a` is completely ignored at the value level).
 
@@ -445,25 +475,6 @@ import Data.Functor.Const (Const(..))
 
 ### 4. Advanced Parameterized Types Exercises
 
-#### Exercise 9: Traversing Without Failure (Bonus)
-The `traverse` function is commonly used to map a fallible function over a sequence of elements:
-`traverse :: Applicative f => (a -> f b) -> [a] -> f [b]`
-When specialized to `Either e`, its signature effectively becomes:
-`traverse :: (a -> Either e b) -> [a] -> Either e [b]`
-Imagine you have a list of valid inputs `[a]`, and a specific function `process :: a -> Either Void b` that is *mathematically guaranteed* to succeed (perhaps reusing a parser or computation that theoretically *could* fail on some data, but not on this specific data).
-How can you use `either absurd id` to write a function `processAll :: [a] -> [b]` that completely sheds the `Either` wrapper from the resulting list?
-
-<details>
-<summary><b>View Solution</b></summary>
-Because `process` returns `Either Void b`, mapping it via `traverse process` will return an `Either Void [b]`. Since the type system proves the sequence of computations cannot possibly fail, we can safely extract our final list of results using the exact same idiom!
-
-```haskell
-processAll :: [a] -> [b]
-processAll xs = either absurd id (traverse process xs)
-```
-</details>
-
-
 ## Annex 
 
 ### The Secret Inhabitant: Bottom (`_|_`)
@@ -504,6 +515,4 @@ By doing this, a complete crash (`_|_`) is safely intercepted and converted into
 2. Danielsson, N. A., Hughes, J., Jansson, P., & Gibbons, J. (2006). *Fast and Loose Reasoning is Morally Correct*. ACM SIGPLAN Notices, 41(1), 273-284. (A formal justification for reasoning about Haskell programs while ignoring `_|_`).
 3. Leijen, D., & Meijer, E. (1999). *Domain Specific Embedded Compilers*. ACM SIGPLAN Notices, 35(1), 109-122. (An early and influential paper showcasing the use of Phantom Types in Haskell).
 4. King, A. (2019). *[Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)*. (A highly influential post demonstrating how to use the type system, including uninhabited types, to prove properties and prevent invalid states).
-5. Diehl, S. *[What I Wish I Knew When Learning Haskell](https://smunix.github.io/dev.stephendiehl.com/hask/tutorial.pdf)*. (A comprehensive guide to practical Haskell, covering many advanced type-level mechanics including `Void` and phantom types).
-
 5. Diehl, S. *[What I Wish I Knew When Learning Haskell](https://smunix.github.io/dev.stephendiehl.com/hask/tutorial.pdf)*. (A comprehensive guide to practical Haskell, covering many advanced type-level mechanics including `Void` and phantom types).
