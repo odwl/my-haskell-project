@@ -110,35 +110,6 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 > *(For the deep technical details on how the compiler handles matching on uninhabited types, refer to the [GHC User Guide on EmptyCase](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html)).*
 >
 > However, we rarely need to write our own custom empty types because Haskell's standard library provides a built-in one!
-
-**Exercise 1: Implementing the Impossible**
-It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
-
-1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
-2. Now, using your defined `absurd` function, how would you implement `vacuous :: Functor f => f Never -> f a`?
-
-<details>
-<summary><b>View Solutions</b></summary>
-
-**1.** By enabling the `EmptyCase` language extension, we can pattern match on the impossible value. Since the compiler sees there are 0 constructors for `Never`, we don't even have to provide a right-hand side for the case expression!
-
-```haskell
-{-# LANGUAGE EmptyCase #-}
-
-data Never
-
-absurd :: Never -> a
-absurd v = case v of {}
-```
-
-**2.** Because `absurd` can turn a `Never` into any type `a`, all we need to do is map it over the functor!
-
-```haskell
-vacuous :: Functor f => f Never -> f a
-vacuous = fmap absurd
-```
-</details>
-
 **Common Idioms:**
 Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler. Here are some very useful common idioms using uninhabited types:
 
@@ -187,6 +158,37 @@ fiveEuros = Money 5.0
 -- illegalSum = fiveDollars `addMoney` fiveEuros
 ```
 Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
+
+#### 4. Exercises: Building the Impossible
+
+**Exercise 1: Implementing the Impossible**
+It is actually a great exercise to understand how to implement the standard empty type tooling yourself!
+
+1. Given your own custom empty type `data Never`, how would you implement your own `absurd :: Never -> a`?
+2. Now, using your defined `absurd` function, how would you implement `vacuous :: Functor f => f Never -> f a`?
+
+<details>
+<summary><b>View Solutions</b></summary>
+
+**1.** By enabling the `EmptyCase` language extension, we can pattern match on the impossible value. Since the compiler sees there are 0 constructors for `Never`, we don't even have to provide a right-hand side for the case expression!
+
+```haskell
+{-# LANGUAGE EmptyCase #-}
+
+data Never
+
+absurd :: Never -> a
+absurd v = case v of {}
+```
+
+**2.** Because `absurd` can turn a `Never` into any type `a`, all we need to do is map it over the functor!
+
+```haskell
+vacuous :: Functor f => f Never -> f a
+vacuous = fmap absurd
+```
+</details>
+
 
 **Exercise 2: Traversing Without Failure**
 The `traverse` function is commonly used to map a fallible function over a sequence of elements:
