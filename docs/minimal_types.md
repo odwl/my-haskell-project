@@ -91,6 +91,17 @@ collapseRight = either id absurd
 ```
 By doing this, you are providing a mathematical proof to the compiler that only one side is possible, allowing safe extraction without ever using dangerous partial functions like `fromRight` or `fromLeft`.
 
+**Can the compiler figure this out for us?**
+Yes! The compiler is actually smart enough to know that since `Void` cannot exist, the *entire `Left` constructor* also cannot exist because it demands a `Void` at runtime. 
+If you enable the `EmptyCase` extension (or use newer compiler versions with it built-in), you can pattern match exclusively on the `Right` side. You can completely omit the `Left` case, and the compiler will cleanly accept it *without* issuing any "incomplete pattern match" warnings!
+```haskell
+{-# LANGUAGE EmptyCase #-}
+-- Only the Right branch is mandatory here!
+collapseLeftSmart :: Either Void a -> a
+collapseLeftSmart (Right x) = x
+-- The compiler mathematically proves Left is impossible and doesn't require us to write it.
+```
+
 #### 3. The Usefulness of Uninhabited Types
 
 Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler.
@@ -108,11 +119,11 @@ What if we have a computation that is *guaranteed* to succeed and never throw an
 safeComputation :: Result Void Int
 safeComputation = Right 42
 ```
-Because the `Left` branch requires a `Void`, the caller *knows with absolute certainty* that `safeComputation` will only ever return `Right`. If the caller pattern matches on it, they can safely ignore the `Left` case using `absurd`:
+Because the `Left` branch requires a `Void`, the caller *knows with absolute certainty* that `safeComputation` will only ever return `Right`. To extract the value, we can directly reuse the `collapseLeft` idiom (or its smart pattern match version) from above!
 ```haskell
-extractSafe :: Result Void a -> a
-extractSafe (Right val) = val
-extractSafe (Left v) = absurd v -- The compiler knows this branch is unreachable
+-- This is exactly equivalent to applying collapseLeft!
+finalValue :: Int
+finalValue = either absurd id safeComputation
 ```
 
 ##### Example 2: Phantom Types for Type Safety
