@@ -321,7 +321,7 @@ Another brilliant consequence of this relates to function arity. Mathematically,
 
 So what is a **0-ary** function? It must provide an output out of *no* input. It is equivalent to choosing an element from a set with no prior information. Mathematically, this is modeled via a function from a **singleton set** (a set with exactly one element, like `{*}`) to a target type `a`. The function `f : {*} -> a` simply picks exactly one value of type `a` when you evaluate `f(*)`. 
 
-In Haskell, that singleton set is the unit type `()`. Therefore, a 0-ary computation has the exact signature `() -> a`. This beautifully explains why we use `()` to represent an action or computation that requires no meaningful input to provide a result!
+Because all singleton sets are strictly **isomorphic** to one another (i.e., `()` $\cong$ `{myElement}` $\cong$ `{*}`), the actual value of their single element is completely irrelevant. In Haskell, we use the unit type `()` as the standard, generic representation of this singleton concept. Therefore, a 0-ary computation has the exact signature `() -> a`. This beautifully explains why we use `()` to represent an action or computation that requires no meaningful input to provide a result!
 
 #### 4. Other Library Unit Types
 While `()` is standard, Haskell libraries often use specialized 1-inhabitant types for specific contexts:
