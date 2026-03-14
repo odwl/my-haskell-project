@@ -39,6 +39,8 @@ In type theory and functional programming, we can classify types by the number o
 
 While minimal types are omnipresent in pure functional languages like Haskell, they can often feel counter-intuitive or overly abstract to newcomers. Why would we want a type that holds zero values? What is the point of a type with exactly one? This document aims to demystify these concepts by exploring the simplest possible types and demonstrating their immense practical value. To aid in your learning journey, a hands-on exercise section has been provided at the end of this guide.
 
+**Intended Audience:** From a pedagogical perspective, this guide is specifically tailored for intermediate Haskell learners and practical software engineers who have grasped the basic syntax but want to develop a stronger intuition for type-level design. If you've ever struggled to understand *why* concepts like `Void` or `Proxy` exist in the standard library—rather than just *how* to compile them—this resource provides the foundational mental models to bridge that gap between abstract theory and daily, practical application.
+
 ## A Quick Primer: What is a "Kind"?
 
 Before we dive into counting inhabitants, we need to clarify what we mean by "Kind". 
