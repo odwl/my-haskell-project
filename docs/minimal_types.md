@@ -103,9 +103,12 @@ collapseLeft (Right x) = x
 -- The compiler mathematically proves Left is impossible and doesn't require us to write it!
 ```
 
-Instead of writing custom pattern-matching functions like this, it is highly idiomatic in general to just use the standard library's `either` function combined with `id` and `absurd` to collapse the "impossible" branch. This provides a mathematical proof to the compiler allowing safe extraction without ever using dangerous partial functions like `fromRight`:
+Instead of writing custom pattern-matching functions like this, it is highly idiomatic in general to just use the standard library's `either` function combined with `id` and `absurd` to collapse the "impossible" branch. 
+
+In fact, a dedicated `collapseLeft` function is almost never explicitly defined in real Haskell codebases because developers simply use `either absurd id` directly inline! This provides a one-line mathematical proof to the compiler, allowing safe extraction without ever using dangerous partial functions like `fromRight`:
 
 ```haskell
+-- In practice, developers just use `either absurd id` inline!
 collapseLeft :: Either Void a -> a
 collapseLeft = either absurd id
 ```
