@@ -27,6 +27,10 @@ absurd v = case v of {}
 vacuous :: (Functor f) => f Never -> f a
 vacuous = fmap absurd
 
+collapse :: Either Never a -> a
+collapse (Left v) = absurd v
+collapse (Right x) = x
+
 -----------------------------------
 -- Minimum Foldable
 -----------------------------------
