@@ -115,6 +115,8 @@ testBatch (eq (undefined :: MyData))
 
 - **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces `True == True` and `False == False`. But what about `True == False`? Mathematically, if we evaluated it to `True`, we'd be constructing a perfectly lawful equality where `True` and `False` belong to the exact same *equivalence class*. This would mathematically collapse `Bool` into a 1-inhabitant type! Therefore, because we want to preserve both inhabitants, we are strictly required to define the cross-comparisons as `False` (`True /= False`). The remaining laws (Symmetry and Transitivity) are then trivially fulfilled.
 
+- **$\infty$ Inhabitants (`Fraction`)**: When a type has many inhabitants, the default compiler-derived `Eq` (which checks identical memory structure) may not reflect true mathematical parity. We often have to manually implement structural equality.
+
   **Exercise 5: A Meaningful Custom `Eq`**
   Suppose you are working with fractions defined as a numerator and denominator:
   ```haskell
