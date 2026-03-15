@@ -113,8 +113,8 @@ testBatch (eq (undefined :: MyData))
   This immediately breaks **Reflexivity**, which strictly mandates that for all values $x$, $x == x$ must evaluate to `True`. Because our instance returns `False`, it is an unlawful, mathematically invalid `Eq`!
   </details>
 
-- **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces our hand to define `True == True` and `False == False`. This leaves us with exactly two lawful possibilities for how we handle the cross-comparisons (`True == False`), giving us two valid cases:
-  1. **The Useful Case (`_ == _ = False` for differing values)**: By defining the cross-comparisons to evaluate to `False`, we preserve `True` and `False` as two completely distinct semantic concepts. The remaining laws (Symmetry and Transitivity) are then trivially fulfilled.
+- **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces our hand to define `True == True` and `False == False`. This leaves us with exactly two lawful possibilities for how we handle the cross-comparisons (`True == False`). Both of these configurations naturally fulfill the remaining laws (Symmetry and Transitivity), giving us two valid cases:
+  1. **The Useful Case (`_ == _ = False` for differing values)**: By defining the cross-comparisons to evaluate to `False`, we preserve `True` and `False` as two completely distinct semantic concepts.
   2. **The Non-Useful Case (`_ == _ = True` for differing values)**: Mathematically, if we evaluate this to `True`, we construct a perfectly lawful equality where `True` and `False` belong to the exact same *equivalence class*. While `Bool` would still structurally have two distinct memory tags internally, this algebraically groups them together into a single *Quotient Type*. It mathematically collapses the concept of `Bool` into behaving like a 1-inhabitant type whenever evaluated through `(==)`. This is a perfectly correct and mathematically lawful instance, but it is hardly useful in any programming context since we would entirely lose the ability to differentiate branches!
 
   **Exercise 5: The Logic Gate**
