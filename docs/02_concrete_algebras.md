@@ -12,7 +12,16 @@ Before we can combine values or map over structures, the most fundamental operat
 
 ### Section 1.1: `Eq` (The Laws of Mathematical Equivalence)
 
-The `Eq` typeclass provides the `(==)` and `(/=)` operators. But to be a valid instance, it must rigorously satisfy the three mathematical laws of an **equivalence relation**:
+The `Eq` typeclass provides the `(==)` and `(/=)` operators.
+
+```haskell
+class Eq a where
+    (==) :: a -> a -> Bool
+    (/=) :: a -> a -> Bool
+    {-# MINIMAL (==) | (/=) #-}
+```
+
+To be a valid instance, it must rigorously satisfy the three mathematical laws of an **equivalence relation**:
 
 1. **Reflexivity**: Everything is equal to itself.
    `x == x` must be `True`.
@@ -28,7 +37,23 @@ The `Eq` typeclass provides the `(==)` and `(/=)` operators. But to be a valid i
 
 ### Section 1.2: `Ord` (The Laws of Total Ordering)
 
-If `Eq` tells us if things are the same, `Ord` tells us how to line them up in a sequence. `Ord` provides operations like `compare`, `<=`, and `>`. It is a fundamental rule that any type with an `Ord` instance *must* also have an `Eq` instance.
+If `Eq` tells us if things are the same, `Ord` tells us how to line them up in a sequence. `Ord` provides operations like `compare`, `<=`, and `>`. 
+
+```haskell
+data Ordering = LT | EQ | GT
+
+class Eq a => Ord a where
+    compare :: a -> a -> Ordering
+    (<)     :: a -> a -> Bool
+    (<=)    :: a -> a -> Bool
+    (>)     :: a -> a -> Bool
+    (>=)    :: a -> a -> Bool
+    max     :: a -> a -> a
+    min     :: a -> a -> a
+    {-# MINIMAL compare | (<=) #-}
+```
+
+It is a fundamental rule that any type with an `Ord` instance *must* also have an `Eq` instance.
 
 Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` and adds:
 
