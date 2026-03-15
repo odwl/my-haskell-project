@@ -142,6 +142,8 @@ class Eq a => Ord a where
     {-# MINIMAL compare | (<=) #-}
 ```
 
+Just like with `Eq`, the `{-# MINIMAL compare | (<=) #-}` pragma dictates what we need to provide. To satisfy the compiler and get a full `Ord` instance with all seven functions, we only need to implement *either* the `compare` function *or* the `(<=)` operator. If we define `compare`, all other functions like `<`, `>`, and `max` are automatically derived from it.
+
 It is a fundamental rule that any type with an `Ord` instance *must* also have an `Eq` instance.
 
 Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` and adds:
