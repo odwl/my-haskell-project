@@ -157,6 +157,29 @@ Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` a
 - **1 Inhabitant (`()`)**: `()` is always equal to (and therefore `<=` to) `()`.
 - **2 Inhabitants (`Bool`)**: `False` is canonically ordered before `True` (`False <= True`).
 
+  **Exercise 5: Deriving the Rest from `compare`**
+  Assume you have provided a valid `compare :: a -> a -> Ordering` for your type. How would you mathematically define the other operators (`<`, `<=`, `>`, `>=`, `max`, `min`) solely in terms of `compare`?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  ```haskell
+  x <  y = compare x y == LT
+  x <= y = compare x y /= GT
+  x >  y = compare x y == GT
+  x >= y = compare x y /= LT
+
+  max x y = case compare x y of
+                LT -> y
+                _  -> x
+
+  min x y = case compare x y of
+                GT -> y
+                _  -> x
+  ```
+  This beautifully shows how the entirety of total ordering logic neatly cascades out of a single comparison query!
+  </details>
+
 Because we have firmly established how to compare and order concrete values, we can finally move on to *combining* them.
 
 ***
