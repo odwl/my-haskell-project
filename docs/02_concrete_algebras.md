@@ -84,9 +84,38 @@ testBatch (eq (undefined :: MyData))
 
 - **1 Inhabitant (`()`)**: There is only one possible value, so `() == ()` is always `True`.
 
+  **Exercise 3: The Trivial Inequality**
+  Without relying on `(==)`, how would you implement the simplest possible `(/=) :: () -> () -> Bool` directly?
+  
+  <details>
+  <summary><b>View Solution</b></summary>
+  
+  Since both inputs must be `()`, they are always exactly the same value. Thus, they can never be not equal. The implementation is universally `False`:
+  ```haskell
+  instance Eq () where
+      () /= () = False
+  -- or simply:
+  --  _ /= _ = False
+  ```
+  </details>
+
+  **Exercise 4: Breaking the Unit Laws**
+  Is it possible to write a mathematically invalid `Eq` instance for `()`? If so, what is it and which law does it break?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  Yes! Although there's only one way to define equality that obeys the mathematical laws, Haskell still lets you write whatever code you want:
+  ```haskell
+  instance Eq () where
+      () == () = False
+  ```
+  This immediately breaks **Reflexivity**, which strictly mandates that for all values $x$, $x == x$ must evaluate to `True`. Because our instance returns `False`, it is an unlawful, mathematically invalid `Eq`!
+  </details>
+
 - **2 Inhabitants (`Bool`)**: We must ensure `True == True` and `False == False`, while cross-comparisons yield `False`.
 
-  **Exercise 3: Breaking the Laws**
+  **Exercise 5: Breaking the Math**
   Consider this hypothetical `Eq` instance for a type representing a game's choices:
   ```haskell
   data RPS = Rock | Paper | Scissors
@@ -106,7 +135,7 @@ testBatch (eq (undefined :: MyData))
   It violates **Symmetry**! We defined `Rock == Paper` to evaluate to `True`, but `Paper == Rock` will fall through to the catch-all `_ == _ = False`. Because symmetry strictly requires `x == y` $\Rightarrow$ `y == x`, this implementation is mathematically invalid.
   </details>
 
-  **Exercise 4: A Meaningful Custom `Eq`**
+  **Exercise 6: A Meaningful Custom `Eq`**
   Suppose you are working with fractions defined as a numerator and denominator:
   ```haskell
   data Fraction = Fraction Integer Integer
@@ -159,7 +188,7 @@ Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` a
 - **1 Inhabitant (`()`)**: `()` is always equal to (and therefore `<=` to) `()`.
 - **2 Inhabitants (`Bool`)**: `False` is canonically ordered before `True` (`False <= True`).
 
-  **Exercise 5: Deriving the Rest from `compare`**
+  **Exercise 7: Deriving the Rest from `compare`**
   Assume you have provided a valid `compare :: a -> a -> Ordering` for your type. How would you mathematically define the other operators (`<`, `<=`, `>`, `>=`, `max`, `min`) solely in terms of `compare`?
 
   <details>
