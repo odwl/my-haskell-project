@@ -51,18 +51,27 @@
 
 ## Introduction
 
-In type theory and functional programming, we can classify types by the number of distinct values (inhabitants) they can hold at runtime. Let's call "minimal types" the types that have very few inhabitants (that is, possible distinct values). Understanding these "minimal types" provides a strong foundation for building robust and mathematically sound abstractions.
+In type theory and functional programming, a profound dichotomy exists that mirrors mathematics: the distinction between **Structures** (Data Types without inherent laws) and **Algebras** (Typeclasses with mathematical laws).
 
-While minimal types are omnipresent in pure functional languages like Haskell, they can often feel counter-intuitive or overly abstract to newcomers. Why would we want a type that holds zero values? What is the point of a type with exactly one? This document aims to demystify these concepts by exploring the simplest possible types and demonstrating their immense practical value. To aid in your learning journey, several hands-on exercises are suggested throughout this guide.
+1. **The Structures (Nouns):** A concrete data type (like `Bool`, `Maybe`, or `Void`) simply defines a "shape in memory" by explicitly declaring how many distinct values (inhabitants) it can hold. It has no strict mathematical laws governing how it must behave; its only rules are structural.
+2. **The Algebras (Verbs/Adjectives):** A typeclass (like `Eq`, `Semigroup`, or `Functor`) defines an interface of behavior mapping across these structures. Because these define behavior, they explicitly come with **Mathematical Laws** to ensure that behavior is predictable and compositionally sound.
 
-**Intended Audience:** From a pedagogical perspective, this guide is specifically tailored for intermediate Haskell learners and practical software engineers who have grasped the basic syntax but want to develop a stronger intuition for type-level design. If you've ever struggled to understand *why* concepts like `Void` or `Proxy` exist in the standard library—rather than just *how* to compile them—this resource provides the foundational mental models to bridge that gap between abstract theory and daily, practical application.
+This document focuses firmly on the first half of that dichotomy: **The Structures.** We will explore how classifying types purely by the number of distinct values they can hold at runtime provides a phenomenally strong foundation for building robust abstractions.
+
+While minimal types (like those with 0 or 1 inhabitant) are omnipresent in pure functional languages like Haskell, they can often feel counter-intuitive or overly abstract to newcomers. Why would we want a type that holds zero values? What is the point of a type with exactly one? This document aims to demystify these concepts. To aid in your learning journey, several hands-on exercises are suggested throughout this guide.
+
+**Intended Audience:** From a pedagogical perspective, this guide is tailored for intermediate Haskell learners and practical software engineers. If you've ever struggled to understand *why* concepts like `Void` or `Proxy` exist in the standard library—rather than just *how* to compile them—this resource provides the foundation. After mastering the *Structures* outlined here, you will be perfectly prepared to study the *Algebras* (Typeclasses and their laws) that bring them to life.
 
 ## A Quick Primer: What is a "Kind"?
 
 Before we dive into counting inhabitants, we need to clarify what we mean by "Kind". 
 Just as **types** classify **values** (e.g., `True` is a value of type `Bool`), **kinds** classify **types**.
 - **`Type`**: This is the kind of a concrete type that can actually hold values at runtime. For example, `Int`, `Bool`, `String`, and `Maybe Int` are all of kind `Type`. *(Note: Older Haskell code uses `*` for this, but modern Haskell uses `Type` imported from `Data.Kind` to avoid conflict with the multiplication operator).*
+  - **Also known as**: Concrete Types, Fully Applied Types, Nullary Type Constructors.
+  - **Typeclasses**: Typeclasses that operate on fully realized data (like `Eq`, `Ord`, `Semigroup`, and `Monoid`) expect variables of kind `Type`. You can append two lists of strings, but you cannot append an abstract `Maybe`.
 - **`Type -> Type`**: This is the kind of a *type constructor* that takes one concrete type and returns a new concrete type. For example, `[]` (List) and `Maybe` are of kind `Type -> Type` because they need a type argument (like `Int`) to become a concrete type (`[Int]` or `Maybe Int`) of kind `Type`.
+  - **Also known as**: Higher-Kinded Types (HKTs), Unary Type Constructors.
+  - **Typeclasses**: Typeclasses that operate on "shapes" or "containers" (like `Functor`, `Applicative`, `Monad`, `Foldable`, and `Traversable`) expect variables of kind `Type -> Type`.
 
 With that in mind, the first chapter will focus on the minimal types of the simplest kind `Type` while the second chapter will be devoted to the minimal types of the second simplest kind `Type -> Type`.
 
@@ -73,6 +82,8 @@ These are standard, concrete types that take no parameters. A type of kind `Type
 Furthermore, it is a fundamental property of type theory that any finite types with exactly $n$ inhabitants are strictly **isomorphic** to each other. Because they have the exact same number of possible distinct runtime values, they can be perfectly mapped back and forth without losing any information. For example, the `Bool` type (which has 2 inhabitants: `True` and `False`) is perfectly isomorphic to the type `Either () ()` (which also has 2 inhabitants: `Left ()` and `Right ()`). *(Note: As we talked about in the Annex, as long as we treat Haskell as a total language and ignore `_|_`, this isomorphism holds perfectly true in the Haskell type-checker!)*
 
 ### 1. 0 Inhabitants (Uninhabited Type)
+
+**Categorical Analog:** *The Initial Object* (denoted as $0$). In Category Theory, an initial object has exactly one unique morphism *to* every other object in the category, but none coming in from populated objects. In Haskell, this corresponds to the `absurd` function (which can produce any type from `Void`).
 
 An uninhabited type (or empty type) is a type that has absolutely no data constructors. Because there are no constructors, it is impossible to create a value of this type at runtime.
 
@@ -288,6 +299,8 @@ Because it is impossible to instantiate a `Void`, we can never use the `Leaf` co
 
 ### 2. 1 Inhabitant (Unit Type)
 
+**Categorical Analog:** *The Terminal Object* (denoted as $1$). In Category Theory, a terminal object has exactly one unique morphism coming in *from* every other object. In Haskell, this corresponds to the fact that you can map any arbitrary Type into the Unit type simply by throwing away the input value (`\x -> ()`).
+
 A 1-inhabitant type has exactly one possible value. Inspecting the value tells you nothing new—it simply conveys "this computation finished" or acts as a structural placeholder.
 
 #### 1. Custom Unit Types
@@ -363,6 +376,8 @@ safeFromJust (Just x) = Right x
 
 ### 3. 2 Inhabitants (Boolean Type)
 
+**Categorical Analog:** *The Coproduct (Sum) of two Terminal Objects* (denoted as $1 + 1 = 2$). In Category theory, adding two single-element sets together creates a two-element set. This fundamentally models branching logic (e.g., "Left or Right", "True or False").
+
 A 2-inhabitants type represents a binary choice. It contains exactly two distinct values.
 
 #### 1. The Standard `Bool`
@@ -416,7 +431,7 @@ This is because every unique possible function `Integer -> Bool` represents a co
 
 ## Chapter 2: Parameterized Types of Kind `Type -> Type`
 
-These are type constructors that require one type argument `a` before they become concrete types. The number of inhabitants discussed here applies *regardless* of what `a` is instantiated to (i.e. the type parameter `a` is completely ignored at the value level).
+These are type constructors that require one type argument `a` before they become concrete types. Because they take another type as an argument, they are categorically referred to as **Higher-Kinded Types (HKTs)**. The number of inhabitants discussed here applies *regardless* of what `a` is instantiated to (i.e. the type parameter `a` is completely ignored at the value level).
 
 ### 1. 0 Inhabitants 
 
@@ -535,3 +550,7 @@ By doing this, a complete crash (`_|_`) is safely intercepted and converted into
 3. Leijen, D., & Meijer, E. (1999). *Domain Specific Embedded Compilers*. ACM SIGPLAN Notices, 35(1), 109-122. (An early and influential paper showcasing the use of Phantom Types in Haskell).
 4. King, A. (2019). *[Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/)*. (A highly influential post demonstrating how to use the type system, including uninhabited types, to prove properties and prevent invalid states).
 5. Diehl, S. *[What I Wish I Knew When Learning Haskell](https://smunix.github.io/dev.stephendiehl.com/hask/tutorial.pdf)*. (A comprehensive guide to practical Haskell, covering many advanced type-level mechanics including `Void` and phantom types).
+6. Taylor, C. *[The Algebra of Algebraic Data Types](https://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/)*. (A famous blog series expanding the structural analogy by directly using high-school algebra to calculate isomorphic data types).
+7. Maguire, S. (2018). *[Thinking with Types](https://thinkingwithtypes.com/)*. (Features early chapters specifically focusing on the "Cardinality" and algebra of types, using structural counting to prove which functions can mathematically exist).
+8. Milewski, B. (2014). *[Category Theory for Programmers](https://bartoszmilewski.com/2014/10/28/category-theory-for-programmers-the-preface/)*. (A highly acclaimed resource that defines the Initial Object (0) and Terminal Object (1) purely structurally before ever introducing Functors and Monads).
+9. Yorgey, B. (2009). *[The Typeclassopedia](https://wiki.haskell.org/Typeclassopedia)*. The Monad Reader Issue 13. (The definitive guide to mapping out the core Haskell typeclasses and their laws).
