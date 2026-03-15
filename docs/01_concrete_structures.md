@@ -408,6 +408,13 @@ Because `()` carries zero information, the only piece of information an entire `
 * `[(), ()]` represents 2
 * ...and so on.
 
+**The Unordered Pair (`UnorderedPair Integer`):**
+Another simple example is the unordered pair we discussed previously. Consider the type:
+```haskell
+data UnorderedPair a = UPair a a
+```
+If we instantiate this with a countably infinite type like `Integer`, the resulting type `UnorderedPair Integer` is also countably infinite. Even though it pairs two numbers (like `UPair 1 2`), because order doesn't mathematically matter in an *unordered* set (meaning `UPair 1 2` is equivalent to `UPair 2 1`), the total number of distinct pairs remains countably infinite!
+
 #### 2. Uncountably Infinite ($2^{\aleph_0}$)
 
 Haskell's laziness and function semantics allow us to define types that contain an **uncountably infinite** number of possible inhabitants (specifically $2^{\aleph_0}$, possessing the same cardinality as the real numbers).
@@ -437,7 +444,7 @@ type IntegerPredicate = Integer -> Bool
 
 This is because defining a single complete function of type `Integer -> Bool` requires making an infinite number of binary choices (the outputs corresponding to the inputs `0, 1, 2...`). Thus, the total number of unique `Integer -> Bool` functions is exactly $2^{\aleph_0}$.
 
----
+***
 
 
 ## Annex 
@@ -472,5 +479,5 @@ safeWrapper title = try (evaluate (legacyCrashingCall title))
 ```
 By doing this, a complete crash (`_|_`) is safely intercepted and converted into a `Left SomeException` within the `IO` boundary.
 
----
+***
 > For references, papers, and further reading on these algebraic structures, refer to [Part 9: Bibliography](09_bibliography.md).
