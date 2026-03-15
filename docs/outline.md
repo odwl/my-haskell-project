@@ -22,7 +22,7 @@ This document serves as the master architectural blueprint for the "Minimal Hask
   - `Monoid`: The laws of identity (`mempty` and `<>`).
   - **The Top Minimal Implementations**: Unpacking exactly why `Bool` has 4 valid Monoids, and why 3-inhabitant types have exactly 33!
 
----
+***
 
 ## Universe 2: Higher-Kinded Types (Kind `Type -> Type`)
 
@@ -54,7 +54,7 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 #### Chapter 5: Monad (Effectful Sequencing)
 - Bind, Join, Kleisli, and the `Const` barrier.
 
----
+***
 
 ## Universe 3: Functor Combinators & N-Ary Glues
 
@@ -69,7 +69,7 @@ This document serves as the master architectural blueprint for the "Minimal Hask
   - Section 3.1: The Value-Level Product (`Applicative`).
   - Section 3.2: The Value-Level Sum (`Alternative`).
 
----
+***
 
 ## Part 6: The Deep Math (`docs/08_deep_math_and_proofs.md`)
 

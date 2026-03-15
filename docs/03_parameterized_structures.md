@@ -79,4 +79,4 @@ import Data.Functor.Const (Const(..))
 -- Const True  :: Const Bool a
 ```
 
----
+***
