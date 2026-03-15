@@ -23,6 +23,8 @@ class Eq a where
     {-# MINIMAL (==) | (/=) #-}
 ```
 
+Notice the `{-# MINIMAL (==) | (/=) #-}` pragma. This means we only *need* to implement one of the two operators. If we write `(==)`, Haskell provides a default implementation `x /= y = not (x == y)` (and vice versa).
+
 To be a valid instance, it must rigorously satisfy the three mathematical laws of an **equivalence relation**:
 
 1. **Reflexivity**: Everything is equal to itself.
@@ -47,12 +49,12 @@ testBatch (eq (undefined :: MyData))
       v1 == _ = absurd v1
   ```
   And because we can never instantiate the values at runtime to break them, the property laws of `Eq` are trivially (vacuously) satisfied:
-  * **Reflexivity**: `v == v`? We can never provide `v`, so yes.
-  * **Symmetry**: `v1 == v2 \Rightarrow v2 == v1`? We can never provide `v1` or `v2`, so yes.
-  * **Transitivity**: `v1 == v2 \land v2 == v3 \Rightarrow v1 == v3`? We can never provide `v1`, `v2`, or `v3`, so yes.
+  * **Reflexivity**: $\forall v$, $v == v$? We can never provide any $v$, so the statement is vacuously true.
+  * **Symmetry**: $\forall (v_1, v_2)$, $v_1 == v_2 \Rightarrow v_2 == v_1$? We can never provide $v_1$ or $v_2$, so yes.
+  * **Transitivity**: $\forall (v_1, v_2, v_3)$, $v_1 == v_2 \land v_2 == v_3 \Rightarrow v_1 == v_3$? We can never provide $v_1$, $v_2$, or $v_3$, so yes.
 
   **Exercise 1: The Impossible `(/=)`**
-  Since `(/=)` is also part of the `Eq` typeclass (with a default implementation `x /= y = not (x == y)`), how would you manually implement `(/=) :: Void -> Void -> Bool` directly without relying on `(==)`?
+  Since `(/=)` is also part of the `Eq` typeclass, how would you manually implement `(/=) :: Void -> Void -> Bool` directly without relying on `(==)`?
   
   <details>
   <summary><b>View Solution</b></summary>
@@ -102,7 +104,7 @@ Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` a
 
 Because we have firmly established how to compare and order concrete values, we can finally move on to *combining* them.
 
----
+***
 
 ## Chapter 2: Associative Binary Operations ($+$ and $\times$)
 
