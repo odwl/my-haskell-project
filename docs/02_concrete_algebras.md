@@ -113,7 +113,7 @@ testBatch (eq (undefined :: MyData))
   This immediately breaks **Reflexivity**, which strictly mandates that for all values $x$, $x == x$ must evaluate to `True`. Because our instance returns `False`, it is an unlawful, mathematically invalid `Eq`!
   </details>
 
-- **2 Inhabitants (`Bool`)**: We must ensure `True == True` and `False == False`, while cross-comparisons yield `False`.
+- **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces `True == True` and `False == False`. But what about `True == False`? Mathematically, if we evaluated it to `True`, we'd be constructing a perfectly lawful equality where `True` and `False` are considered the exact same mathematical value—like synonymous words! To preserve them as distinct concepts, we manually define the cross-comparisons as `False`. The remaining laws (Symmetry and Transitivity) are then trivially fulfilled.
 
   **Exercise 5: Breaking the Math**
   Consider this hypothetical `Eq` instance for a type representing a game's choices:
