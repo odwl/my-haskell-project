@@ -5,19 +5,18 @@
 - [Introduction](#introduction)
 - [A Quick Primer: What is a "Kind"?](#a-quick-primer-what-is-a-kind)
 - [Chapter 1: Types of Kind `Type`](#chapter-1-types-of-kind-type)
-  - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
+  - [Section 1.1: `Void` (0 Inhabitants / Initial Object)](#section-11-void-0-inhabitants--initial-object)
     - [1. Custom Empty Data](#1-custom-empty-data)
-    - [2. `Data.Void` - the built-in equivalent.](#2-datavoid-the-built-in-equivalent)
+    - [2. `Data.Void` - the built-in equivalent.](#2-datavoid---the-built-in-equivalent)
       - [Exercise 1: Implementing the Impossible](#exercise-1-implementing-the-impossible)
-    - [3. Common Idioms](#3-common-idioms)
-      - [1. Type-Level Guarantees](#1-type-level-guarantees)
+    - [3. Type-Level Guarantees](#3-type-level-guarantees)
       - [Exercise 2: Avoiding `fromRight` and Partiality](#exercise-2-avoiding-fromright-and-partiality)
       - [Exercise 3: Traversing Without Failure (Bonus)](#exercise-3-traversing-without-failure-bonus)
       - [Exercise 4: Safe List Processing](#exercise-4-safe-list-processing)
-      - [2. Type-Level Phantom Types for Type Safety](#2-type-level-phantom-types-for-type-safety)
+    - [4. Type-Level Phantom Types for Type Safety](#4-type-level-phantom-types-for-type-safety)
       - [Exercise 5: Phantom Status](#exercise-5-phantom-status)
       - [Exercise 6: A Tree Without Leaves](#exercise-6-a-tree-without-leaves)
-  - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
+  - [Section 1.2: `()` (1 Inhabitant / Terminal Object)](#section-12--1-inhabitant--terminal-object)
     - [1. Custom Unit Types](#1-custom-unit-types)
     - [2. The Standard Unit `()`](#2-the-standard-unit-)
     - [3. The "0-Tuple" Intuition](#3-the-0-tuple-intuition)
@@ -25,16 +24,18 @@
     - [5. Exercises: The Power of One](#5-exercises-the-power-of-one)
       - [Exercise 7: A Safe `head`](#exercise-7-a-safe-head)
       - [Exercise 8: Avoiding `fromJust` with `Either`](#exercise-8-avoiding-fromjust-with-either)
-  - [3. 2 Inhabitants (Boolean Type)](#3-2-inhabitants-boolean-type)
+  - [Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)](#section-13-bool-2-inhabitants--coproduct-of-terminal-objects)
     - [1. The Standard `Bool`](#1-the-standard-bool)
+    - [2. Using `Either () ()`](#2-using-either--)
     - [3. Custom Enumerations](#3-custom-enumerations)
-  - [4. Uncountably Infinite Inhabitants](#4-uncountably-infinite-inhabitants)
-    - [1. Infinite Streams](#1-infinite-streams)
-    - [2. Infinite Functions](#2-infinite-functions)
-
+  - [Section 1.4: Infinite Inhabitants (Countable and Uncountable)](#section-14-infinite-inhabitants-countable-and-uncountable)
+    - [1. Countably Infinite ($\aleph_0$)](#1-countably-infinite-aleph_0)
+    - [2. Uncountably Infinite ($2^{\aleph_0}$)](#2-uncountably-infinite-2aleph_0)
+      - [A. Infinite Streams](#a-infinite-streams)
+      - [B. Infinite Functions](#b-infinite-functions)
 - [Annex ](#annex-)
   - [The Secret Inhabitant: Bottom (`_|_`)](#the-secret-inhabitant-bottom-__)
-  - [Bibliography](#bibliography)
+    - [Interacting with Bottom safely using `IO`](#interacting-with-bottom-safely-using-io)
 
 ## Introduction
 
@@ -154,10 +155,10 @@ vacuous = fmap absurd
 *(Note on safety: Why does `vacuous` not crash if calling `absurd` crashes? Because `absurd` only crashes if you actually give it a `Never` value! If an `f Never` exists at runtime, the structure `f` must logically be "empty" of values—such as `Nothing`, an empty list `[]`, or a `Right`. Consequently, `fmap` traverses the container but never actually finds a `Never` value to apply `absurd` to, meaning the code safely evaluates without crashing!)*
 </details>
 
-#### 3. Common Idioms
-Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler. Here are some very useful common idioms using uninhabited types:
+Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler. Here are some very useful common idioms using uninhabited types: Type-Level Guarantees and Type-Level Phantom Types for Type Safety.
 
-##### 1. Type-Level Guarantees
+#### 3. Type-Level Guarantees
+
 One of the most frequent patterns when dealing with impossible states is safely extracting a value from a sum type where one branch can never happen. This section will demonstrate how to elegantly establish and resolve these type-level guarantees by leveraging the `Either Void a` structure alongside the `either absurd id` idiom. *(Note: you can seamlessly apply the exact same logic to the right side using `Either a Void` and `either id absurd`!)*
 
 By encoding the impossibility of failure directly into the type signature (e.g. `Either Void a`), you mathematically prove a computation is *guaranteed* to succeed! This approach is a far safer alternative to relying on notorious partial functions—like `head`, `fromJust`, `read`, or the list index operator `!!`—that will crash your entire program at runtime if handed unexpected input.
@@ -237,7 +238,7 @@ extractUsers = map (either absurd id)
 ```
 </details>
 
-##### 2. Type-Level Phantom Types for Type Safety
+#### 4. Type-Level Phantom Types for Type Safety
 
 In many mainstream languages like Java, C++, or Python, developers often rely on `const` modifiers, `final` keywords, or empty "marker interfaces" to tag data and enforce invariants at compile-time. Haskell achieves a much more powerful and flexible version of this exact same concept using **Phantom Types**. 
 
