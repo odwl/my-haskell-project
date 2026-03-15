@@ -31,12 +31,19 @@ This project is a comprehensive collection of Haskell exercises focused on core 
 - **test/Exercism/**
     - Automated test suites for all Exercism exercises (Anagram, Bob, Pangram, Reverse String).
 
-## � Categorical Foundations
+## 📘 Type Algebra & Design Documentation
+
+The `docs/` directory contains an extensive, multi-part interactive guide exploring Haskell's type system from the ground up through the mathematical lens of Type Algebra:
+- **`01_concrete_structures.md`**: Explores the structural cardinality of types of kind `Type`, covering uninhabited types (`Void`), the unit type (`()`), binary choices (`Bool`), and countably/uncountably infinite inhabitants.
+- **`02_concrete_algebras.md`**: Delves into the `Eq` and `Ord` typeclasses, their strict mathematical laws, and edge cases involving minimal/quotient types.
+- **`03_parameterized_structures.md`**: Progresses to higher-kinded types (`Type -> Type`) such as `Functor`s and `Bifunctor`s.
+
+## 📐 Categorical Foundations
 
 The Functor, Applicative, and Monadic structures implemented in this project closely follow the mathematical laws and derivations taught in **"Category Theory for Programmers"** by Bartosz Milewski. You can find the PDF version of the book here:
 [Category Theory for Programmers (Milewski 2023)](https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf).
 
-## �🚀 Key Feature: `MaybeList`
+## 🚀 Key Feature: `MaybeList`
 
 The `MaybeList` type (`[Maybe a]`) has been carefully implemented to strictly adhere to all Functor, Applicative, and Monad laws. We achieved this by leveraging the **`MaybeT`** monad transformer and the **`DerivingVia`** extension.
 

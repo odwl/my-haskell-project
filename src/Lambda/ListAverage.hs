@@ -74,16 +74,6 @@ sumMonoid = getSum . foldMap Sum
 lenMonoid :: [Double] -> Int
 lenMonoid = getSum . foldMap (const (Sum 1))
 
--- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
-sumTraverse :: [Double] -> Double
-sumTraverse = 
--- the applicative is probably Sum Double. with a = b = Double
--- we have that Sum is actually an a -> Sum a. 
--- so we can do traverse Sum xs and we obtain a Sum [Double]
--- but how to get a Double? 
--- Sum         :: a -> Sum a
--- Const       :: forall a b. a -> Const a b
--- Const . Sum :: forall a b. a -> Const (Sum a) b
 
 -- | Returns the sum using Applicative '<*>' on Const (Sum Double)
 -- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
