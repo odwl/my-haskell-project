@@ -144,3 +144,27 @@ test-suite all-tests
     my-haskell-project,
 
   ghc-options: -fbyte-code
+
+executable weather-client
+  import: warnings
+  main-is: Main.hs
+  hs-source-dirs: src/WeatherClient
+  default-language: Haskell2010
+  build-depends:
+    base >=4.14 && <5,
+    req,
+    aeson,
+    text,
+    bytestring
+
+executable flight-client
+  import: warnings
+  main-is: Main.hs
+  hs-source-dirs: src/FlightClient
+  default-language: Haskell2010
+  build-depends:
+    base >=4.14 && <5,
+    req,
+    aeson,
+    text,
+    bytestring
