@@ -121,7 +121,7 @@ This document serves as the master architectural blueprint for the four-part "Mi
 
 ---
 
-## Part 3: The Aggregators (docs/03_the_aggregators.md)
+## Part 3: The Monoids (docs/03_the_monoid.md)
 
 ### Chapter 6: Other Minimals
 #### Section 6.1: Minimal Monoid
@@ -137,6 +137,10 @@ This document serves as the master architectural blueprint for the four-part "Mi
 - **The Limits of Parametricity**: Unlike Functors (`Type -> Type`), Monoids (`Type`) operate on concrete values, meaning parametricity doesn't force a single unique implementation (e.g., `Double` can be `Sum` or `Product`).
 - **The Sum Monoid**: A practical numeric monoid (`mempty = 0`, `<> = +`).
 - **Aggregation with `foldMap`**: How to map elements to a Monoid and fold them securely without requiring the full Monad machinery.
+
+---
+
+## Part 4: The Foldables (docs/04_the_foldable.md)
 
 ### Chapter 7: Minimal Foldable and the Foldable Laws
 #### Section 7.1: What is a Foldable?
@@ -172,7 +176,7 @@ This document serves as the master architectural blueprint for the four-part "Mi
 
 ---
 
-## Part 4: The Deep Math (docs/04_the_deep_math.md)
+## Part 5: The Deep Math (docs/05_the_deep_math.md)
 
 ### Chapter 4: Deep Dive into Bifunctors
 #### Section 4.1: The True Nature of Bifunctors
