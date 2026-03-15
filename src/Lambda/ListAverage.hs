@@ -55,7 +55,7 @@ instance Monoid MySum where
   -- mappend (MySum a) (MySum b) = MySum (a + b)
 
 sumMySum :: [Double] -> Double
-sumMySum = (\(MySum x) -> x) . foldMap MySum
+sumMySum xs = let (MySum x) = foldMap MySum xs in x
 
 -- instance Functor MySum where
 --   fmap f (MySum a) = MySum (f a)
