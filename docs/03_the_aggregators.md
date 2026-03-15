@@ -3,11 +3,31 @@
 ## Chapter 6: Other Minimals
 
 ### Section 6.1: Minimal Monoid
- could possibly be a monoid. 
 
-While functors and applicatives define the shape of computations, A type is a monoid if it has two operations an 0-ary and a 2-ary. As we will see *Monoids* give us a fundamental way to aggregate concrete values. A Monoid is defined by two simple things:
-1. `mempty`: An identity "empty" value.
-2. `mappend` (or `<>`): A binary associative operation to combine two values.
+While functors and applicatives define the shape of computations, *Monoids* give us a fundamental way to aggregate concrete values. To be a valid `Monoid` in Haskell, a type must satisfy two main conditions:
+
+#### 1. A Well-Kinded Type (`Type`)
+Unlike Functors which must be type constructors of kind `Type -> Type` (like `[]` or `Maybe`), a Monoid must have kind `Type`. It operates on fully saturated, concrete value types like `[Int]`, `String`, or `Sum Double`. You cannot have a `Monoid` instance for a bare constructor like `Maybe`, only for a specific type like `Maybe Int`.
+
+> [!WARNING]
+> **What about function types?**
+> It is a very common trap to look at a function type like `Integer -> Bool` and intuitively guess its kind is `Type -> Type` because of the single arrow. But this is an illusion of syntax!
+> 
+> The arrow operator `(->)` is actually an infix type constructor. It takes *two* concrete types to build a final concrete type. Thus, its base kind is `Type -> Type -> Type`.
+> * `(->)` alone has kind `Type -> Type -> Type`
+> * `(->) Integer` (partially applied) has kind `Type -> Type`
+> * `(->) Integer Bool` (fully applied, normally written as `Integer -> Bool`) has kind `Type`.
+> 
+> Because `Integer -> Bool` is fully saturated and has kind `Type`, it operates as a concrete value type and perfectly qualifies to be a Monoid! In fact, Haskell automatically provides a Monoid instance for any function `a -> b` provided that the return type `b` is a Monoid.
+
+> [!NOTE]
+> However, the *concept* of a monoid absolutely exists for `Type -> Type`!
+> In Haskell, the monoid for types of kind `Type -> Type` is captured by the `Alternative` typeclass (which we will talk about later). If you map the signatures conceptually, it's an exact match: `mempty` becomes `empty :: f a` and `<>` becomes `<|> :: f a -> f a -> f a`.
+
+#### 2. Two Core Operations
+A type is a monoid if it has two operations: a 0-ary identity and a 2-ary combination.
+1. `mempty :: a`: An identity "empty" value.
+2. `mappend :: a -> a -> a` (or `<>`): A binary associative operation to combine two values.
 
 **The Monoid Laws and Testing**
 Just like Functors and Applicatives, instances of `Monoid` must rigidly obey mathematical laws:
@@ -92,13 +112,27 @@ What happens when we jump to a type with exactly 3 values (like `LT`, `EQ`, `GT`
 
 Therefore, for a type with 3 values, out of 19,683 possible operations, exactly **33 form perfectly valid Monoids**!
 
-#### 4. Types with Countably Infinite Inhabitants (e.g., `Integer` or `String`)
+#### 4. Types with Countably Infinite Inhabitants (e.g., `Integer`)
 What if the type has an infinite number of values? In this case, there are an **infinite** number of valid Monoids. 
 For example, for standard numeric types (`Integer`), you trivially have `Sum` ($0, \mathbf{+}$) and `Product` ($1, \mathbf{\times}$), but also `Max` ($-\infty, \max$) and `Min` ($\infty, \min$), along with infinite logical bitwise operations like `And` and `Xor`. 
 
-Furthermore, any type that models a sequence (like `String` or `[a]`) forms the "Free Monoid", meaning simply concatenating elements end-to-end forms a perfectly valid, structurally infinite layer of monoids!
+#### 5. The Free Monoid (`[a]`)
+An incredibly special case of a countably infinite type is the List (`[a]`). Lists form what mathematicians term the **Free Monoid** over a set `a`. A "Free" object in algebra is one that satisfies the minimal laws required, and absolutely nothing else. 
 
-#### 5. Why do `Sum`, `Product`, `Max`, and `Min` stand out?
+By concatenating elements end-to-end (`++`), lists perfectly obey the Monoid laws:
+* `[] ++ xs = xs` (Left Identity)
+* `xs ++ [] = xs` (Right Identity)
+* `(as ++ bs) ++ cs = as ++ (bs ++ cs)` (Associativity)
+
+The List monoid does no "computation" or "squashing" like `Sum` or `Product` do; it purely memorizes the order and elements over time. Because it is the "purest" monoid with no additional baggage, you can map any List into *any other valid Monoid* using `foldMap`:
+```haskell
+-- The Free Monoid perfectly translates into any other Monoid:
+sumList xs = getSum (foldMap Sum xs)
+mulList xs = getProduct (foldMap Product xs)
+```
+In fact, `Foldable` is entirely defined by a data structure's ability to be collapsed down into this Free Monoid!
+
+#### 6. Why do `Sum`, `Product`, `Max`, and `Min` stand out?
 You might notice that while there are infinitely many ways to combine integers, we almost always reach for these four. What makes them "atomic"?
 
 Just as Functors can be built from "atoms" (Identity, Constant, Either, Pair) using composition, these Monoids are the **natural algebraic projections** of underlying structures:
@@ -109,7 +143,7 @@ Just as Functors can be built from "atoms" (Identity, Constant, Either, Pair) us
 In this sense, these monoids aren't arbitrary; they are the **unique** ways to satisfy the Monoid laws while preserving the deeper algebraic relationships (like distribution or ordering) already present in the type. 
 
 **Is Parametricity Helping Here?**
-Unlike Functors (`* -> *`), which are parameterized over *any* type, Monoids operate on concrete types (`*`). This means parametricity *does not* force a single, unique implementation. For example, the type `Double` could form a monoid under addition (`0` and `+`) or under multiplication (`1` and `*`). Haskell uses `newtype` wrappers like `Sum` and `Product` to explicitly choose the monoidal behavior.
+Unlike Functors (`Type -> Type`), which are parameterized over *any* type, Monoids operate on concrete types (`Type`). This means parametricity *does not* force a single, unique implementation. For example, the type `Double` could form a monoid under addition (`0` and `+`) or under multiplication (`1` and `*`). Haskell uses `newtype` wrappers like `Sum` and `Product` to explicitly choose the monoidal behavior.
 
 **The `Sum` Monoid**
 `Sum` is a very common monoid. For `Sum Double`, `mempty = Sum 0` and `Sum x <> Sum y = Sum (x + y)`.
@@ -129,8 +163,8 @@ While Functors map values and Applicatives/Monads sequence them, a `Foldable` is
 At its core, a `Foldable` is a typeclass that abstracts the idea of "walking through" a data structure and squashing all of its elements together. 
 
 #### 1. A Well-Kinded Type Constructor
-Before anything else, a type must have the correct "shape" to be Foldable. Mathematically, `Foldable` is a property of a type constructor of kind `* -> *` (like `List` or `Maybe`). It describes a container that holds some type `a` (`t a`). 
-Because of this strict kind signature, absolute atomic concrete types like `Int`, `Double`, or the uninhabited type `Void` (which all possess kind `*`) mathematically cannot be `Foldable`. You cannot fold an `Int` because there's no generic type parameter `a` to map over!
+Before anything else, a type must have the correct "shape" to be Foldable. Mathematically, `Foldable` is a property of a type constructor of kind `Type -> Type` (like `List` or `Maybe`). It describes a container that holds some type `a` (`t a`). 
+Because of this strict kind signature, absolute atomic concrete types like `Int`, `Double`, or the uninhabited type `Void` (which all possess kind `Type`) mathematically cannot be `Foldable`. You cannot fold an `Int` because there's no generic type parameter `a` to map over!
 
 #### 2. Unconstrained Morphism Mapping (`foldMap`)
 In Haskell's `Data.Foldable` class, there are dozens of functions available (such as `length`, `null`, `toList`, and `foldl`). However, to make your type an instance of `Foldable`, you mathematically only need to provide exactly **one** of two core functions (The Minimal Complete Definition):
@@ -231,7 +265,7 @@ instance Foldable Identity where
 #### 4. The Ghost Data (`Const r`)
 What if your data structure physically holds data in memory, but it's the *wrong* type parameter? 
 ```haskell
--- Notice the kind is `* -> * -> *`. We fold over the SECOND parameter 'a'
+-- Notice the kind is `Type -> Type -> Type`. We fold over the SECOND parameter 'a'
 data Const r a = Const r
 
 instance Foldable (Const r) where
@@ -279,7 +313,7 @@ Once your elements are mathematically aligned into a list, folding them reduces 
 
 ### Section 7.3: The Algebra of Foldables
 
-Just like Functors and Bifunctors, the `Foldable` typeclass strictly shares the same structural shape (`* -> *`). Because of this, it inherently possesses the exact same magnificent algebraic composition rules! 
+Just like Functors and Bifunctors, the `Foldable` typeclass strictly shares the same structural shape (`Type -> Type`). Because of this, it inherently possesses the exact same magnificent algebraic composition rules! 
 
 We can mathematically prove that if `f` and `g` are both valid `Foldable` structures, then their **Sum**, **Product**, and **Composition** are also mathematically guaranteed to be seamlessly `Foldable`.
 

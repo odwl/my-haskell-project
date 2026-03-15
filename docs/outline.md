@@ -17,13 +17,13 @@ This document serves as the master architectural blueprint for the four-part "Mi
 
 ### Chapter 2: The Foundations of Functors and Bifunctors
 #### Section 2.1: What is a Functor?
-- **Foundations**: Well-kindedness (`* -> *`), Unconstrained Morphism Mapping (`fmap`).
+- **Foundations**: Well-kindedness (`Type -> Type`), Unconstrained Morphism Mapping (`fmap`).
 - **Parametricity**: Theorems for free!
 - **Mathematical Laws**: Identity and Composition.
   - **Automated Law Testing**: Professional verification with `tasty-checkers`.
   - **Caveat: Testing vs. Proof**: The probabilistic nature of property-based testing.
 - **Categorical Functors that are not Haskell Functors**:
-  - **Bifunctors**: Wrong kind (`* -> * -> *`).
+  - **Bifunctors**: Wrong kind (`Type -> Type -> Type`).
   - **Restricted Functors**: Requires constraints (e.g., `Data.Set` with `Ord`).
 - **Law-Breaking Functors (Non-Valid)**:
   - **The Counter**: Mutations breaking identity.
@@ -134,13 +134,13 @@ This document serves as the master architectural blueprint for the four-part "Mi
   - **3 Inhabitants (e.g., `Ordering`)**: The combinatorial explosion: 19,683 possible operations → 243 with an identity → Exactly 33 valid Monoids!
   - **Countably Infinite Inhabitants (e.g., `Integer`)**: There are infinitely many valid Monoids (e.g., `Sum`, `Product`, `Max`, `Min`, `List` concatenation).
 - **Commutativity is Not Required**: Explaining that Monoids only require Associativity and Identity. Commutative monoids exist (Abelian Monoids like `Sum`), but many foundational programming monoids (like `List`, `First`, and `Endo`) are strictly non-commutative.
-- **The Limits of Parametricity**: Unlike Functors (`* -> *`), Monoids (`*`) operate on concrete values, meaning parametricity doesn't force a single unique implementation (e.g., `Double` can be `Sum` or `Product`).
+- **The Limits of Parametricity**: Unlike Functors (`Type -> Type`), Monoids (`Type`) operate on concrete values, meaning parametricity doesn't force a single unique implementation (e.g., `Double` can be `Sum` or `Product`).
 - **The Sum Monoid**: A practical numeric monoid (`mempty = 0`, `<> = +`).
 - **Aggregation with `foldMap`**: How to map elements to a Monoid and fold them securely without requiring the full Monad machinery.
 
 ### Chapter 7: Minimal Foldable and the Foldable Laws
 #### Section 7.1: What is a Foldable?
-- **1. A Well-Kinded Type Constructor**: Why `Foldable` requires kind `* -> *` (excluding `Int` and `Void`).
+- **1. A Well-Kinded Type Constructor**: Why `Foldable` requires kind `Type -> Type` (excluding `Int` and `Void`).
 - **2. Unconstrained Morphism Mapping (`foldMap`)**: The Minimal Complete Definition and the logic of Parametricity Constraints.
 - **3. Mathematical Laws**: Ensuring fold consistency across modes of traversal.
 - **Category Theory Origin**: The lossy projection onto a Monoid (`traverse` via `Const`).

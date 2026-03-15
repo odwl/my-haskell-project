@@ -1,6 +1,6 @@
 # Annex: The Functor Monoid and N-ary Glues
 
-This document captures a profound mathematical exploration into the foundations of Algebraic Data Types (ADTs). Instead of looking at simple types, we will investigate the **Category of Endofunctors** (`* -> *`). 
+This document captures a profound mathematical exploration into the foundations of Algebraic Data Types (ADTs). Instead of looking at simple types, we will investigate the **Category of Endofunctors** (`Type -> Type`). 
 
 The goal is to discover the irreducible minimal generating set of the Functor universe.
 
@@ -12,7 +12,7 @@ If we have a universe of Functors, a mathematically perfect way to define a "str
 We can represent this concept as a type-level record or class:
 ```haskell
 -- | A Monoid over the Functor Category
-class FunctorMonoid (m :: [* -> *] -> * -> *) where
+class FunctorMonoid (m :: [Type -> Type] -> * -> *) where
     -- The 0-ary Base Case (Identity Element)
     -- Must be a mathematically valid Functor.
     type Atom m :: * -> *
@@ -103,7 +103,7 @@ Because if you have that `FunctorMonoid` record, you have mathematically perfect
 
 ```haskell
 -- The Universal N-ary Factory
-type family FoldGlue (m :: [* -> *] -> * -> *) (fs :: [* -> *]) :: * -> * where
+type family FoldGlue (m :: [Type -> Type] -> * -> *) (fs :: [Type -> Type]) :: * -> * where
     FoldGlue m '[]       = Atom m
     FoldGlue m (f ': fs) = Bin m f (FoldGlue m fs)
 ```
@@ -111,7 +111,7 @@ type family FoldGlue (m :: [* -> *] -> * -> *) (fs :: [* -> *]) :: * -> * where
 Thanks to parametricity, folding the **Sum Record** dynamically generates the profound construct `UnionF`:
 ```haskell
 -- The Output of folding the Sum Record
-data UnionF (fs :: [* -> *]) a where
+data UnionF (fs :: [Type -> Type]) a where
     ThisF :: f a -> UnionF (f ': fs) a
     ThatF :: UnionF fs a -> UnionF (f ': fs) a
 ```
@@ -119,7 +119,7 @@ data UnionF (fs :: [* -> *]) a where
 And folding the **Product Record** dynamically generates `HListF`:
 ```haskell
 -- The Output of folding the Product Record
-data HListF (fs :: [* -> *]) a where
+data HListF (fs :: [Type -> Type]) a where
     HNilF  :: HListF '[] a                     
     HConsF :: f a -> HListF fs a -> HListF (f ': fs) a  
 ```
@@ -155,7 +155,7 @@ If the Sum Record is the compile-time choice of functor shapes, `Alternative` is
 The compile-time N-ary glues build new varying data structures (`UnionF` and `HListF`); the runtime `Applicative` and `Alternative` merge values within identical existing structures. Yet, they are governed by the fundamentally identical mathematical laws of Functor Monoids!
 
 ## 6. The Formal Lexicon
-There isn't exactly *one* single buzzword that covers the entire N-ary signature `[* -> *] -> (* -> *)`, as the name changes depending on the domain:
+There isn't exactly *one* single buzzword that covers the entire N-ary signature `[Type -> Type] -> (* -> *)`, as the name changes depending on the domain:
 
 1.  **Category Theory**: In the category of endofunctors, `UnionF` is formally the **N-ary Coproduct of Endofunctors**, and `HListF` is the **N-ary Product of Endofunctors**. Our dummy zero and one glues are the *Initial and Terminal Objects* of the Functor Category. The 0-ary and 2-ary pairing we defined is formally a **Monoidal Category over Functors**.
 2.  **Advanced Haskell (`generics-sop`)**: In libraries like Generics-SOP, these N-ary glues represent the true foundational bedrock (`NS` and `NP`). They are generally categorized as **Functor Combinators** or **Higher-Order Functors**.

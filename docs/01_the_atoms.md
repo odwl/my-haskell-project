@@ -41,10 +41,10 @@ If you ask a mathematician, they will point you to Saunders Mac Lane, one of the
 
 In Haskell, the `Functor` typeclass is a specific implementation of a categorical functor. To be a valid `Functor` in Haskell, you must satisfy three distinct conditions:
 
-#### 1. A Well-Kinded Type Constructor (`* -> *`)
+#### 1. A Well-Kinded Type Constructor (`Type -> Type`)
 You must be an *Endofunctor* on the category `Hask`. This means you map from `Hask` back to `Hask`. 
 
-*   *Invalid Kind*: `Int` (kind `*`) or `(,)` (kind `* -> * -> *`) are not functors on their own. They don't have the right "shape" to be a container/wrapper. A functor must be a "context" that can hold any type `a`.
+*   *Invalid Kind*: `Int` (kind `Type`) or `(,)` (kind `Type -> Type -> Type`) are not functors on their own. They don't have the right "shape" to be a container/wrapper. A functor must be a "context" that can hold any type `a`.
 
 #### 2. Unconstrained Morphism Mapping (`fmap`)
 You must provide a function `fmap :: (a -> b) -> f a -> f b`. This is the implementation of how "arrows" are mapped between categories. Crucially, in Haskell, this mapping must be **unconstrained**: it must work for *any* type `a` and `b`. You cannot require headers or properties (like `Eq` or `Ord`).
@@ -121,8 +121,8 @@ In all three cases above, we can "fix" the problem by adding a constraint like `
 By adding a constraint, you are explicitly telling the compiler: "I am no longer operating on the category of all types (`Hask`); I am now operating only on a subcategory." The standard `Functor` typeclass is simply the special case where that subcategory is the entire category `Hask`.
 
 If we look at valid candidates in Haskell:
-*   `Maybe` is a valid functor candidate (Kind `* -> *`).
-*   `Identity` is a valid functor candidate (Kind `* -> *`).
+*   `Maybe` is a valid functor candidate (Kind `Type -> Type`).
+*   `Identity` is a valid functor candidate (Kind `Type -> Type`).
 
 ##### 4.2. The Malicious Functor (Hidden Law-Breaker)
 This example illustrates why testing alone isn't proof. It has the correct signature and is parametric, but it "hides" its law-breaking behavior behind a conditional:
@@ -141,7 +141,7 @@ If `testBatch` never randomly generates the integer `12345`, this structure will
 
 ### Section 1.2: Minimal Functors
 
-Now that we have explored several examples of types that are *not* valid functors, let's reverse the approach. We will define the absolute simplest, most minimal structural types we can physically imagine building in Haskell. We will conduct this exercise for both standard **Functors** (types with a single parameter, `* -> *`) and **Bifunctors** (types with two parameters, `* -> * -> *`). 
+Now that we have explored several examples of types that are *not* valid functors, let's reverse the approach. We will define the absolute simplest, most minimal structural types we can physically imagine building in Haskell. We will conduct this exercise for both standard **Functors** (types with a single parameter, `Type -> Type`) and **Bifunctors** (types with two parameters, `Type -> Type -> Type`). 
 
 The beautiful consequence of choosing structures this simple is that it perfectly demonstrates the "forced hand" of **parametricity**. Because these minimal types contain almost no data, there is mathematically only a single possible way to map over them without violating the type signature. Once we define the type, the compiler practically writes the unique `Functor` and `Bifunctor` instances for us!
 
@@ -290,7 +290,7 @@ To truly illustrate the power of parametricity, consider what happens when we co
 
 ### Section 1.3: Minimal Bifunctors
 
-Just as we started Chapter 1 by looking at the simplest possible Functors (`Proxy`, `Const`, `Identity`), we can apply the exact same "shrinking" exercise to Bifunctors (`* -> * -> *`). While `Either` (Sum) and `(,)` (Product) are the fundamental operations of our algebra, they both contain term-level data. We can go simpler in three distinct ways:
+Just as we started Chapter 1 by looking at the simplest possible Functors (`Proxy`, `Const`, `Identity`), we can apply the exact same "shrinking" exercise to Bifunctors (`Type -> Type -> Type`). While `Either` (Sum) and `(,)` (Product) are the fundamental operations of our algebra, they both contain term-level data. We can go simpler in three distinct ways:
 
 ##### 1. The Absolute Simplest: The "Bi-Proxy" (Zero Data)
 Just like `Proxy` ignoring its `a`, the simplest Bifunctor ignores *both* `a` and `b`. It is essentially an empty box with two phantom types.
@@ -593,7 +593,7 @@ To make this concrete:
 
 When you build an algebraic equation in mathematics, like $f(x) = 2x + 1$, you only need two foundational components to start building: your numbers (constants like 1, 2) and your variable ($x$).
 
-For standard Endofunctors (`* -> *`), it is incredibly obvious what our two "atomic" building blocks must therefore be:
+For standard Endofunctors (`Type -> Type`), it is incredibly obvious what our two "atomic" building blocks must therefore be:
 1.  **The Constants ($C$)**: `Const r` represents any constant value independent of `x`. At its absolute simplest scale, `Proxy` (or `Const ()`) represents the mathematical constant $1$.
 2.  **The Single Variable ($X$)**: `Identity` rigidly represents the single parameter/variable $x$ itself.
 
@@ -601,7 +601,7 @@ Every other single-variable algebraic data type in Haskell can be built by takin
 
 But are Sums and Products Functors themselves? Yes! In Category Theory, operations like Sum ($+$) and Product ($\times$) are specifically known as **Bifunctors** because they map *two* categories (or a product of categories) into one. In Haskell, these are represented by `Either` (Sum) and `(,)` (Product). 
 
-Because they are Bifunctors, if you fix one of their arguments, they immediately become standard Endofunctors (`* -> *`). Furthermore, the category of Functors is closed over these operations: the sum or product of two Functors is inherently a Functor (like `Data.Functor.Sum` and `Data.Functor.Product`).
+Because they are Bifunctors, if you fix one of their arguments, they immediately become standard Endofunctors (`Type -> Type`). Furthermore, the category of Functors is closed over these operations: the sum or product of two Functors is inherently a Functor (like `Data.Functor.Sum` and `Data.Functor.Product`).
 
 *(Note: The formal laws governing how these products and sums associate and interact are a bit more complex, requiring them to verify the **pentagon** and **triangle** laws from Monoidal Categories. We will refer to the details of these laws in [Chapter 5](#chapter-5-monoidal-categories) at the end of this journey).*
 
@@ -614,7 +614,7 @@ To see these Bifunctors in action with our simplest atomic functor, `Proxy`:
 
 Is there an algebra for Bifunctors just as there is for standard Functors? Absolutely! Because the category of Functors is closed over Products and Sums, we can combine our foundational Bifunctor atoms exactly the same way to build incredibly complex Bifunctors.
 
-If standard Functors (`* -> *`) are single-variable polynomials like $f(x) = x^2 + 1$, then Bifunctors (`* -> * -> *`) are simply two-variable polynomials like $f(a, b) = a \times b + a$. 
+If standard Functors (`Type -> Type`) are single-variable polynomials like $f(x) = x^2 + 1$, then Bifunctors (`Type -> Type -> Type`) are simply two-variable polynomials like $f(a, b) = a \times b + a$. 
 
 This means it becomes very obvious what our two "atomic variables" are:
 *   **The First Variable ($A$)**: `ConstLeft a b = ConstLeft a` (ignoring the right).
@@ -625,7 +625,7 @@ Equipped with our two atomic variables, we can perform any algebraic operation:
 *   **Bifunctor Products ($\times$)**: We can tuple Bifunctors together (e.g. `(Either a b, ConstContext String a b)`).
 *   **Bifunctor Fixed Points**: Just like `List` recursively nests standard Functors, structures like a `Bifunctor Tree` can recursively nest Bifunctors (e.g. `data BiTree a b = Leaf a b | Node (BiTree a b) (BiTree a b)`).
 
-Anything you can do in one dimension (`* -> *`), Category Theory allows you to transparently extend into two dimensions (`* -> * -> *`) using the exact same polynomial algebra!
+Anything you can do in one dimension (`Type -> Type`), Category Theory allows you to transparently extend into two dimensions (`Type -> Type -> Type`) using the exact same polynomial algebra!
 
 #### 3. Composing Functors into a Bifunctor (`Biff`)
 While `Compose` elegantly handles nesting a Functor inside another Functor (`f ∘ g`), what happens when we want to compose Functors directly into the independent branches of a **Bifunctor**?
@@ -678,12 +678,12 @@ So, the polynomial functor shape for `Shape a` is mathematically written as:
 
 ### Section 1.8: The Parallel Functor Ecosystem (Solutions for Restricted Functors)
 
-As we briefly highlighted in Section 2.1, the mathematical definition of a functor is far broader than Haskell's native `Functor` typeclass (which strictly maps `* -> *` unconstrained). When structures inevitably violate these two rules, we do not throw our hands up in defeat! 
+As we briefly highlighted in Section 2.1, the mathematical definition of a functor is far broader than Haskell's native `Functor` typeclass (which strictly maps `Type -> Type` unconstrained). When structures inevitably violate these two rules, we do not throw our hands up in defeat! 
 
 The Haskell ecosystem simply defines *parallel* typeclasses to capture these different categorical mappings, allowing us to retain the exact same structural guarantees.
 
 #### 1. The Too-Wide Functor: `Bifunctor`
-If a structure has a kind of `* -> * -> *` (like `Either` or `(,)`), it is a perfectly valid functor mapping from the product category $Hask \times Hask \to Hask$. Because it requires two types, we use `Data.Bifunctor`:
+If a structure has a kind of `Type -> Type -> Type` (like `Either` or `(,)`), it is a perfectly valid functor mapping from the product category $Hask \times Hask \to Hask$. Because it requires two types, we use `Data.Bifunctor`:
 ```haskell
 class Bifunctor p where
     bimap :: (a -> b) -> (c -> d) -> p a c -> p b d
@@ -710,7 +710,7 @@ class Profunctor p where
 #### 4. The Constrained Functor: `MonoFunctor` (The `mono-traversable` library)
 Recall that `Data.Set` fails to be a `Functor` because rebuilding its internal tree requires an `Ord a` constraint on mapping. It is a "Restricted Functor" mapping only onto a subcategory. 
 
-Similarly, structures like `ByteString` or `Text` aren't parametric at all (they have kind `*`), but logically act precisely like containers. To solve this, Michael Snoyman's `mono-traversable` library created the `MonoFunctor` typeclass:
+Similarly, structures like `ByteString` or `Text` aren't parametric at all (they have kind `Type`), but logically act precisely like containers. To solve this, Michael Snoyman's `mono-traversable` library created the `MonoFunctor` typeclass:
 ```haskell
 class MonoFunctor mono where
     omap :: (Element mono -> Element mono) -> mono -> mono
