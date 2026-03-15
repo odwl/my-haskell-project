@@ -101,5 +101,5 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 ### Annex A: Proof of 2-Inhabitant Associativity
 - **The Cayley Table Proof**: Mathematical proof showing that once a two-sided identity element is locked in for a 2-inhabitant type, the remaining $2 \times 2$ grid leaves no structural room for associativity to fail.
 
-### Bibliography
-- Reading list: Wadler, Moggi, Danielsson, Milewski, Swierstra, McBride.
+### Part 9: Bibliography (`docs/09_bibliography.md`)
+- **Focus**: Centralized list of foundational papers, influential articles, and recommended reading for the concepts discussed throughout this series.

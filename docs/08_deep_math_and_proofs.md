@@ -225,17 +225,4 @@ These govern how typeclass methods (like `fmap`, `bimap`, `>>=`) must behave com
 **Structural Isomorphisms (Type-level mapping)**:
 These govern the "shape" of the types themselves. When we say $B(I, A) \cong A$ (e.g., `(Either Void A) ≅ A`), we are describing **structural isomorphism**. The compiler knows that `Either Void Bool` and `Bool` are two entirely different types (`Left True` vs `True`). However, because `Void` contains no information, we can write a perfect, lossless two-way mapping between the two structures. These mappings are the exact "Left/Right Unitors". They are not equalities; they are natural transformations between non-equal types.
 
-## Bibliography
-*   **"Theorems for free!"** by Philip Wadler (1989).
-*   **"Notions of computation and monads"** by Eugenio Moggi (1991).
-*   **"Fast and Loose Reasoning is Morally Correct"** by Nils Anders Danielsson, John Hughes, Patrik Jansson, and Jeremy Gibbons (2006) — *A practice widely accepted in the Haskell community, beautifully formalized by Nils Anders Danielsson, John Hughes, and others in their famous paper: "Fast and Loose Reasoning is Morally Correct".*
-*   **"The Typeclassopedia"** by Brent Yorgey (The Monad Reader Issue 13, 2009).
-*   *(Recommended Reading)* **"Thinking with Types"** by Sandy Maguire.
-*   *(Recommended Reading)* **"Functors, Applicatives, And Monads In Pictures"** by Aditya Bhargava.
-*   **"Category Theory for Programmers"** (Introductory Notes) by Bartosz Milewski ([PDF Link](https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf)).
-*   **"Algebra of Programming"** by Richard Bird and Oege de Moor (1997) — *A foundational text exploring how algebras and functor subcategories are derived systematically from building blocks like Bifunctors.*
-*   **"Data types à la carte"** by Wouter Swierstra (2008) — *A seminal paper proving how to use the algebraic Sum operator over Functors to modularly compose distinct data types and interpreters.*
-*   **"The derivative of a regular type is its type of one-hole contexts"** by Conor McBride (2001) — *A mind-bending proof that taking the calculus derivative of a data type's polynomial structurally generates its exact Zipper.*
-
----
-
+> For references, papers, and further reading on these advanced concepts, refer to [Part 9: Bibliography](09_bibliography.md).
