@@ -1,4 +1,4 @@
-{-# LANGUAGE EmptyCase #-}
+{-# LANGUAGE EmptyCase, DerivingVia #-}
 
 module Lambda.ListAverage where
 
@@ -7,14 +7,7 @@ import Control.Monad.State
 import Data.Functor.Const (Const (..), getConst)
 import Data.Monoid (Sum (..), getSum)
 
--- import Data.Bifunctor (bimap)
 
--- | Returns the sum of all elements using pattern matching
-{-# ANN sumCase "HLint: ignore Use foldr" #-}
-{-# ANN sumCase "HLint: ignore Use sum" #-}
-sumCase :: [Double] -> Double
-sumCase [] = 0
-sumCase (x : xs) = x + sumCase xs
 
 -----------------------------------
 -- Minimum Void
@@ -31,46 +24,54 @@ collapse :: Either Never a -> a
 collapse (Left v) = absurd v
 collapse (Right x) = x
 
------------------------------------
--- Minimum Foldable
------------------------------------
--- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
-
 data VoidFoldable a
 
 instance Foldable VoidFoldable where
   foldMap _ v = case v of {}
 
--- My sum foldable.
-newtype MySum = MySum Double deriving (Eq, Show)
-
-getMySum :: MySum -> Double
-getMySum (MySum x) = x
-
-instance Semigroup MySum where
-  MySum a <> MySum b = MySum (a + b)
-
-instance Monoid MySum where
-  mempty = MySum 0
-  -- mappend (MySum a) (MySum b) = MySum (a + b)
-
-sumMySum :: [Double] -> Double
-sumMySum xs = let (MySum x) = foldMap MySum xs in x
-
--- instance Functor MySum where
---   fmap f (MySum a) = MySum (f a)
-
--- | Returns the sum of all elements using fold
--- foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
-{-# ANN sumFold "HLint: ignore Use sum" #-}
-sumFold :: [Double] -> Double
-sumFold = foldl (+) 0
-
--- | Returns the sum of all elements using monoid map
+-----------------------------------
+-- Minimum Foldable
+-----------------------------------
 -- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
--- Sum :: a -> Sum a
+-- foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
+-- foldM :: (Foldable t, Monad m) => (b -> a -> m b) -> b -> t a -> m b
+-- foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
+
+-- | Returns the sum of all elements using pattern matching
+{-# ANN sumCase "HLint: ignore Use foldr" #-}
+{-# ANN sumCase "HLint: ignore Use sum" #-}
+sumCase :: [Double] -> Double
+sumCase [] = 0
+sumCase (x : xs) = x + sumCase xs
+
+lenMyLen :: [Double] -> Int
+lenMyLen = getSum . foldMap (const (Sum 1))
+
 sumMonoid :: [Double] -> Double
 sumMonoid = getSum . foldMap Sum
+
+-- | Returns the sum of all elements using foldl
+{-# ANN sumFoldl "HLint: ignore Use sum" #-}
+sumFoldl :: [Double] -> Double
+sumFoldl = foldl (+) 0
+
+-- | Returns the length of the list using foldl
+lenFoldl :: [Double] -> Double 
+lenFoldl = foldl (const . (+1)) 0
+
+-- | Returns the sum of all elements using foldr
+sumFoldr :: [Double] -> Double
+sumFoldr = foldr (+) 0
+
+-- | Returns the length of the list using foldr
+lenFoldr :: [Double] -> Double
+lenFoldr = foldr (\_ -> (+1)) 0
+
+-- -- | Returns the sum of all elements using monoid map
+-- -- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
+-- -- Sum :: a -> Sum a
+-- sumMonoid :: [Double] -> Double
+-- sumMonoid = getSum . foldMap Sum
 
 -- | Returns the sum using Applicative '<*>' on Const (Sum Double)
 -- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
@@ -96,9 +97,7 @@ sumFoldM = getSum . foldM (\acc x -> return (acc + x)) 0
 sumKleisli :: [Double] -> Double
 sumKleisli xs = getSum $ foldr ((>=>) . (\x acc -> Sum (acc + x))) return xs 0
 
--- | Returns the length of the list using fold
-lenFold :: [Double] -> Double
-lenFold = foldl (\acc _ -> acc + 1) 0
+
 
 -- | Returns the length of the list using pattern matching
 lenCase :: [Double] -> Double
