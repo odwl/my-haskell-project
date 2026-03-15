@@ -115,27 +115,7 @@ testBatch (eq (undefined :: MyData))
 
 - **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces `True == True` and `False == False`. But what about `True == False`? Mathematically, if we evaluated it to `True`, we'd be constructing a perfectly lawful equality where `True` and `False` are considered the exact same mathematical value—like synonymous words! To preserve them as distinct concepts, we manually define the cross-comparisons as `False`. The remaining laws (Symmetry and Transitivity) are then trivially fulfilled.
 
-  **Exercise 5: Breaking the Math**
-  Consider this hypothetical `Eq` instance for a type representing a game's choices:
-  ```haskell
-  data RPS = Rock | Paper | Scissors
-
-  instance Eq RPS where
-      Rock == Rock = True
-      Paper == Paper = True
-      Scissors == Scissors = True
-      Rock == Paper = True
-      _ == _ = False
-  ```
-  Which of the mathematical laws of `Eq` (Reflexivity, Symmetry, Transitivity) does this instance violate?
-
-  <details>
-  <summary><b>View Solution</b></summary>
-
-  It violates **Symmetry**! We defined `Rock == Paper` to evaluate to `True`, but `Paper == Rock` will fall through to the catch-all `_ == _ = False`. Because symmetry strictly requires `x == y` $\Rightarrow$ `y == x`, this implementation is mathematically invalid.
-  </details>
-
-  **Exercise 6: A Meaningful Custom `Eq`**
+  **Exercise 5: A Meaningful Custom `Eq`**
   Suppose you are working with fractions defined as a numerator and denominator:
   ```haskell
   data Fraction = Fraction Integer Integer
@@ -187,6 +167,30 @@ Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` a
 - **0 Inhabitants (`Void`)**: Vacuously true.
 - **1 Inhabitant (`()`)**: `()` is always equal to (and therefore `<=` to) `()`.
 - **2 Inhabitants (`Bool`)**: `False` is canonically ordered before `True` (`False <= True`).
+
+- **3 Inhabitants (`RPS`)**: Three inhabitants is the minimum number required to demonstrate a cyclic relationship, meaning we can mathematically break a Total Order!
+
+  **Exercise 6: Breaking the Total Order**
+  Consider a hypothetical game of Rock-Paper-Scissors. Can we mathematically construct a valid sequence of all choices? Let's try writing an `Ord` instance:
+  ```haskell
+  data RPS = Rock | Paper | Scissors deriving (Eq)
+
+  instance Ord RPS where
+      compare Rock Paper = LT     -- Rock loses to Paper  (Rock < Paper)
+      compare Paper Scissors = LT -- Paper loses to Scissors (Paper < Scissors)
+      compare Scissors Rock = LT  -- Scissors loses to Rock (Scissors < Rock)
+      compare x y | x == y    = EQ
+                  | otherwise = GT
+  ```
+  While this compiles and type-checks, which of the mathematical laws of a Total Order (`Ord`) does it violate?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  It violates **Transitivity**!
+  Our instance defines `Rock <= Paper` and `Paper <= Scissors`. By the mathematical rule of Transitivity, it would follow that `Rock <= Scissors` must be true.
+  However, our code specifically defines `compare Scissors Rock = LT` (meaning `Scissors < Rock`, and thus `Rock > Scissors`), making `Rock <= Scissors` evaluate to `False`! Therefore, Rock-Paper-Scissors is a mathematical *cycle*, rendering it physically impossible to fulfill a sequence of Total Order!
+  </details>
 
   **Exercise 7: Deriving the Rest from `compare`**
   Assume you have provided a valid `compare :: a -> a -> Ordering` for your type. How would you mathematically define the other operators (`<`, `<=`, `>`, `>=`, `max`, `min`) solely in terms of `compare`?
