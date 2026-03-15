@@ -4,7 +4,7 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 
 ## Universe 1: Concrete Types (Kind `Type`)
 
-### Part 1: The Structures (No Laws) (`docs/minimal_types.md`)
+### Part 1: The Structures (No Laws) (`docs/01_concrete_structures.md`)
 - **Focus**: The geometry of types, counting inhabitants, and categorical analogs.
 - **Chapter 1: Types of Kind `Type`**
   - Section 1.1: `Void` (0 Inhabitants / Initial Object) 
@@ -12,7 +12,7 @@ This document serves as the master architectural blueprint for the "Minimal Hask
   - Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)
   - Section 1.4: Infinite Inhabitants (Streams and Functions)
 
-### Part 2: The Algebras (Laws) (`docs/03_the_monoid.md` - TO BE RENAMED)
+### Part 2: The Algebras (Laws) (`docs/02_concrete_algebras.md`)
 - **Focus**: Attaching behavior to concrete structures using lawful typeclasses.
 - **Chapter 1: Equivalence and Ordering**
   - `Eq`: The laws of mathematical equivalence.
@@ -26,14 +26,14 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 
 ## Universe 2: Higher-Kinded Types (Kind `Type -> Type`)
 
-### Part 3: The Parameterized Structures (No Laws) (`docs/minimal_types.md` - continued)
+### Part 3: The Parameterized Structures (No Laws) (`docs/03_parameterized_structures.md`)
 - **Focus**: Parameterized shapes and "empty boxes".
 - **Chapter 2: Parameterized Types of Kind `Type -> Type`**
   - Section 2.1: `VoidFoldable` (0 Inhabitants)
   - Section 2.2: `Proxy` (1 Inhabitant)
   - Section 2.3: `Const Bool a` (2 Inhabitants)
 
-### Part 4: The Algebras of Shape (`docs/01_the_atoms.md`, `02_the_evolution.md`, `04_the_foldable.md`)
+### Part 4: The Algebras of Shape (`docs/04_the_holy_trinity.md`)
 - **Focus**: The "holy trinity" of shapes (Functor, Foldable, Traversable) and computational contexts (Applicative, Monad).
 
 #### Chapter 1: Functor & Bifunctor (Shape Preservation)
