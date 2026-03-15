@@ -6,6 +6,7 @@ import Control.Monad (foldM, (>=>))
 import Control.Monad.State
 import Data.Functor.Const (Const (..), getConst)
 import Data.Monoid (Sum (..), getSum)
+import Data.Foldable (foldl', foldr')
 
 -----------------------------------
 -- Minimum Void
@@ -30,10 +31,16 @@ instance Foldable VoidFoldable where
 -----------------------------------
 -- Minimum Foldable
 -----------------------------------
--- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
 -- foldl :: Foldable t => (b -> a -> b) -> b -> t a -> b
--- foldM :: (Foldable t, Monad m) => (b -> a -> m b) -> b -> t a -> m b
+-- foldl' :: Foldable t => (b -> a -> b) -> b -> t a -> b
 -- foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
+-- foldr' :: Foldable t => (a -> b -> b) -> b -> t a -> b
+-- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
+-- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
+-- foldM :: (Foldable t, Monad m) => (b -> a -> m b) -> b -> t a -> m b
+
+-- still note fully done: traverse_, mapM_, mapM, traverse, sequence_, sequenceA_, sequenceM_, sequenceA
+-- and also catamorphism and Recursion Schemes.
 
 -- | Returns the sum of all elements using pattern matching
 {-# ANN sumCase "HLint: ignore Use foldr" #-}
@@ -42,34 +49,41 @@ sumCase :: [Double] -> Double
 sumCase [] = 0
 sumCase (x : xs) = x + sumCase xs
 
-lenMyLen :: [Double] -> Int
-lenMyLen = getSum . foldMap (const (Sum 1))
-
-sumMonoid :: [Double] -> Double
-sumMonoid = getSum . foldMap Sum
-
 -- | Returns the sum of all elements using foldl
 {-# ANN sumFoldl "HLint: ignore Use sum" #-}
 sumFoldl :: [Double] -> Double
-sumFoldl = foldl (+) 0
+sumFoldl = foldl' (+) 0
 
 -- | Returns the length of the list using foldl
 lenFoldl :: [Double] -> Int 
-lenFoldl = foldl (const . (+1)) 0
+lenFoldl = foldl' (const . (+1)) 0
 
 -- | Returns the sum of all elements using foldr
 sumFoldr :: [Double] -> Double
-sumFoldr = foldr (+) 0
+sumFoldr = foldr' (+) 0
 
 -- | Returns the length of the list using foldr
 lenFoldr :: [Double] -> Int
-lenFoldr = foldr (const (+1)) 0
+lenFoldr = foldr' (const (+1)) 0
 
--- -- | Returns the sum of all elements using monoid map
--- -- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
--- -- Sum :: a -> Sum a
--- sumMonoid :: [Double] -> Double
--- sumMonoid = getSum . foldMap Sum
+-- | Returns the sum of all elements using foldMap
+sumMonoid :: [Double] -> Double
+sumMonoid = getSum . foldMap Sum
+
+-- | Returns the length of the list using foldMap
+lenMonoid :: [Double] -> Int
+lenMonoid = getSum . foldMap (const (Sum 1))
+
+-- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
+sumTraverse :: [Double] -> Double
+sumTraverse = 
+-- the applicative is probably Sum Double. with a = b = Double
+-- we have that Sum is actually an a -> Sum a. 
+-- so we can do traverse Sum xs and we obtain a Sum [Double]
+-- but how to get a Double? 
+-- Sum         :: a -> Sum a
+-- Const       :: forall a b. a -> Const a b
+-- Const . Sum :: forall a b. a -> Const (Sum a) b
 
 -- | Returns the sum using Applicative '<*>' on Const (Sum Double)
 -- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
@@ -88,7 +102,7 @@ sumMonad = getSum . foldl (\acc x -> acc >>= \a -> Sum (a + x)) (Sum 0)
 -- foldM :: (Foldable t, Monad m) => (b -> a -> m b) -> b -> t a -> m b
 sumFoldM :: [Double] -> Double
 sumFoldM = getSum . foldM (\acc x -> return (acc + x)) 0
-
+ 
 -- | Returns the sum of all elements using foldr and Kleisli composition (>=>)
 -- foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
 -- (>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c

@@ -46,6 +46,10 @@ listAverageTests =
             lenFoldl (xs :: [Double]) === lenCase xs,
           testProperty "lenFoldr equals lenCase" $ \xs ->
             lenFoldr (xs :: [Double]) === lenCase xs,
+          testProperty "lenMonoid equals lenCase" $ \xs ->
+            lenMonoid (xs :: [Double]) === lenCase xs,
+          testProperty "lenMonoid equals length" $ \xs ->
+            lenMonoid xs === length (xs :: [Double]),
           testProperty "lenFoldl equals length" $ \xs ->
             lenFoldl xs === length (xs :: [Double]),
           testProperty "lenFoldr equals length" $ \xs ->

@@ -1,6 +1,6 @@
 # Part 2: The Algebras (Laws) for Concrete Types
 
-Welcome to the second part of Universe 1. In Part 1, we defined our core **Structures**—the bare mathematical geometry of how many values a type can hold. We looked at the Initial Object (`Void`), the Terminal Object (`()`), and the Coproduct of Terminal Objects (`Bool`).
+Welcome to the second part of Universe 1. In Part 1, we defined our core **Structures**—the bare mathematical geometry of how many values a type can hold. We looked at the Initial Object (`Void`), the Terminal Object (`()`), the Coproduct of Terminal Objects (`Bool`), and both Countable (e.g., `[()]`, `Integer`) and Uncountable (e.g., `Stream Bool`, `Integer -> Bool`) infinite inhabitants.
 
 But structures alone are sterile. To actually perform computation, we need **Algebras**. An algebra assigns specific *behaviors* to our structures. In Haskell, we implement these algebras using Typeclasses. But unlike simple interfaces in other programming languages, a true algebra must come with **Mathematical Laws** to ensure the behavior is predictably sound.
 
@@ -11,6 +11,8 @@ In this document, we will build out the fundamental algebras that operate direct
 Before we can combine values or map over structures, the most fundamental operation a computer can perform is determining if two things are the same.
 
 ### Section 1.1: `Eq` (The Laws of Mathematical Equivalence)
+
+Before looking at the operations of `Eq`, we must ask: what *kinds* of types can have an `Eq` instance? Because the operators compare fully instantiated runtime values, any type implementing `Eq` **must be a simple kind `Type`**. We cannot test if two uninstantiated type constructors (like `Maybe`) are equal; we can only test if two concrete values (like `Maybe Int`) are equal.
 
 The `Eq` typeclass provides the `(==)` and `(/=)` operators.
 
@@ -30,9 +32,41 @@ To be a valid instance, it must rigorously satisfy the three mathematical laws o
 3. **Transitivity**: Equality chains perfectly.
    If `x == y` and `y == z`, then `x == z`.
 
+**Testing the Laws (`tasty-quickcheck` & `testBatch`)**
+
+As we discussed in the Introduction, these laws are mathematically absolute. But we don't need to manually verify them! We can write property tests using `tasty-quickcheck` to systematically generate random values and mechanically assert all three laws hold. For many standard typeclasses, libraries even provide pre-built test batches.
+```haskell
+-- Automatically tests Reflexivity, Symmetry, and Transitivity!
+testBatch (eq (undefined :: MyData))
+```
+
 **The Minimal Implementations:**
-- **0 Inhabitants (`Void`)**: Since we can never instantiate two `Void` values, `Eq` is trivially (vacuously) satisfied.
+- **0 Inhabitants (`Void`)**: As explored in Part 1 (Functions Returning an Uninhabited Type), any function computing a value from `Void` is mathematically valid via the Principle of Explosion. Since the signature becomes `(==) :: Void -> Void -> Bool`, substituting `Void` requires at least one `Void` as input. Using `absurd` (or the empty case), this gives us the *only* implementation possible:
+  ```haskell
+  instance Eq Void where
+      v1 == _ = absurd v1
+  ```
+  And because we can never instantiate the values at runtime to break them, the property laws of `Eq` are trivially (vacuously) satisfied:
+  * **Reflexivity**: `v == v`? We can never provide `v`, so yes.
+  * **Symmetry**: `v1 == v2 \Rightarrow v2 == v1`? We can never provide `v1` or `v2`, so yes.
+  * **Transitivity**: `v1 == v2 \land v2 == v3 \Rightarrow v1 == v3`? We can never provide `v1`, `v2`, or `v3`, so yes.
+
+  **Exercise 1: The Impossible `(/=)`**
+  Since `(/=)` is also part of the `Eq` typeclass (with a default implementation `x /= y = not (x == y)`), how would you manually implement `(/=) :: Void -> Void -> Bool` directly without relying on `(==)`?
+  
+  <details>
+  <summary><b>View Solution</b></summary>
+  
+  Because the input is `Void`, you can apply the exact same logic! Any computation taking an impossible value can return anything. Thus:
+  ```haskell
+  instance Eq Void where
+      v1 == _ = absurd v1
+      v1 /= _ = absurd v1
+  ```
+  </details>
+
 - **1 Inhabitant (`()`)**: There is only one possible value, so `() == ()` is always `True`.
+
 - **2 Inhabitants (`Bool`)**: We must ensure `True == True` and `False == False`, while cross-comparisons yield `False`.
 
 ### Section 1.2: `Ord` (The Laws of Total Ordering)
