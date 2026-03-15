@@ -86,6 +86,44 @@ testBatch (eq (undefined :: MyData))
 
 - **2 Inhabitants (`Bool`)**: We must ensure `True == True` and `False == False`, while cross-comparisons yield `False`.
 
+  **Exercise 3: Breaking the Laws**
+  Consider this hypothetical `Eq` instance for a type representing a game's choices:
+  ```haskell
+  data RPS = Rock | Paper | Scissors
+
+  instance Eq RPS where
+      Rock == Rock = True
+      Paper == Paper = True
+      Scissors == Scissors = True
+      Rock == Paper = True
+      _ == _ = False
+  ```
+  Which of the mathematical laws of `Eq` (Reflexivity, Symmetry, Transitivity) does this instance violate?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  It violates **Symmetry**! We defined `Rock == Paper` to evaluate to `True`, but `Paper == Rock` will fall through to the catch-all `_ == _ = False`. Because symmetry strictly requires `x == y` $\Rightarrow$ `y == x`, this implementation is mathematically invalid.
+  </details>
+
+  **Exercise 4: A Meaningful Custom `Eq`**
+  Suppose you are working with fractions defined as a numerator and denominator:
+  ```haskell
+  data Fraction = Fraction Integer Integer
+  ```
+  If we let the compiler automatically derive an `Eq` instance for us, it would only check if the exact fields match. Under that default instance, `Fraction 1 2 == Fraction 2 4` would evaluate to `False`. How would you write a custom `Eq` instance that mathematically reflects truly equivalent fractions?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  Two fractions $a/b$ and $c/d$ are equal if their cross-multiplication matches ($a \times d = b \times c$).
+  ```haskell
+  instance Eq Fraction where
+      Fraction a b == Fraction c d = (a * d) == (b * c)
+  ```
+  By defining equality based on the mathematical properties of the values rather than their literal data layout, we ensure a robust equivalence relation that fully obeys Reflexivity, Symmetry, and Transitivity!
+  </details>
+
 ### Section 1.2: `Ord` (The Laws of Total Ordering)
 
 If `Eq` tells us if things are the same, `Ord` tells us how to line them up in a sequence. `Ord` provides operations like `compare`, `<=`, and `>`. 
