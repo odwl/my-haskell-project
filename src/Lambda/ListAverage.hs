@@ -42,10 +42,20 @@ instance Foldable VoidFoldable where
   foldMap _ v = case v of {}
 
 -- My sum foldable.
-newtype MySum a = MySum a deriving (Eq, Show)
+newtype MySum = MySum Double deriving (Eq, Show)
 
-instance Foldable MySum where
-  foldMap f (MySum a) = f a
+getMySum :: MySum -> Double
+getMySum (MySum x) = x
+
+instance Semigroup MySum where
+  MySum a <> MySum b = MySum (a + b)
+
+instance Monoid MySum where
+  mempty = MySum 0
+  -- mappend (MySum a) (MySum b) = MySum (a + b)
+
+sumMySum :: [Double] -> Double
+sumMySum = (\(MySum x) -> x) . foldMap MySum
 
 -- instance Functor MySum where
 --   fmap f (MySum a) = MySum (f a)
