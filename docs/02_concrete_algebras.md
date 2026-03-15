@@ -113,19 +113,18 @@ testBatch (eq (undefined :: MyData))
   This immediately breaks **Reflexivity**, which strictly mandates that for all values $x$, $x == x$ must evaluate to `True`. Because our instance returns `False`, it is an unlawful, mathematically invalid `Eq`!
   </details>
 
-- **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces `True == True` and `False == False`. But what about `True == False`? Mathematically, if we evaluated it to `True`, we'd be constructing a perfectly lawful equality where `True` and `False` belong to the exact same *equivalence class*. This would mathematically collapse `Bool` into a 1-inhabitant type! Therefore, because we want to preserve both inhabitants, we are strictly required to define the cross-comparisons as `False` (`True /= False`). The remaining laws (Symmetry and Transitivity) are then trivially fulfilled.
+- **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces our hand to define `True == True` and `False == False`. This leaves us with exactly two lawful possibilities for how we handle the cross-comparisons (`True == False`), giving us two valid cases:
+  1. **The Useful Case (`_ == _ = False` for differing values)**: By defining the cross-comparisons to evaluate to `False`, we preserve `True` and `False` as two completely distinct semantic concepts. The remaining laws (Symmetry and Transitivity) are then trivially fulfilled.
+  2. **The Non-Useful Case (`_ == _ = True` for differing values)**: Mathematically, if we evaluate this to `True`, we construct a perfectly lawful equality where `True` and `False` belong to the exact same *equivalence class*. While `Bool` would still structurally have two distinct memory tags internally, this algebraically groups them together into a single *Quotient Type*. It mathematically collapses the concept of `Bool` into behaving like a 1-inhabitant type whenever evaluated through `(==)`. This is a perfectly correct and mathematically lawful instance, but it is hardly useful in any programming context since we would entirely lose the ability to differentiate branches!
 
-  **Exercise 5: Counting Valid Equalities**
-  Consider our 2-inhabitant `Bool` type again. How many mathematically valid (lawful) `Eq` instances can you possibly write for it? 
+  **Exercise 5: The Logic Gate**
+  Focusing on the "useful" implementation of `Eq` for `Bool`, the `(==)` and `(/=)` operators are both functions of type `Bool -> Bool -> Bool`. If you were building a physical circuit board, what standard logic gates do these two operators correspond to?
 
   <details>
   <summary><b>View Solution</b></summary>
   
-  Exactly **two**!
-  1. The **Standard Equality** (`True == True`, `False == False`, cross-comparisons are `False`). This keeps `Bool` conceptually as a 2-inhabitant type (two equivalence classes).
-  2. The **Universal Equality** (`_ == _ = True`). This mathematically collapses `Bool` into functioning as a 1-inhabitant type (one equivalence class).
-
-  Any other configuration (such as making a value not equal to itself, or making `True == False` return `True` but `False == True` return `False`) would break Reflexivity or Symmetry, making it an unlawful instance.
+  * `(==)` outputs `True` only if both inputs are the same (both `True` or both `False`). This corresponds perfectly to an **XNOR (Exclusive-NOR)** gate (also called the logical biconditional).
+  * `(/=)` outputs `True` only if the inputs differ (`True/False` or `False/True`). This corresponds perfectly to an **XOR (Exclusive-OR)** gate!
   </details>
 
 - **$\infty$ Inhabitants (`Fraction`)**: When a type has many inhabitants, the default compiler-derived `Eq` (which checks identical memory structure) may not reflect true mathematical parity. We often have to manually implement structural equality.
