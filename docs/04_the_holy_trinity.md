@@ -31,7 +31,7 @@ The true protagonist of this journey is **Parametricity**. Due to parametric pol
 
 *(Note: There are rare counterexamples where multiple valid implementations might exist—for example, traversing a complex tree structure in different orders, or the `List` monad which actually has exactly two valid implementations for `bind`—but these are atypical for the minimal types we are exploring).*
 
----
+***
 
 ## Chapter 1: Functor & Bifunctor (Shape Preservation)
 
@@ -137,7 +137,7 @@ instance Functor MyBox where
 ```
 If `testBatch` never randomly generates the integer `12345`, this structure will **pass all your tests** while remaining mathematically invalid!
 
----
+***
 
 ### Section 1.2: Minimal Functors
 
@@ -170,7 +170,7 @@ instance Functor Zero where
 *   *Identity*: `fmap id z` where `z :: Zero a`. Pattern matching on `z` (empty case) immediately satisfies the law as no value exists to violate it.
 *   *Composition*: Guaranteed automatically by parametricity ("Theorems for free!") since the Identity law is satisfied.
 
-**Category Theory Equivalent**: This represents the constant functor \\(\Delta_0\\). It maps every object in the category space to the Initial Object \\(0\\) (the empty set \\(\emptyset\\)) and every morphism to the empty function \\(id_0\\).
+**Category Theory Equivalent**: This represents the constant functor $\Delta_0$. It maps every object in the category space to the Initial Object $0$ (the empty set $\emptyset$) and every morphism to the empty function $id_0$.
 
 #### 2. The Empty Box: `Proxy`
 *(One constructor, Zero computational data, Zero contextual data).*
@@ -195,7 +195,7 @@ instance Functor Proxy where
 
 *(Note: As proven by Wadler's "Theorems for free!", satisfying the Identity law automatically guarantees the Composition law for any parametrically polymorphic functor. We explicitly verify both here and throughout this section purely for the sake of a complete, explicit proof).*
 
-**Category Theory Equivalent**: This represents the constant functor \\(\Delta_1\\). It maps every object in the category space to the Terminal Object \\(1\\) (the singleton set \\(\{*\}\\)) and every morphism to \\(id_1\\).
+**Category Theory Equivalent**: This represents the constant functor $\Delta_1$. It maps every object in the category space to the Terminal Object $1$ (the singleton set $\{*\}$) and every morphism to $id_1$.
 
 #### 3. The Constant Context: `Const r`
 *(Zero computational data, Some contextual data `r`).*
@@ -224,7 +224,7 @@ instance Functor (Const r) where
 
 *(We will see in Section 1.3 how these three specific specializations intimately link to the numbers $0$, $1$, and $2$ in algebraic arithmetic!)*
 
-**Category Theory Equivalent**: This represents the general constant functor \\(\Delta_r\\). It collapses the entire category, mapping every object to the specific fixed object \\(r\\), and every morphism mathematically to the identity morphism \\(id_r\\).
+**Category Theory Equivalent**: This represents the general constant functor $\Delta_r$. It collapses the entire category, mapping every object to the specific fixed object $r$, and every morphism mathematically to the identity morphism $id_r$.
 
 #### 4. The Wrapper: `Identity`
 *(One computational data, Zero contextual data).*
@@ -244,7 +244,7 @@ instance Functor Identity where
 *   *Identity*: `fmap id (Identity x) == Identity (id x) == Identity x == id (Identity x)`
 *   *Composition*: `fmap (f . g) (Identity x) == Identity ((f . g) x) == Identity (f (g x)) == fmap f (Identity (g x)) == fmap f (fmap g (Identity x))`
 
-**Category Theory Equivalent**: This represents the Identity Functor \\(Id_{\mathbf{C}}\\). It strictly maps every object to itself (\\(X \mapsto X\\)) and every morphism to itself (\\(f \mapsto f\\)). It is the perfectly transparent container.
+**Category Theory Equivalent**: This represents the Identity Functor $Id_{\mathbf{C}}$. It strictly maps every object to itself ($X \mapsto X$) and every morphism to itself ($f \mapsto f$). It is the perfectly transparent container.
 
 #### 5. The Exponential: `(->) r` (The Reader)
 *(Infinite computational data, delayed by domain `r`).*
@@ -262,7 +262,7 @@ instance Functor ((->) r) where
 *   *Identity*: `fmap id g == id . g == g == id g`
 *   *Composition*: Guaranteed automatically by parametricity ("Theorems for free!") since the Identity law is satisfied.
 
-**Category Theory Equivalent**: This represents the Covariant \\(Hom\\)-functor \\(Hom(r, -)\\). In any category, \\(Hom(A, B)\\) represents the set of all morphisms passing from object \\(A\\) to object \\(B\\). In Haskell, fixing the input type \\(r\\) forms the functor mapping \\(a \mapsto Hom(r, a)\\).
+**Category Theory Equivalent**: This represents the Covariant $Hom$-functor $Hom(r, -)$. In any category, $Hom(A, B)$ represents the set of all morphisms passing from object $A$ to object $B$. In Haskell, fixing the input type $r$ forms the functor mapping $a \mapsto Hom(r, a)$.
 
 ##### Exponential Blends and Higher-Order Exponentials
 To truly illustrate the power of parametricity, consider what happens when we combine our building blocks (Sums, Products, and Exponentials). Even for these complex concepts, parametricity completely forces the only mathematically valid implementation!
@@ -744,7 +744,7 @@ By using both Sums and Products with **Recursion**, we can build a list. A list 
 
 
 
----
+***
 
 
 ## Chapter 2: Foldable (Lossy Aggregation)
@@ -1236,7 +1236,7 @@ This concludes a magnificent piece of abstract mathematical geometry: **Because 
 This algebraic theorem is exactly what powers the `DeriveFunctor`, `DeriveFoldable`, and `DeriveTraversable` compiler extensions. The Haskell compiler does not guess; it systematically parses your data type as a structural mathematical polynomial and algebraically applies these exact foundational atoms and combinators to write the canonical, mathematically flawless instances for you.
 
 
----
+***
 
 
 ## Chapter 4: Applicative (Context Aggregation)
@@ -1311,7 +1311,7 @@ Just as with Functors, we can verify our Applicative instances using `tasty-chec
   testBatch (applicative (undefined :: Maybe (Int, String, Int)))
 ```
 
----
+***
 
 ## Chapter 5: Monad (Effectful Sequencing)
 
@@ -1349,15 +1349,15 @@ Finally, we can verify our Monad instances (Left Identity, Right Identity, and A
   testBatch (monad (undefined :: Maybe (Int, String, Int)))
 ```
 
----
+***
 ## Conclusion: The Tale of Three Minimals
 
 By starting from these absolute minimal examples, the "magic" evaporates, leaving the elegant logic of types and the algebraic discovery of everything from `Maybe` to `List`.
 
----
+***
 
----
+***
 
 
----
+***
 

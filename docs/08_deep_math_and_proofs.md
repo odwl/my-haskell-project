@@ -57,7 +57,7 @@ While `Either` and `(,)` are Bifunctors, they are *special* Bifunctors because t
 
 *(This section is a placeholder for a future deep-dive into the formal definitions of tensor products, and how they interact structurally via the pentagon and triangle identities).*
 
----
+***
 
 ### Parametricity in Category Theory
 
@@ -112,7 +112,7 @@ To model this categorically, we have to move beyond just looking at the category
 
 In this setting, a type operator (like List) isn't just a functor; it must be a functor that lifts to relations (e.g., if you have a relation $R$ between $A$ and $B$, you automatically get a relation $\text{List}(R)$ between $\text{List}(A)$ and $\text{List}(B)$). A parametrically polymorphic function is then an object in this higher category that intrinsically preserves all relations, fulfilling Reynolds' exact definition.
 
----
+***
 
 ### Summary and Type Bundle Taxonomy
 At this level, Functors are entirely about **Shape and Preservation**. Whether we are dealing with an empty box (`Proxy`), a wrapper (`Identity`), or an infinite chain (`List`), `fmap` ensures that the structure of the data remains physically identical while the values inside are transformed.
@@ -123,7 +123,7 @@ Before moving to Applicatives, remember the three tools Haskell gives us to bund
 2.  **`newtype` (Strict Wrapper)**: Distinct type, zero overhead. Use for type safety (e.g., `UserId`).
 3.  **`data` (Full ADT)**: Flexible, supports multiple constructors. Use for complex shapes.
 
----
+***
 
 ## Annex A: Proof of 2-Inhabitant Associativity
 *Proof that all 2-inhabitant logical operations possessing a valid two-sided identity element are automatically associative.*
@@ -159,7 +159,7 @@ Let us evaluate this final equation for both possible remaining tables:
 
 **Q.E.D.** Once you successfully lock in an identity element on a 2-inhabitant type, there is simply no remaining mathematical room in the $2 \times 2$ matrix for associativity to break!
 
----
+***
 
 ## Annex: Proofs and Derivations
 
