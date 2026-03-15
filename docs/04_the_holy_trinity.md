@@ -1,6 +1,4 @@
-# The Holy Trinity of Shape: Functor, Foldable, Traversable (and Applicative/Monad)
-
-# The Minimal Haskell Series: Part 1 - The Atoms
+# Part 4: The Algebras of Shape
 
 ## 1. Introduction
 
@@ -35,7 +33,7 @@ The true protagonist of this journey is **Parametricity**. Due to parametric pol
 
 ---
 
-## Chapter 1: The Foundations of Functors and Bifunctors
+## Chapter 1: Functor & Bifunctor (Shape Preservation)
 
 ### Section 1.1: What is a Functor?
 
@@ -748,9 +746,8 @@ By using both Sums and Products with **Recursion**, we can build a list. A list 
 
 ---
 
-# The Minimal Haskell Series: Part 4 - The Foldables
 
-## Chapter 7: Minimal Foldable and the Foldable Laws
+## Chapter 2: Foldable (Lossy Aggregation)
 
 While Functors map values and Applicatives/Monads sequence them, a `Foldable` is fundamentally about *aggregating* or destroying a structure down to a summary value.
 
@@ -1128,7 +1125,7 @@ Do we need to explicitly prove new laws for them, like we did for associativity 
 No! We receive a massive mathematical freebie. 
 Because our combinators are defined *strictly* using the underlying Base `foldMap` operations and the Monoid `<>` operator, **the abstract algebra automatically guarantees the compound structures obey the laws**. Assuming the base atoms (like `Proxy` and `Identity`) are valid, the rigid associativity of the Monoid (`<>`) flawlessly ensures that whether you fold completely sequentially (`foldr`), or smash nested structures together hierarchically (`Compose` / `Product` / `Fix`), the final aggregated value will unequivocally evaluate to the exact same monoidal mathematical truth!
 
-## Chapter 8: Minimal Traversable and the Algebra of Effects
+## Chapter 3: Traversable (Effectful Folding)
 
 If `Functor` is about **Shape Preservation** (mapping functions over data without altering the container) and `Foldable` is about **Aggregation** (destroying the shape to fold its elements into a single Monoid), then `Traversable` represents the final pillar of this mathematical trinity: **Effectful Sequencing**.
 
@@ -1241,9 +1238,8 @@ This algebraic theorem is exactly what powers the `DeriveFunctor`, `DeriveFoldab
 
 ---
 
-# The Minimal Haskell Series: Part 2 - The Evolution
 
-## Chapter 2: The Applicative Evolution
+## Chapter 4: Applicative (Context Aggregation)
 
 Now we step up in power. An `Applicative` is a Functor equipped with two new powers: `pure` (to lift values) and `<*>` (to lift application).
 
@@ -1317,7 +1313,7 @@ Just as with Functors, we can verify our Applicative instances using `tasty-chec
 
 ---
 
-## Chapter 3: The Monadic Conclusion
+## Chapter 5: Monad (Effectful Sequencing)
 
 The `Monad` adds the power of **Context-Dependent Sequencing** via `bind` (`>>=`) or `join`.
 

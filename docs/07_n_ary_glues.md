@@ -1,10 +1,10 @@
-# Annex: The Functor Monoid and N-ary Glues
+# Part 5: The Functor Monoids
 
 This document captures a profound mathematical exploration into the foundations of Algebraic Data Types (ADTs). Instead of looking at simple types, we will investigate the **Category of Endofunctors** (`Type -> Type`). 
 
 The goal is to discover the irreducible minimal generating set of the Functor universe.
 
-## 1. The Functor Monoid (The True Engine)
+## Chapter 1: The Functor Monoid (The True Engine)
 Before we can build infinitely large data structures, we need to understand how two functors mathematically combine. 
 
 If we have a universe of Functors, a mathematically perfect way to define a "structural glue" is to define a **Monoid over Functors**. A Monoid requires exactly two things: an Identity Element (the 0-ary base case) and a Binary Combinator (the 2-ary joining operator).
@@ -24,7 +24,7 @@ class FunctorMonoid (m :: [Type -> Type] -> * -> *) where
 
 Any record that validly implements this class completely defines a structural family of data types. The associated mathematical laws dictate that `Bin m (Atom m) f` must be structurally isomorphic to `f` (the Identity Law).
 
-## 2. The Minimal Generators
+### Section 1.1: The Minimal Generators
 If we look at the universe of Functors, what are the fundamental building blocks that can satisfy this Monoid, and how far do they get us?
 
 There are bounds to the universe we can manipulate.
@@ -96,7 +96,7 @@ instance FunctorMonoid Compose where
 
 Just as $0$ is the atom for Addition, and $1$ for Multiplication, the `Identity` Functor is the perfect mathematical atom for Nesting because nesting a functor inside `Identity` functionally does absolutely nothing: it preserves the exact original structure!
 
-## 3. From Monoids to N-ary Glues
+## Chapter 2: From Monoids to N-ary Glues
 Why is defining the 0-ary Atom and the 2-ary Bin so profound? 
 
 Because if you have that `FunctorMonoid` record, you have mathematically perfectly defined an **N-ary Glue**. You can write exactly one universal folding function that magically turns any valid Monoid into an infinitely scaling N-ary combinator!
@@ -126,7 +126,7 @@ data HListF (fs :: [Type -> Type]) a where
 
 We do not need to explicitly declare N-ary glues. They are merely the syntactic, inductive evaluation of a Functor Monoid folded over a type-level list!
 
-## 4. The Ultimate Generator: System F
+### Section 2.2: The Ultimate Generator: System F
 As a final profound twist: if you introduce the minimal function arrow `(->)` and pair it with Polymorphism (`forall`), it completely cannibalizes the rest of the universe.
 
 In Type Theory (System F), using **Church Encodings**, you can generate the ENTIRE universe of functors purely out of the Exponential `(->)` glue—rendering the primitive Sum and Product monoids entirely unnecessary!
@@ -139,22 +139,22 @@ In Type Theory (System F), using **Church Encodings**, you can generate the ENTI
 
 If you have the Polymorphic Arrow, its mathematical closure contains absolutely all possible Functors.
 
-## 5. The Value-Level Symmetry
+## Chapter 3: The Value-Level Symmetry
 We have defined `FunctorMonoid` as a monoid operating at the type level to combine structural shapes. Does this concept exist at the value level? Yes! It is the exact symmetry that defines two of Haskell's most famous typeclasses:
 
-### A. The Value-Level Product: `Applicative`
+### Section 3.1: The Value-Level Product: `Applicative`
 If the Product Record is the compile-time combination of functor shapes, `Applicative` is the mathematical equivalent applied to runtime values.
 *   **0-ary Identity (`pure`)**: Injects EXACTLY ONE value out of nothing ($1$).
 *   **2-ary Combinator (`liftA2 (,)`)**: Takes two values from identical functor shapes and combines them into a Product holding both.
 
-### B. The Value-Level Sum: `Alternative`
+### Section 3.2: The Value-Level Sum: `Alternative`
 If the Sum Record is the compile-time choice of functor shapes, `Alternative` is the mathematical equivalent applied to runtime values.
 *   **0-ary Identity (`empty`)**: Represents EXACTLY ZERO choices ($0$).
 *   **2-ary Combinator (`<|>`)**: Takes two values from identical functor shapes and provides a choice (or merging) into one.
 
 The compile-time N-ary glues build new varying data structures (`UnionF` and `HListF`); the runtime `Applicative` and `Alternative` merge values within identical existing structures. Yet, they are governed by the fundamentally identical mathematical laws of Functor Monoids!
 
-## 6. The Formal Lexicon
+## Chapter 4: The Formal Lexicon
 There isn't exactly *one* single buzzword that covers the entire N-ary signature `[Type -> Type] -> (* -> *)`, as the name changes depending on the domain:
 
 1.  **Category Theory**: In the category of endofunctors, `UnionF` is formally the **N-ary Coproduct of Endofunctors**, and `HListF` is the **N-ary Product of Endofunctors**. Our dummy zero and one glues are the *Initial and Terminal Objects* of the Functor Category. The 0-ary and 2-ary pairing we defined is formally a **Monoidal Category over Functors**.

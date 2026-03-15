@@ -44,34 +44,34 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 - The adjunction mapping (`foldMap`).
 - Minimal Foldables: `Zero`, `Proxy`, `Identity`, `Const`, `Either`.
 
-#### Chapter 3: Applicative (Context Aggregation)
+#### Chapter 3: Traversable (Effectful Folding)
+- Commuting structure and effects.
+
+#### Chapter 4: Applicative (Context Aggregation)
 - Lifting values and application.
 - The `Const` Twist: Why `Applicative` relies on `Monoid`.
 
-#### Chapter 4: Monad (Effectful Sequencing)
+#### Chapter 5: Monad (Effectful Sequencing)
 - Bind, Join, Kleisli, and the `Const` barrier.
-
-#### Chapter 5: Traversable (Effectful Folding)
-- Commuting structure and effects.
 
 ---
 
 ## Universe 3: Functor Combinators & N-Ary Glues
 
-### Part 5: The Functor Monoids (`docs/annex_n_ary_glues.md`)
+### Part 5: The Functor Monoids (`docs/07_n_ary_glues.md`)
 - **Focus**: The mathematical foundations of combining parameterized types.
-- **Chapter 1: The N-Ary Glues**
-  - Section 1.1: Expanding beyond Binary (`Either`, `(,)`) to N-Ary structures.
-  - Section 1.2: The trivial glues: `NaryZero` and `NaryProxy`.
-  - Section 1.3: Real N-Ary glues: `Union` (n-ary Sum) and `HList` (n-ary Product).
-- **Chapter 2: The Functor Monoid (Combinators)**
-  - Section 2.1: Treating Functors as atoms and defining type-level monoids (`FunctorMonoid`).
-  - Section 2.2: The Combinator Generators: `Zero`/`Sum`, `Proxy`/`Product`, `Fix`, `(->)`, and `Compose`/`Identity`.
-  - Section 2.3: Connection to value-level counterparts (`Applicative` and `Alternative`).
+- **Chapter 1: The Functor Monoid (The True Engine)**
+  - Section 1.1: The Minimal Generators (`Zero`/`Sum`, `Proxy`/`Product`, `Fix`, `(->)`, `Compose`).
+- **Chapter 2: From Monoids to N-ary Glues**
+  - Section 2.1: Expanding beyond Binary (`Either`, `(,)`) to N-Ary structures.
+  - Section 2.2: The Ultimate Generator: System F.
+- **Chapter 3: The Value-Level Symmetry**
+  - Section 3.1: The Value-Level Product (`Applicative`).
+  - Section 3.2: The Value-Level Sum (`Alternative`).
 
 ---
 
-## Part 6: The Deep Math (`docs/05_the_deep_math.md`)
+## Part 6: The Deep Math (`docs/08_deep_math_and_proofs.md`)
 
 ### Chapter 4: Deep Dive into Bifunctors
 #### Section 4.1: The True Nature of Bifunctors

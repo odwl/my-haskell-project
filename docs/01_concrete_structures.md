@@ -1,4 +1,4 @@
-# Minimal Types
+# Part 1: The Structures (No Laws)
 **Author:** Olivier De Wolf, odewolf@gmail.com
 
 ## Table of Contents
@@ -81,7 +81,7 @@ These are standard, concrete types that take no parameters. A type of kind `Type
 
 Furthermore, it is a fundamental property of type theory that any finite types with exactly $n$ inhabitants are strictly **isomorphic** to each other. Because they have the exact same number of possible distinct runtime values, they can be perfectly mapped back and forth without losing any information. For example, the `Bool` type (which has 2 inhabitants: `True` and `False`) is perfectly isomorphic to the type `Either () ()` (which also has 2 inhabitants: `Left ()` and `Right ()`). *(Note: As we talked about in the Annex, as long as we treat Haskell as a total language and ignore `_|_`, this isomorphism holds perfectly true in the Haskell type-checker!)*
 
-### 1. 0 Inhabitants (Uninhabited Type)
+### Section 1.1: `Void` (0 Inhabitants / Initial Object)
 
 **Categorical Analog:** *The Initial Object* (denoted as $0$). In Category Theory, an initial object has exactly one unique morphism *to* every other object in the category, but none coming in from populated objects. In Haskell, this corresponds to the `absurd` function (which can produce any type from `Void`).
 
@@ -297,7 +297,7 @@ Because it is impossible to instantiate a `Void`, we can never use the `Leaf` co
 *(Bonus thought: Any attempt to manually construct a finite `Tree Void` in Haskell would require "cheating" the type system by explicitly placing a bottom (`_|_`) value, such as `undefined` or `error`, in the `Leaf` position!)*
 </details>
 
-### 2. 1 Inhabitant (Unit Type)
+### Section 1.2: `()` (1 Inhabitant / Terminal Object)
 
 **Categorical Analog:** *The Terminal Object* (denoted as $1$). In Category Theory, a terminal object has exactly one unique morphism coming in *from* every other object. In Haskell, this corresponds to the fact that you can map any arbitrary Type into the Unit type simply by throwing away the input value (`\x -> ()`).
 
@@ -374,7 +374,7 @@ safeFromJust (Just x) = Right x
 ```
 </details>
 
-### 3. 2 Inhabitants (Boolean Type)
+### Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)
 
 **Categorical Analog:** *The Coproduct (Sum) of two Terminal Objects* (denoted as $1 + 1 = 2$). In Category theory, adding two single-element sets together creates a two-element set. This fundamentally models branching logic (e.g., "Left or Right", "True or False").
 
@@ -401,7 +401,7 @@ data SwitchState = On | Off
 data AccessLevel = Admin | User
 ```
 
-### 4. Uncountably Infinite Inhabitants
+### Section 1.4: Infinite Inhabitants (Streams and Functions)
 
 While integer types like `Integer` carry a countably infinite number of inhabitants, Haskell's laziness enables types that contain an **uncountably infinite** number of possible inhabitants (specifically $2^{\aleph_0}$, the same cardinality as the real numbers).
 

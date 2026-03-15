@@ -1,4 +1,4 @@
-# Parameterized Structures (Kind `Type -> Type`)
+# Part 3: The Parameterized Structures (No Laws)
 
 **Author:** Olivier De Wolf, odewolf@gmail.com
 
@@ -6,7 +6,7 @@
 
 These are type constructors that require one type argument `a` before they become concrete types. Because they take another type as an argument, they are categorically referred to as **Higher-Kinded Types (HKTs)**. The number of inhabitants discussed here applies *regardless* of what `a` is instantiated to (i.e. the type parameter `a` is completely ignored at the value level).
 
-### 1. 0 Inhabitants 
+### Section 2.1: `VoidFoldable` (0 Inhabitants)
 
 These parameterized types cannot be constructed, no matter what `a` is. 
 
@@ -38,7 +38,7 @@ import Data.Void (Void)
 -- Const Void a
 ```
 
-### 2. 1 Inhabitant
+### Section 2.2: `Proxy` (1 Inhabitant)
 
 These parameterized types have exactly one value, irrespective of `a`.
 
@@ -61,7 +61,7 @@ import Data.Functor.Const (Const(..))
 -- Const () a (value is Const ())
 ```
 
-### 3. 2 Inhabitants
+### Section 2.3: `Const Bool a` (2 Inhabitants)
 
 These parameterized types have precisely two values, regardless of `a`.
 

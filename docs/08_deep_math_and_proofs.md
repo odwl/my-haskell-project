@@ -1,4 +1,4 @@
-# The Minimal Haskell Series: Part 4 - The Deep Math
+# Part 6: The Deep Math
 
 ## Chapter 4: Deep Dive into Bifunctors
 
