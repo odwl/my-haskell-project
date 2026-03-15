@@ -14,13 +14,9 @@ listAverageTests =
         [ testCase "sumCase calculates the sum of elements" $
             sumCase [1.0, 2.0, 3.0, 4.0] @?= 10.0,
           testCase "lenFoldl calculates the length of the list" $
-            lenFoldl [1.0, 2.0, 3.0, 4.0] @?= 4.0,
+            lenFoldl [1.0, 2.0, 3.0, 4.0] @?= 4,
           testCase "lenFoldr calculates the length of the list" $
-            lenFoldr [1.0, 2.0, 3.0, 4.0] @?= 4.0,
-          testCase "mySum calculates the sum of elements" $
-            mySum [1.0, 2.0, 3.0, 4.0] @?= 10.0,
-          testCase "myCount calculates the length of the list" $
-            myCount [1.0, 2.0, 3.0, 4.0] @?= 4.0
+            lenFoldr [1.0, 2.0, 3.0, 4.0] @?= 4
         ],
       testGroup
         "QuickCheck"
@@ -51,19 +47,13 @@ listAverageTests =
           testProperty "lenFoldr equals lenCase" $ \xs ->
             lenFoldr (xs :: [Double]) === lenCase xs,
           testProperty "lenFoldl equals length" $ \xs ->
-            lenFoldl xs === fromIntegral (length (xs :: [Double])),
+            lenFoldl xs === length (xs :: [Double]),
           testProperty "lenFoldr equals length" $ \xs ->
-            lenFoldr xs === fromIntegral (length (xs :: [Double])),
-          testProperty "mySum equals sum" $ \xs ->
-            mySum xs === sum (xs :: [Double]),
-          testProperty "myCount equals length" $ \xs ->
-            myCount xs === fromIntegral (length (xs :: [Double])),
-          testProperty "myCountMonoid equals myCount" $ \xs ->
-            myCountMonoid (xs :: [Double]) === myCount xs,
-          testProperty "myCountApplicative equals myCount" $ \xs ->
-            myCountApplicative (xs :: [Double]) === myCount xs,
+            lenFoldr xs === length (xs :: [Double]),
+          testProperty "myCountApplicative equals length" $ \xs ->
+            myCountApplicative xs === length (xs :: [Double]),
           testProperty "sumAndCount equals (sum, length)" $ \xs ->
-            sumAndCount xs === (sum (xs :: [Double]), fromIntegral (length xs)),
+            sumAndCount xs === (sum (xs :: [Double]), length xs),
           testProperty "average equals sum / length" $ \xs ->
             not (null xs) ==> average (xs :: [Double]) === sum xs / fromIntegral (length xs),
           testProperty "sumAndCount variants are equivalent" $ \xs ->

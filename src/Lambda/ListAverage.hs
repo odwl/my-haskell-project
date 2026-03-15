@@ -7,8 +7,6 @@ import Control.Monad.State
 import Data.Functor.Const (Const (..), getConst)
 import Data.Monoid (Sum (..), getSum)
 
-
-
 -----------------------------------
 -- Minimum Void
 -----------------------------------
@@ -56,7 +54,7 @@ sumFoldl :: [Double] -> Double
 sumFoldl = foldl (+) 0
 
 -- | Returns the length of the list using foldl
-lenFoldl :: [Double] -> Double 
+lenFoldl :: [Double] -> Int 
 lenFoldl = foldl (const . (+1)) 0
 
 -- | Returns the sum of all elements using foldr
@@ -64,7 +62,7 @@ sumFoldr :: [Double] -> Double
 sumFoldr = foldr (+) 0
 
 -- | Returns the length of the list using foldr
-lenFoldr :: [Double] -> Double
+lenFoldr :: [Double] -> Int
 lenFoldr = foldr (const (+1)) 0
 
 -- -- | Returns the sum of all elements using monoid map
@@ -97,35 +95,33 @@ sumFoldM = getSum . foldM (\acc x -> return (acc + x)) 0
 sumKleisli :: [Double] -> Double
 sumKleisli xs = getSum $ foldr ((>=>) . (\x acc -> Sum (acc + x))) return xs 0
 
-
-
 -- | Returns the length of the list using pattern matching
-lenCase :: [Double] -> Double
+lenCase :: [Double] -> Int
 lenCase [] = 0
 lenCase (_ : xs) = 1 + lenCase xs
 
--- | Returns the sum of all elements
-mySum :: [Double] -> Double
-mySum = sum
+-- -- | Returns the sum of all elements
+-- mySum :: [Double] -> Double
+-- mySum = sum
 
--- | Returns the count of all elements
-myCount :: [Double] -> Double
-myCount = foldl (\acc _ -> acc + 1) 0
+-- -- | Returns the count of all elements
+-- myCount :: [Double] -> Int
+-- myCount = foldl (\acc _ -> acc + 1) 0
 
--- | Tells the writer to increment the count by 1.
-increment :: Double -> Sum Double
-increment _ = Sum 1
+-- -- | Tells the writer to increment the count by 1.
+-- increment :: Double -> Sum Double
+-- increment _ = Sum 1
 
--- | Uses the Monoid instance of Sum to accumulate
-myCountMonoid :: [Double] -> Double
-myCountMonoid xs = getSum $ foldMap (\_ -> Sum 1) xs
+-- -- | Uses the Monoid instance of Sum to accumulate
+-- myCountMonoid :: [Double] -> Int
+-- myCountMonoid xs = getSum $ foldMap (\_ -> Sum 1) xs
 
 -- | Uses the Applicative instance of Const (which relies on <*>) to accumulate
-myCountApplicative :: [Double] -> Double
+myCountApplicative :: [Double] -> Int
 myCountApplicative xs = getSum $ getConst $ traverse (\_ -> Const (Sum 1)) xs
 
 -- -- | Computes sum and count in a single traversal
-sumAndCount :: [Double] -> (Double, Double)
+sumAndCount :: [Double] -> (Double, Int)
 sumAndCount = foldl (\(s, c) x -> (s + x, c + 1)) (0, 0)
 
 -- sumAndCount = foldl (flip ((flip bimap (+ 1)) . (+))) (0, 0)
@@ -133,10 +129,10 @@ sumAndCount = foldl (\(s, c) x -> (s + x, c + 1)) (0, 0)
 
 -- -- -- | Use the result of sumAndCount to find the average
 average :: [Double] -> Double
-average = uncurry (/) . sumAndCount
+average = (\(s, c) -> s / fromIntegral c) . sumAndCount
 
-addNumber :: Double -> State (Double, Double) ()
+addNumber :: Double -> State (Double, Int) ()
 addNumber x = modify (\(s, c) -> (s + x, c + 1))
 
-sumAndCountMonadic :: [Double] -> (Double, Double)
+sumAndCountMonadic :: [Double] -> (Double, Int)
 sumAndCountMonadic xs = execState (mapM_ addNumber xs) (0, 0)
