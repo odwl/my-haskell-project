@@ -415,6 +415,12 @@ data UnorderedPair a = UPair a a
 ```
 If we instantiate this with a countably infinite type like `Integer`, the resulting type `UnorderedPair Integer` is also countably infinite. Even though it pairs two numbers (like `UPair 1 2`), because order doesn't mathematically matter in an *unordered* set (meaning `UPair 1 2` is equivalent to `UPair 2 1`), the total number of distinct pairs remains countably infinite!
 
+**Other Utterly Useful Envelopes:**
+If you need a countably infinite type but must conform to specific structural API shapes, you will frequently see basic infinite types wrapped in "containers" that preserve their exact cardinality (*Note: these containers are of kind `Type -> Type` which we will explore in Chapter 2, but when instantiated with an `Integer` they return to kind `Type`!*):
+* **The Ordered Pair (`(Integer, Integer)`):** Unlike our unordered pair, the standard tuple distinguishes order, meaning `(1, 2)` and `(2, 1)` are distinct values. Because mathematically $\aleph_0 \times \aleph_0 = \aleph_0$, the standard tuple remains perfectly countably infinite. It's the ubiquitous foundation for returning multiple values, representing 2D Euclidean coordinates, and building Rational numbers (fractions).
+* **The Constant Payload (`Const Integer String`):** `Const` is a highly specialized, absolutely pervasive wrapper from `Data.Functor.Const` that physically holds a value of its first type parameter (e.g. `Integer`) while completely ignoring and pretending to hold its second type parameter (`String`). It actually has exactly the same number of inhabitants as `Integer`! It is utterly indispensable in advanced Haskell (like building Lenses or writing Traversals), as it lets you "hijack" a mapping operation that expects to modify a `String`, and instead use it to accumulate a constant `Integer`.
+* **The Transparent Box (`Identity Integer`):** Often, complex abstractions like Monad Transformers require a value to be wrapped in a structural shape. The `Identity` type perfectly fills this requirement without adding any branching logic or effects, acting as a transparent zero-cost box around an `Integer`.
+
 #### 2. Uncountably Infinite ($2^{\aleph_0}$)
 
 Haskell's laziness and function semantics allow us to define types that contain an **uncountably infinite** number of possible inhabitants (specifically $2^{\aleph_0}$, possessing the same cardinality as the real numbers).
