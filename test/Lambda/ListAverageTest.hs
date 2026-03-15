@@ -41,6 +41,9 @@ listAverageTests =
           testProperty "sumCase equals sum" $ \xs ->
             let diff = abs (sumCase (xs :: [Double]) - sum xs)
              in diff < 1e-9,
+          testProperty "sumMySum equals sum" $ \xs ->
+            let diff = abs (sumMySum (xs :: [Double]) - sum xs)
+             in diff < 1e-9,
           testProperty "lenFold equals lenCase" $ \xs ->
             lenFold (xs :: [Double]) === lenCase xs,
           testProperty "lenFold equals length" $ \xs ->
