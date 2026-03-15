@@ -65,7 +65,7 @@ sumFoldr = foldr (+) 0
 
 -- | Returns the length of the list using foldr
 lenFoldr :: [Double] -> Double
-lenFoldr = foldr (\_ -> (+1)) 0
+lenFoldr = foldr (const (+1)) 0
 
 -- -- | Returns the sum of all elements using monoid map
 -- -- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
