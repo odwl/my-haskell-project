@@ -56,7 +56,22 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 
 ---
 
-## Part 5: The Deep Math (`docs/05_the_deep_math.md`)
+## Universe 3: Functor Combinators & N-Ary Glues
+
+### Part 5: The Functor Monoids (`docs/annex_n_ary_glues.md`)
+- **Focus**: The mathematical foundations of combining parameterized types.
+- **Chapter 1: The N-Ary Glues**
+  - Section 1.1: Expanding beyond Binary (`Either`, `(,)`) to N-Ary structures.
+  - Section 1.2: The trivial glues: `NaryZero` and `NaryProxy`.
+  - Section 1.3: Real N-Ary glues: `Union` (n-ary Sum) and `HList` (n-ary Product).
+- **Chapter 2: The Functor Monoid (Combinators)**
+  - Section 2.1: Treating Functors as atoms and defining type-level monoids (`FunctorMonoid`).
+  - Section 2.2: The Combinator Generators: `Zero`/`Sum`, `Proxy`/`Product`, `Fix`, `(->)`, and `Compose`/`Identity`.
+  - Section 2.3: Connection to value-level counterparts (`Applicative` and `Alternative`).
+
+---
+
+## Part 6: The Deep Math (`docs/05_the_deep_math.md`)
 
 ### Chapter 4: Deep Dive into Bifunctors
 #### Section 4.1: The True Nature of Bifunctors
