@@ -48,6 +48,12 @@ testBatch (eq (undefined :: MyData))
   instance Eq Void where
       v1 == _ = absurd v1
   ```
+  Note that because `Eq` has a minimal pragma, Haskell automatically derives `(/=)` from our `(==)` implementation using the default `x /= y = not (x == y)`. Therefore, the effective full implementation is forced to be:
+  ```haskell
+  instance Eq Void where
+      v1 == _ = absurd v1
+      v1 /= v2 = not (absurd v1)
+  ```
   And because we can never instantiate the values at runtime to break them, the property laws of `Eq` are trivially (vacuously) satisfied:
   * **Reflexivity**: $\forall v$, $v == v$? We can never provide any $v$, so the statement is vacuously true.
   * **Symmetry**: $\forall (v_1, v_2)$, $v_1 == v_2 \Rightarrow v_2 == v_1$? We can never provide $v_1$ or $v_2$, so yes.
