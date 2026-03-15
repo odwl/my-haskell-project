@@ -53,17 +53,18 @@ testBatch (eq (undefined :: MyData))
   * **Symmetry**: $\forall (v_1, v_2)$, $v_1 == v_2 \Rightarrow v_2 == v_1$? We can never provide $v_1$ or $v_2$, so yes.
   * **Transitivity**: $\forall (v_1, v_2, v_3)$, $v_1 == v_2 \land v_2 == v_3 \Rightarrow v_1 == v_3$? We can never provide $v_1$, $v_2$, or $v_3$, so yes.
 
-  **Exercise 1: The Impossible `(/=)`**
-  Since `(/=)` is also part of the `Eq` typeclass, how would you manually implement `(/=) :: Void -> Void -> Bool` directly without relying on `(==)`?
+  **Exercise 1: Point-Free `(==)`**
+  How would you manually implement `(==) :: Void -> Void -> Bool` in a fully point-free style using only `absurd` and `const`?
   
   <details>
   <summary><b>View Solution</b></summary>
   
-  Because the input is `Void`, you can apply the exact same logic! Any computation taking an impossible value can return anything. Thus:
+  `absurd` has the type `Void -> a`, which can be specialized to `Void -> Bool`.
+  `const` takes a value and ignores its second argument, with type `x -> y -> x`.
+  By passing `absurd` to `const`, we get a function `const absurd` with the signature `y -> (Void -> Bool)`. When used in our instance, `y` aligns with `Void`, giving `Void -> Void -> Bool`. Thus:
   ```haskell
   instance Eq Void where
-      v1 == _ = absurd v1
-      v1 /= _ = absurd v1
+      (==) = const absurd
   ```
   </details>
 
