@@ -401,14 +401,33 @@ data SwitchState = On | Off
 data AccessLevel = Admin | User
 ```
 
-### Section 1.4: Infinite Inhabitants (Streams and Functions)
+### Section 1.4: Infinite Inhabitants (Countable and Uncountable)
 
-While integer types like `Integer` carry a countably infinite number of inhabitants, Haskell's laziness enables types that contain an **uncountably infinite** number of possible inhabitants (specifically $2^{\aleph_0}$, the same cardinality as the real numbers).
+When we step beyond finite algebraic structures, we enter the realm of infinity. However, in mathematics and type theory, not all infinities are equal in size!
 
-To achieve an uncountable number of distinct values, a type must represent an infinite sequence of choices, where each step offers at least two options.
+#### 1. Countably Infinite ($\aleph_0$)
 
-#### 1. Infinite Streams
-Because Haskell evaluates lists lazily, a list like `[Bool]` can be infinitely long. The set of all possible infinite sequences of `True` and `False` forms an uncountably infinite set.
+Countably infinite types have exactly as many inhabitants as the Natural numbers ($0, 1, 2, 3\dots$). You can theoretically line them up and count them one by one.
+
+**The Base Standard:**
+Haskell's `Integer` is the canonical countably infinite type, as it models unbounded whole numbers. 
+
+**The Structural Example (`[()]`):**
+Structurally, we can construct a countably infinite type using a recursive Sum type. Consider a standard list containing *only* the Unit type: `[()]`.
+
+Because `()` carries zero information, the only piece of information an entire `[()]` list can possibly hold is its length. It is perfectly isomorphic to the Natural numbers:
+* `[]` represents 0
+* `[()]` represents 1
+* `[(), ()]` represents 2
+* ...and so on.
+
+#### 2. Uncountably Infinite ($2^{\aleph_0}$)
+
+Haskell's laziness and function semantics allow us to define types that contain an **uncountably infinite** number of possible inhabitants (specifically $2^{\aleph_0}$, possessing the same cardinality as the real numbers).
+
+To achieve an uncountable number of distinct values, a type must represent an *infinite sequence of choices*, where every single step offers at least two branching options.
+
+##### A. Infinite Streams
 
 ```haskell
 -- Structurally infinite sequence of choices
@@ -418,14 +437,18 @@ data Stream a = Cons a (Stream a)
 type CoinFlips = Stream Bool
 ```
 
-#### 2. Infinite Functions
-A mathematically pure function type mapping from a countably infinite domain (like `Integer`) to a type with at least two inhabitants (like `Bool`) is also uncountably infinite. 
+Every `CoinFlips` stream is an infinite sequence of `True`/`False` decisions (e.g. `True, False, False, True...`). Because this represents an infinite branching path of binary choices, it is mathematically isomorphic to a real number between $0.0$ and $1.0$ in binary. There is no mapping that can linearly "count" every possible infinite stream; it is strictly uncountably infinite.
+
+##### B. Infinite Functions
+
+A mathematically pure function mapping from a countably infinite domain (like `Integer`) to a type with at least two inhabitants (like `Bool`) is also uncountably infinite.
 
 ```haskell
 -- Uncountably infinite inhabitants
 type IntegerPredicate = Integer -> Bool
 ```
-This is because every unique possible function `Integer -> Bool` represents a completely unique infinite sequence of binary choices (the outputs corresponding to the inputs `0, 1, 2...`).
+
+This is because defining a single complete function of type `Integer -> Bool` requires making an infinite number of binary choices (the outputs corresponding to the inputs `0, 1, 2...`). Thus, the total number of unique `Integer -> Bool` functions is exactly $2^{\aleph_0}$.
 
 ---
 

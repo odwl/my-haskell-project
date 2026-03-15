@@ -10,7 +10,7 @@ This document serves as the master architectural blueprint for the "Minimal Hask
   - Section 1.1: `Void` (0 Inhabitants / Initial Object) 
   - Section 1.2: `()` (1 Inhabitant / Terminal Object)
   - Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)
-  - Section 1.4: Infinite Inhabitants (Streams and Functions)
+  - Section 1.4: Infinite Inhabitants (Countable and Uncountable)
 
 ### Part 2: The Algebras (Laws) (`docs/02_concrete_algebras.md`)
 - **Focus**: Attaching behavior to concrete structures using lawful typeclasses.
