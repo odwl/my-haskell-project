@@ -115,9 +115,22 @@ testBatch (eq (undefined :: MyData))
 
 - **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces `True == True` and `False == False`. But what about `True == False`? Mathematically, if we evaluated it to `True`, we'd be constructing a perfectly lawful equality where `True` and `False` belong to the exact same *equivalence class*. This would mathematically collapse `Bool` into a 1-inhabitant type! Therefore, because we want to preserve both inhabitants, we are strictly required to define the cross-comparisons as `False` (`True /= False`). The remaining laws (Symmetry and Transitivity) are then trivially fulfilled.
 
+  **Exercise 5: Counting Valid Equalities**
+  Consider our 2-inhabitant `Bool` type again. How many mathematically valid (lawful) `Eq` instances can you possibly write for it? 
+
+  <details>
+  <summary><b>View Solution</b></summary>
+  
+  Exactly **two**!
+  1. The **Standard Equality** (`True == True`, `False == False`, cross-comparisons are `False`). This keeps `Bool` conceptually as a 2-inhabitant type (two equivalence classes).
+  2. The **Universal Equality** (`_ == _ = True`). This mathematically collapses `Bool` into functioning as a 1-inhabitant type (one equivalence class).
+
+  Any other configuration (such as making a value not equal to itself, or making `True == False` return `True` but `False == True` return `False`) would break Reflexivity or Symmetry, making it an unlawful instance.
+  </details>
+
 - **$\infty$ Inhabitants (`Fraction`)**: When a type has many inhabitants, the default compiler-derived `Eq` (which checks identical memory structure) may not reflect true mathematical parity. We often have to manually implement structural equality.
 
-  **Exercise 5: A Meaningful Custom `Eq`**
+  **Exercise 6: A Meaningful Custom `Eq`**
   Suppose you are working with fractions defined as a numerator and denominator:
   ```haskell
   data Fraction = Fraction Integer Integer
@@ -172,7 +185,7 @@ Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` a
 
 - **3 Inhabitants (`RPS`)**: Three inhabitants is the minimum number required to demonstrate a cyclic relationship, meaning we can mathematically break a Total Order!
 
-  **Exercise 6: Breaking the Total Order**
+  **Exercise 7: Breaking the Total Order**
   Consider a hypothetical game of Rock-Paper-Scissors. Can we mathematically construct a valid sequence of all choices? Let's try writing an `Ord` instance:
   ```haskell
   data RPS = Rock | Paper | Scissors deriving (Eq)
@@ -194,7 +207,7 @@ Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` a
   However, our code specifically defines `compare Scissors Rock = LT` (meaning `Scissors < Rock`, and thus `Rock > Scissors`), making `Rock <= Scissors` evaluate to `False`! Therefore, Rock-Paper-Scissors is a mathematical *cycle*, rendering it physically impossible to fulfill a sequence of Total Order!
   </details>
 
-  **Exercise 7: Deriving the Rest from `compare`**
+  **Exercise 8: Deriving the Rest from `compare`**
   Assume you have provided a valid `compare :: a -> a -> Ordering` for your type. How would you mathematically define the other operators (`<`, `<=`, `>`, `>=`, `max`, `min`) solely in terms of `compare`?
 
   <details>
