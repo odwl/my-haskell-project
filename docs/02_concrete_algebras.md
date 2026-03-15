@@ -82,7 +82,7 @@ testBatch (eq (undefined :: MyData))
   ```
   </details>
 
-- **1 Inhabitant (`()`)**: There is only one possible value, so `() == ()` is always `True`.
+- **1 Inhabitant (`()`)**: There is only one possible value, so `() == ()` is always `True`. This trivially respects all the laws.
 
   **Exercise 3: The Trivial Inequality**
   Without relying on `(==)`, how would you implement the simplest possible `(/=) :: () -> () -> Bool` directly?
