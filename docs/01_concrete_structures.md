@@ -531,6 +531,24 @@ type IntegerPredicate = Integer -> Bool
 
 This is because defining a single complete function of type `Integer -> Bool` requires making an infinite number of binary choices (the outputs corresponding to the inputs `0, 1, 2...`). Thus, the total number of unique `Integer -> Bool` functions is exactly $2^{\aleph_0}$.
 
+##### C. Higher Infinities
+
+Does the hierarchy of infinity stop there? Not at all! What you are referring to are **cardinalities** (which measure the "size" of sets, while ordinals measure "well-ordered types").
+
+Thanks to **Cantor's Theorem**, we know that the power set of any set always has a *strictly greater cardinality* than the set itself. In Haskell, calculating the power set (the set of all subsets) of a type `a` is mathematically equivalent to forming the predicate function `a -> Bool`.
+
+If `Integer -> Bool` has the uncountably infinite cardinality of the continuum ($2^{\aleph_0}$), what happens if we take the power set of *that*?
+
+```haskell
+-- A cardinality strictly larger than the continuum! (2^(2^ℵ_0))
+type HyperPredicate = (Integer -> Bool) -> Bool
+
+-- And we can keep going infinitely!
+type MegaPredicate = ((Integer -> Bool) -> Bool) -> Bool
+```
+
+By continually nesting our functions on the left-hand side, we can theoretically represent an infinite tower of strictly increasing infinities (known in set theory as the sequence of Beth numbers $\beth_0, \beth_1, \beth_2\dots$) directly inside Haskell's type system!
+
 ***
 
 
