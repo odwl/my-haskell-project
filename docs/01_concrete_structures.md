@@ -31,7 +31,11 @@
     - [2. Using `Either () ()`](#2-using-either--)
     - [3. Custom Enumerations](#3-custom-enumerations)
     - [4. Category Theory: Coproduct of Terminal Objects](#4-category-theory-coproduct-of-terminal-objects)
-  - [Section 1.4: Infinite Inhabitants (Countable and Uncountable)](#section-14-infinite-inhabitants-countable-and-uncountable)
+  - [Section 1.4: Other Finite Inhabitants (Products and Coproducts)](#section-14-other-finite-inhabitants-products-and-coproducts)
+    - [1. A 3-Inhabitant Type](#1-a-3-inhabitant-type)
+    - [2. Playing with 4 Inhabitants](#2-playing-with-4-inhabitants)
+    - [3. Scaling to 5 Inhabitants](#3-scaling-to-5-inhabitants)
+  - [Section 1.5: Infinite Inhabitants (Countable and Uncountable)](#section-15-infinite-inhabitants-countable-and-uncountable)
     - [1. Countably Infinite ($\aleph_0$)](#1-countably-infinite-aleph_0)
     - [2. Uncountably Infinite ($2^{\aleph_0}$)](#2-uncountably-infinite-2aleph_0)
       - [A. Infinite Streams](#a-infinite-streams)
@@ -301,8 +305,6 @@ There is exactly one conceptually pure way to implement this function (by doing 
 
 ### Section 1.2: `()` (1 Inhabitant / Terminal Object)
 
-**Categorical Analog:** *The Terminal Object* (denoted as $1$). In Category Theory, a terminal object has exactly one unique morphism coming in *from* every other object. In Haskell, this corresponds to the fact that you can map any arbitrary Type into the Unit type simply by throwing away the input value (`\x -> ()`).
-
 A 1-inhabitant type has exactly one possible value. Inspecting the value tells you nothing new—it simply conveys "this computation finished" or acts as a structural placeholder.
 
 #### 1. Custom Unit Types
@@ -352,9 +354,9 @@ If `Void` is the Initial Object in the `Hask` category, then the Unit type `()` 
 The universal property of a terminal object dictates that for *every* other object $A$ in the category, there exists exactly **one unique morphism** from $A$ to the terminal object. In Haskell, this corresponds to a function that takes any type and returns `()`:
 ```haskell
 unitMorphism :: a -> ()
-unitMorphism _ = ()
+unitMorphism = const ()
 ```
-There is exactly one conceptually pure way to implement this function (by ignoring the input and returning the only available value of the output type). The fact that every type can be deterministically mapped to `()` is what makes `()` the terminal object in `Hask`.
+There is exactly one conceptually pure way to implement this function (by ignoring the input and returning the only available value of the output type, which is precisely what the standard library's `const ()` does). The fact that every type can be deterministically mapped to `()` is what makes `()` the terminal object in `Hask`.
 
 #### 6. Exercises: The Power of One
 
@@ -418,7 +420,38 @@ data AccessLevel = Admin | User
 
 In Category Theory, the sum of two objects is called a **Coproduct**. As we saw, `Bool` is isomorphic to `Either () ()`. Because `()` is the terminal object $1$, `Bool` is the coproduct of $1 + 1$. Its existence allows us to represent independent binary choices in the `Hask` category. Any type with exactly two inhabitants is conceptually isomorphic to this same $1+1$ coproduct.
 
-### Section 1.4: Infinite Inhabitants (Countable and Uncountable)
+### Section 1.4: Other Finite Inhabitants (Products and Coproducts)
+
+We have explicitly covered types with 0, 1, and 2 inhabitants. By combining what we've learned, we can accurately determine the cardinality of *any* finite algebraic type through the mathematical laws of addition (Coproducts, represented by `Either`) and multiplication (Products, represented by tuples).
+
+#### 1. A 3-Inhabitant Type
+The standard library provides `Ordering`, a type with exactly three values representing the result of a comparison:
+```haskell
+data Ordering = LT | EQ | GT
+```
+Like `Bool`, this is a sum of terminal objects: $1 + 1 + 1 = 3$.
+
+#### 2. Playing with 4 Inhabitants
+Because $4 = 2 \times 2$, we can elegantly represent a 4-inhabitant type using the Categorical Product (a tuple) of two `Bool`s!
+```haskell
+type Four = (Bool, Bool)
+```
+This gives us exactly four values: `(True, True)`, `(True, False)`, `(False, True)`, and `(False, False)`. 
+
+Alternatively, since $4 = 1 + 3$, we could also represent it using a Coproduct (sum type) of `()` and `Ordering`:
+```haskell
+type FourSum = Either () Ordering
+```
+This also gives exactly four values: `Left ()`, `Right LT`, `Right EQ`, and `Right GT`. Because both `Four` and `FourSum` possess exactly 4 inhabitants, they are completely isomorphic!
+
+#### 3. Scaling to 5 Inhabitants
+How would you represent a type with exactly 5 inhabitants? 
+Because $5 = 2 + 3$, we could use `Either Bool Ordering`.
+Because $5 = 1 + 4$, we could also use `Either () (Bool, Bool)`.
+
+The specific structures change, but the cardinality remains absolute. This gives you the superpower of swapping data structures for mathematical equivalents depending on what is most ergonomic for your specific problem!
+
+### Section 1.5: Infinite Inhabitants (Countable and Uncountable)
 
 When we step beyond finite algebraic structures, we enter the realm of infinity. However, in mathematics and type theory, not all infinities are equal in size!
 
@@ -491,15 +524,17 @@ This is because defining a single complete function of type `Integer -> Bool` re
 
 Throughout this chapter, we frequently reference **Hask**, the category of Haskell types. 
 In Category Theory, a category consists of three things:
-1.  **Objects**: In `Hask`, the objects are entirely defined by Haskell types (e.g., `Int`, `Bool`, `String`, `Void`, `()`).
-2.  **Morphisms (Arrows)**: The morphisms between objects are standard Haskell functions (e.g., a function `f :: Int -> Bool` is a morphism from the object `Int` to the object `Bool`).
-3.  **Composition**: Morphisms must satisfy composition (in Haskell, using the `(.)` operator).
+1.  **Objects**: In `Hask`, the objects are entirely defined by Haskell types (e.g., `Int`, `Bool`, `String`, `Void`, `()`, as well as composite types like `[Int]`, `Maybe Double`, or `Const String Bool`).
+2.  **Morphisms (Arrows)**: The morphisms between objects are standard Haskell functions (e.g., `f :: Maybe Double -> Int` is a morphism from the object `Maybe Double` to the object `Int`). Because function types are themselves objects in `Hask`, a curried function like `g :: String -> Int -> Int` is perfectly valid—it is a morphism from the object `String` to the object `Int -> Int`.
+3.  **Composition**: Morphisms must satisfy composition (in Haskell, using the `(.)` operator). If you have a morphism `f :: a -> b` and a morphism `g :: b -> c`, their composition `g . f` is a valid morphism from `a -> c`. For example, composing `show :: Int -> String` and `length :: String -> Int` forms a new morphism `(length . show) :: Int -> Int`.
 
 Furthermore, a valid category must obey two strict mathematical laws:
 *   **Identity**: Every object must have an identity morphism (`id :: a -> a`) that behaves as a no-op: `f . id == id . f == f`.
 *   **Associativity**: Function composition must be identically associative: `(f . g) . h == f . (g . h)`.
 
-Haskell was explicitly designed so its abstractions securely mirror these categorical concepts. However, there is a catch. Is `Hask` strictly a valid category from a rigorous mathematical standpoint? The technical answer is **No**, and it's because of a phenomenon called "Bottom".
+Haskell was explicitly designed so its abstractions securely mirror these categorical concepts. However, there is a catch. As famously pointed out by Andrej Bauer in his seminal post *"Hask is not a category"*, is `Hask` strictly a valid category from a rigorous mathematical standpoint? The technical answer is **No**, and it's because of a phenomenon called "Bottom".
+
+*(Note: Despite this technicality, the paper "Fast and Loose Reasoning is Morally Correct" (Danielsson et al., 2006) formally justifies why we can safely abstract away Bottom when reasoning about programs. Therefore, throughout this entire document, we will follow standard functional programming convention and **assume that Hask is a valid category**.)*
 
 ### The Secret Inhabitant: Bottom (`_|_`)
 
