@@ -9,141 +9,90 @@ import GHC.Generics
 import Network.HTTP.Req
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as B
-
--- Duffel API token
-apiToken :: ByteString
-apiToken = "YOUR_DUFFEL_API_TOKEN"
+import System.Environment (lookupEnv)
+import System.Exit (exitFailure)
 
 --------------------------------------------------------------------------------
--- Request Data Types
+-- SerpApi Response Data Types
 --------------------------------------------------------------------------------
 
-data Passenger = Passenger
-  { type_ :: Text
+data FlightDetail = FlightDetail
+  { airline :: Text
+  , flight_number :: Text
   } deriving (Show, Generic)
 
--- We manually write ToJSON to map "type_" to "type"
-instance ToJSON Passenger where
-  toJSON (Passenger t) = object ["type" .= t]
+instance FromJSON FlightDetail
 
-data Slice = Slice
-  { origin :: Text
-  , destination :: Text
-  , departure_date :: Text
+data BestFlight = BestFlight
+  { flights :: [FlightDetail]
+  , price :: Int
   } deriving (Show, Generic)
 
-instance ToJSON Slice
+instance FromJSON BestFlight
 
-data OfferRequestData = OfferRequestData
-  { slices :: [Slice]
-  , passengers :: [Passenger]
-  , requested_sources :: [Text]
+data SerpApiResponse = SerpApiResponse
+  { best_flights :: Maybe [BestFlight]
+  , other_flights :: Maybe [BestFlight]
   } deriving (Show, Generic)
 
-instance ToJSON OfferRequestData
-
-data OfferRequestPayload = OfferRequestPayload
-  { data_ :: OfferRequestData
-  } deriving (Show, Generic)
-
--- We manually write ToJSON to map "data_" to "data"
-instance ToJSON OfferRequestPayload where
-  toJSON (OfferRequestPayload d) = object ["data" .= d]
-
---------------------------------------------------------------------------------
--- Response Data Types
---------------------------------------------------------------------------------
-
-data Amount = Amount
-  { amount_value :: Text
-  , amount_currency :: Text
-  } deriving (Show, Generic)
-instance FromJSON Amount where
-  parseJSON = withObject "Amount" $ \v -> Amount
-      <$> v .: "total_amount"
-      <*> v .: "total_currency"
-
-data Owner = Owner
-  { name :: Text
-  } deriving (Show, Generic)
-instance FromJSON Owner
-
-data Offer = Offer
-  { offer_total_amount :: Text
-  , offer_total_currency :: Text
-  , owner :: Owner
-  } deriving (Show, Generic)
-
-instance FromJSON Offer where
-    parseJSON = withObject "Offer" $ \v -> Offer
-        <$> v .: "total_amount"
-        <*> v .: "total_currency"
-        <*> v .: "owner"
-
-data OfferResponseData = OfferResponseData
-  { offers :: [Offer]
-  } deriving (Show, Generic)
-
-instance FromJSON OfferResponseData
-
-data OfferResponsePayload = OfferResponsePayload
-  { response_data :: OfferResponseData
-  } deriving (Show, Generic)
-
--- We manually write FromJSON to map "data" back to Haskell's generic "data" 
--- BUT Haskell cannot use 'data' as a field name easily, so we use data_ field name
--- and write manual FromJSON
-data OfferResponseWrapper = OfferResponseWrapper 
-  { responseData :: OfferResponseData 
-  } deriving (Show)
-
-instance FromJSON OfferResponseWrapper where
-  parseJSON = withObject "OfferResponseWrapper" $ \v -> OfferResponseWrapper
-    <$> v .: "data"
+instance FromJSON SerpApiResponse
 
 --------------------------------------------------------------------------------
 -- Main Logic
 --------------------------------------------------------------------------------
 
--- Since we are required to search for flights to Paris next Monday!
--- Next Monday is 2026-03-16. 
--- We'll just search from London (LHR) to Paris (CDG) to illustrate.
-fetchFlights :: IO ()
-fetchFlights = runReq defaultHttpConfig $ do
-  let url = https "api.duffel.com" /: "air" /: "offer_requests"
+fetchFlights :: String -> IO ()
+fetchFlights apiKey = runReq defaultHttpConfig $ do
+  -- URL: https://serpapi.com/search.json
+  let url = https "serpapi.com" /: "search.json"
+      
+  let options = 
+          "engine" =: ("google_flights" :: Text)
+       <> "departure_id" =: ("ZRH" :: Text)
+       <> "arrival_id" =: ("BRU" :: Text)
+       <> "outbound_date" =: ("2026-03-17" :: Text)
+       <> "currency" =: ("CHF" :: Text)
+       <> "hl" =: ("en" :: Text)
+       <> "api_key" =: (T.pack apiKey)
 
-  let payload = OfferRequestPayload
-        { data_ = OfferRequestData
-          { slices = [ Slice "LHR" "CDG" "2026-03-16" ]
-          , passengers = [ Passenger "adult" ]
-          , requested_sources = []
-          }
-        }
+  liftIO $ putStrLn "Fetching flight offers to Brussels (ZRH -> BRU) for tomorrow (2026-03-17) using SerpApi..."
 
-  let options =
-        header "Authorization" ("Bearer " <> apiToken)
-        <> header "Duffel-Version" "v2"
-        <> header "Accept" "application/json"
+  -- Send GET Request
+  response <- req GET url NoReqBody jsonResponse options
 
-  liftIO $ putStrLn "Fetching flight offers to Paris (LHR -> CDG) for next Monday (2026-03-16)..."
-
-  -- Send POST Request
-  response <- req POST url (ReqBodyJson payload) jsonResponse options
-
-  let offerResp = responseBody response :: OfferResponseWrapper
-      allOffers = offers (responseData offerResp)
+  let offerResp = responseBody response :: SerpApiResponse
+      best = case best_flights offerResp of
+               Just fs -> fs
+               Nothing -> []
+      other = case other_flights offerResp of
+                Just fs -> fs
+                Nothing -> []
+      allOffers = best ++ other
 
   liftIO $ do
     putStrLn "\n=== Cheapest Flights ==="
     if null allOffers
       then putStrLn "No flights found."
       else do
-        -- we just grab the first one assuming it's returned sorted by duffel, or we can just print the top 3
+        -- Grab the top 3 cheapest flights found
         let topOffers = take 3 allOffers
-        mapM_ (\o -> putStrLn $ "Airline: " ++ T.unpack (name (owner o)) ++ " | Price: " ++ T.unpack (offer_total_amount o) ++ " " ++ T.unpack (offer_total_currency o)) topOffers
+        mapM_ printOffer topOffers
     putStrLn "========================\n"
 
+  where
+    printOffer :: BestFlight -> IO ()
+    printOffer o = do
+      let flightNames = T.intercalate ", " $ map (\f -> airline f <> " (" <> flight_number f <> ")") (flights o)
+      putStrLn $ "Airline: " ++ T.unpack flightNames ++ " | Price: " ++ show (price o) ++ " CHF"
+
 main :: IO ()
-main = fetchFlights
+main = do
+  mKey <- lookupEnv "SERPAPI_API_KEY"
+  case mKey of
+    Nothing -> do
+      putStrLn "Error: SERPAPI_API_KEY environment variable not set."
+      putStrLn "Please get a free API key from https://serpapi.com/ and set it like this:"
+      putStrLn "export SERPAPI_API_KEY=\"your_key_here\""
+      putStrLn "Then run the client again."
+      exitFailure
+    Just key -> fetchFlights key
