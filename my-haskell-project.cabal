@@ -27,6 +27,7 @@ common share-tests-deps
     tasty-quickcheck,
     text,
     transformers,
+    time,
 
 -- The main library for the project
 library
@@ -61,6 +62,10 @@ library
     parser-combinators,
     text,
     transformers,
+    time,
+    req,
+    aeson,
+    bytestring
 
 test-suite lambda-test
   import: share-tests-deps

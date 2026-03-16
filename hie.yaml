@@ -1,5 +1,9 @@
 cradle:
   cabal:
+    - path: "src/FlightClient"
+      component: "exe:flight-client"
+    - path: "src/WeatherClient"
+      component: "exe:weather-client"
     - path: "src"
       component: "lib:my-haskell-project"
     - path: "test/Exercism"

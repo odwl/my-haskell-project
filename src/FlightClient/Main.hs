@@ -25,38 +25,38 @@ import Text.Printf (printf)
 -- | European towns that have direct flights from Zurich with Swiss International Air Lines.
 swissEuropeanDestinationsFromZurich :: [(String, String)]
 swissEuropeanDestinationsFromZurich =
-  [ ("Amsterdam", "AMS"),
-    ("Athens", "ATH"),
-    ("Barcelona", "BCN"),
-    ("Berlin", "BER"),
-    ("Brussels", "BRU"),
-    ("Budapest", "BUD"),
-    ("Copenhagen", "CPH"),
-    ("Dublin", "DUB"),
-    ("Dubrovnik", "DBV"),
-    ("Florence", "FLR"),
-    ("Graz", "GRZ"),
-    ("Istanbul", "IST"),
-    ("Larnaca", "LCA"),
-    ("Lisbon", "LIS"),
-    ("London", "LHR"),
-    ("Madrid", "MAD"),
-    ("Manchester", "MAN"),
-    ("Milan", "MXP"),
-    ("Nice", "NCE"),
-    ("Oslo", "OSL"),
-    ("Palma de Mallorca", "PMI"),
-    ("Paris", "CDG"),
-    ("Prague", "PRG"),
-    ("Pristina", "PRN"),
-    ("Rome", "FCO"),
-    ("Sarajevo", "SJJ"),
-    ("Sofia", "SOF"),
-    ("Stockholm", "ARN"),
-    ("Tirana", "TIA"),
-    ("Venice", "VCE"),
-    ("Vienna", "VIE"),
-    ("Warsaw", "WAW")
+  [ ("Amsterdam", "AMS")
+  -- ("Athens", "ATH"),
+  -- ("Barcelona", "BCN"),
+  -- ("Berlin", "BER"),
+  -- ("Brussels", "BRU"),
+  -- ("Budapest", "BUD"),
+  -- ("Copenhagen", "CPH"),
+  -- ("Dublin", "DUB"),
+  -- ("Dubrovnik", "DBV"),
+  -- ("Florence", "FLR"),
+  -- ("Graz", "GRZ"),
+  -- ("Istanbul", "IST"),
+  -- ("Larnaca", "LCA"),
+  -- ("Lisbon", "LIS"),
+  -- ("London", "LHR"),
+  -- ("Madrid", "MAD"),
+  -- ("Manchester", "MAN"),
+  -- ("Milan", "MXP"),
+  -- ("Nice", "NCE"),
+  -- ("Oslo", "OSL"),
+  -- ("Palma de Mallorca", "PMI"),
+  -- ("Paris", "CDG"),
+  -- ("Prague", "PRG"),
+  -- ("Pristina", "PRN"),
+  -- ("Rome", "FCO"),
+  -- ("Sarajevo", "SJJ"),
+  -- ("Sofia", "SOF"),
+  -- ("Stockholm", "ARN"),
+  -- ("Tirana", "TIA"),
+  -- ("Venice", "VCE"),
+  -- ("Vienna", "VIE"),
+  -- ("Warsaw", "WAW")
   ]
 
 --------------------------------------------------------------------------------
@@ -72,15 +72,15 @@ data RowData = RowData
   }
   deriving (Show)
 
--- | Business logic to find best Swiss direct return flights
-fetchSwissFlightsTable :: String -> IO ()
-fetchSwissFlightsTable key = do
+-- | Business logic to find best direct return flights
+fetchBestFlightsTable :: String -> IO ()
+fetchBestFlightsTable key = do
   now <- getCurrentTime
   let days = 24 * 60 * 60
   let todayStr = formatTime defaultTimeLocale "%Y-%m-%d" (addUTCTime (7 * days) now)
   let nextWeekStr = formatTime defaultTimeLocale "%Y-%m-%d" (addUTCTime (14 * days) now)
 
-  putStrLn $ "Finding best Swiss direct return flights from Zurich..."
+  putStrLn $ "Finding best direct return flights from Zurich..."
   putStrLn $ "Outbound: " ++ todayStr ++ " | Return: " ++ nextWeekStr
   putStrLn "Querying European destinations (this may take a moment)..."
 
@@ -103,12 +103,11 @@ fetchSwissFlightsTable key = do
       respData <- searchFlights opts
 
       let allFs = maybe [] id (best_flights respData) ++ maybe [] id (other_flights respData)
-          swissOnly = filter isSwiss allFs
 
-      if null swissOnly
+      if null allFs
         then return Nothing
         else do
-          let best = head (sortBy (comparing price) swissOnly)
+          let best = head (sortBy (comparing price) allFs)
           return $ Just (cityName, best)
 
   let rows = mapMaybe toRowData (catMaybes results)
@@ -121,11 +120,6 @@ fetchSwissFlightsTable key = do
     printf "%-20s | %-16s | %-16s | %-10d | %-10d\n" (rdDest r) (rdStart r) (rdEnd r) (rdPrice r) (rdDur r)
   putStrLn "========================================================================================\n"
   where
-    isSwiss :: BestFlight -> Bool
-    isSwiss bf = case flights bf of
-      Just fs -> not (null fs) && all (\f -> maybe False (\a -> "Swiss" `T.isInfixOf` a) (airline f)) fs
-      Nothing -> False
-
     toRowData :: (String, BestFlight) -> Maybe RowData
     toRowData (dest, bf) = do
       p <- price bf
@@ -145,4 +139,4 @@ main = do
     Nothing -> do
       putStrLn "Error: SERPAPI_API_KEY environment variable not set."
       exitFailure
-    Just key -> fetchSwissFlightsTable key
+    Just key -> fetchBestFlightsTable key
