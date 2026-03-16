@@ -540,7 +540,7 @@ Thanks to **Cantor's Theorem**, we know that the power set of any set always has
 If `Integer -> Bool` has the uncountably infinite cardinality of the continuum ($2^{\aleph_0}$), what happens if we take the power set of *that*?
 
 ```haskell
--- A cardinality strictly larger than the continuum! (2^(2^ℵ_0))
+-- A cardinality strictly larger than the continuum! (2^(2^$\aleph_0$))
 type HyperPredicate = (Integer -> Bool) -> Bool
 
 -- And we can keep going infinitely!
