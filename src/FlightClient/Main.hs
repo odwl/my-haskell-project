@@ -1,177 +1,125 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Main where
 
+import Control.Monad (forM, forM_)
 import Control.Monad.IO.Class (liftIO)
-import Data.Aeson
-import GHC.Generics
-import Network.HTTP.Req
-import Data.Text (Text)
+import Data.List (sortBy)
+import Data.Maybe (catMaybes, mapMaybe)
+import Data.Ord (comparing)
 import qualified Data.Text as T
+import Data.Time.Clock (addUTCTime, getCurrentTime)
+import Data.Time.Format (defaultTimeLocale, formatTime)
+-- Import the API module
+
+import Network.HTTP.Req
+import SerpApi
 import System.Environment (lookupEnv)
 import System.Exit (exitFailure)
-import Data.Time.Clock (getCurrentTime, addUTCTime)
-import Data.Time.Format (formatTime, defaultTimeLocale)
-import Data.Maybe (mapMaybe, catMaybes)
-import Data.List (sortBy, intercalate)
-import Data.Ord (comparing)
-import Control.Monad (forM, forM_)
 import Text.Printf (printf)
-
---------------------------------------------------------------------------------
--- SerpApi Response Data Types
---------------------------------------------------------------------------------
-
-data AirportInfo = AirportInfo
-  { time :: Maybe Text
-  } deriving (Show, Generic)
-
-instance FromJSON AirportInfo
-
-data FlightDetail = FlightDetail
-  { airline :: Maybe Text
-  , flight_number :: Maybe Text
-  , departure_airport :: Maybe AirportInfo
-  , arrival_airport :: Maybe AirportInfo
-  , duration :: Maybe Int
-  } deriving (Show, Generic)
-
-instance FromJSON FlightDetail
-
-data BestFlight = BestFlight
-  { flights :: Maybe [FlightDetail]
-  , price :: Maybe Int
-  } deriving (Show, Generic)
-
-instance FromJSON BestFlight
-
-data SerpApiResponse = SerpApiResponse
-  { best_flights :: Maybe [BestFlight]
-  , other_flights :: Maybe [BestFlight]
-  } deriving (Show, Generic)
-
-instance FromJSON SerpApiResponse
 
 --------------------------------------------------------------------------------
 -- Swiss Destinations
 --------------------------------------------------------------------------------
 
--- | Returns European towns that have direct flights from Zurich with Swiss International Air Lines.
-swissEuropeanDestinationsFromZurich :: [String]
+-- | European towns that have direct flights from Zurich with Swiss International Air Lines.
+swissEuropeanDestinationsFromZurich :: [(String, String)]
 swissEuropeanDestinationsFromZurich =
-  [ "Amsterdam", "Athens", "Barcelona", "Berlin", "Brussels", "Budapest"
-  , "Copenhagen", "Dublin", "Dubrovnik", "Florence", "Graz", "Istanbul"
-  , "Larnaca", "Lisbon", "London", "Madrid", "Manchester", "Milan"
-  , "Nice", "Oslo", "Palma de Mallorca", "Paris", "Prague", "Pristina"
-  , "Rome", "Sarajevo", "Sofia", "Stockholm", "Tirana", "Venice", "Vienna", "Warsaw"
+  [ ("Amsterdam", "AMS"),
+    ("Athens", "ATH"),
+    ("Barcelona", "BCN"),
+    ("Berlin", "BER"),
+    ("Brussels", "BRU"),
+    ("Budapest", "BUD"),
+    ("Copenhagen", "CPH"),
+    ("Dublin", "DUB"),
+    ("Dubrovnik", "DBV"),
+    ("Florence", "FLR"),
+    ("Graz", "GRZ"),
+    ("Istanbul", "IST"),
+    ("Larnaca", "LCA"),
+    ("Lisbon", "LIS"),
+    ("London", "LHR"),
+    ("Madrid", "MAD"),
+    ("Manchester", "MAN"),
+    ("Milan", "MXP"),
+    ("Nice", "NCE"),
+    ("Oslo", "OSL"),
+    ("Palma de Mallorca", "PMI"),
+    ("Paris", "CDG"),
+    ("Prague", "PRG"),
+    ("Pristina", "PRN"),
+    ("Rome", "FCO"),
+    ("Sarajevo", "SJJ"),
+    ("Sofia", "SOF"),
+    ("Stockholm", "ARN"),
+    ("Tirana", "TIA"),
+    ("Venice", "VCE"),
+    ("Vienna", "VIE"),
+    ("Warsaw", "WAW")
   ]
 
 --------------------------------------------------------------------------------
--- Main Logic
+-- Logic and UI
 --------------------------------------------------------------------------------
 
-fetchFlights :: String -> IO ()
-fetchFlights apiKey = runReq defaultHttpConfig $ do
-  let url = https "serpapi.com" /: "search.json"
-      options = 
-          "engine" =: ("google_flights" :: Text)
-       <> "departure_id" =: ("ZRH" :: Text)
-       <> "arrival_id" =: ("BRU" :: Text)
-       <> "outbound_date" =: ("2026-03-17" :: Text)
-       <> "type" =: ("2" :: Text)
-       <> "currency" =: ("CHF" :: Text)
-       <> "hl" =: ("en" :: Text)
-       <> "api_key" =: T.pack apiKey
-
-  liftIO $ putStrLn "Fetching flight offers to Brussels (ZRH -> BRU) for tomorrow (2026-03-17) using SerpApi..."
-  response <- req GET url NoReqBody jsonResponse options
-
-  let offerResp = responseBody response :: SerpApiResponse
-      best = case best_flights offerResp of
-               Just fs -> fs
-               Nothing -> []
-      other = case other_flights offerResp of
-                Just fs -> fs
-                Nothing -> []
-      allOffers = best ++ other
-
-  liftIO $ do
-    putStrLn "\n=== Cheapest Flights ==="
-    if null allOffers
-      then putStrLn "No flights found."
-      else do
-        let topOffers = take 3 allOffers
-        mapM_ printOffer topOffers
-    putStrLn "========================\n"
-
-  where
-    printOffer :: BestFlight -> IO ()
-    printOffer o = do
-      let flightNames = case flights o of
-            Just fs -> T.intercalate ", " $ map (\f -> maybe "Unknown" id (airline f) <> " (" <> maybe "Unknown" id (flight_number f) <> ")") fs
-            Nothing -> "Unknown"
-      putStrLn $ "Airline: " ++ T.unpack flightNames ++ " | Price: " ++ show (maybe 0 id (price o)) ++ " CHF"
-
 data RowData = RowData
-  { rdDest :: String
-  , rdPrice :: Int
-  , rdStart :: String
-  , rdEnd :: String
-  , rdDur :: Int
-  } deriving (Show)
+  { rdDest :: String,
+    rdPrice :: Int,
+    rdStart :: String,
+    rdEnd :: String,
+    rdDur :: Int
+  }
+  deriving (Show)
 
+-- | Business logic to find best Swiss direct return flights
 fetchSwissFlightsTable :: String -> IO ()
-fetchSwissFlightsTable apiKey = do
+fetchSwissFlightsTable key = do
   now <- getCurrentTime
   let days = 24 * 60 * 60
-  let todayStr = formatTime defaultTimeLocale "%Y-%m-%d" now
-  let nextWeekStr = formatTime defaultTimeLocale "%Y-%m-%d" (addUTCTime (7 * days) now)
-  
+  let todayStr = formatTime defaultTimeLocale "%Y-%m-%d" (addUTCTime (7 * days) now)
+  let nextWeekStr = formatTime defaultTimeLocale "%Y-%m-%d" (addUTCTime (14 * days) now)
+
   putStrLn $ "Finding best Swiss direct return flights from Zurich..."
   putStrLn $ "Outbound: " ++ todayStr ++ " | Return: " ++ nextWeekStr
   putStrLn "Querying European destinations (this may take a moment)..."
 
   results <- runReq defaultHttpConfig $ do
-    let url = https "serpapi.com" /: "search.json"
-    
-    forM swissEuropeanDestinationsFromZurich $ \dest -> do
-      liftIO $ putStrLn $ " - Querying " ++ dest ++ "..."
-      let options = "engine" =: ("google_flights" :: Text)
-                 <> "departure_id" =: ("ZRH" :: Text)
-                 <> "arrival_id" =: (T.pack dest)
-                 <> "outbound_date" =: (T.pack todayStr)
-                 <> "return_date" =: (T.pack nextWeekStr)
-                 <> "type" =: ("1" :: Text) -- 1 = Round trip
-                 <> "stops" =: ("1" :: Text) -- 1 = nonstop
-                 <> "currency" =: ("CHF" :: Text)
-                 <> "hl" =: ("en" :: Text)
-                 <> "api_key" =: T.pack apiKey
-      
-      -- Avoid crashing loop if one fails by trying to catch exceptions or just failing
-      resp <- req GET url NoReqBody jsonResponse options
-      let respData = responseBody resp :: SerpApiResponse
-      
+    forM swissEuropeanDestinationsFromZurich $ \(cityName, iataCode) -> do
+      liftIO $ putStrLn $ " - Querying " ++ cityName ++ " (" ++ iataCode ++ ")..."
+
+      let opts =
+            FlightSearchOptions
+              { departureId = "ZRH",
+                arrivalId = T.pack iataCode,
+                outboundDate = T.pack todayStr,
+                returnDate = Just (T.pack nextWeekStr),
+                travelType = "1", -- Round trip
+                stops = Just "1", -- Nonstop
+                currency = "CHF",
+                apiKey = T.pack key
+              }
+
+      respData <- searchFlights opts
+
       let allFs = maybe [] id (best_flights respData) ++ maybe [] id (other_flights respData)
-          -- Filter for flights where all legs have "Swiss" in the airline
           swissOnly = filter isSwiss allFs
-      
+
       if null swissOnly
         then return Nothing
         else do
-          let best = head (sortBy (comparing price) swissOnly) -- Sort remaining by price Ascending
-          return $ Just (dest, best)
+          let best = head (sortBy (comparing price) swissOnly)
+          return $ Just (cityName, best)
 
   let rows = mapMaybe toRowData (catMaybes results)
       sortedRows = sortBy (comparing rdPrice) rows
 
   putStrLn "\n========================================================================================"
-  printf "%-20s | %-16s | %-16s | %-10s | %-10s\n" ("Destination"::String) ("Start Time"::String) ("End Time"::String) ("Price CHF"::String) ("Duration m"::String)
+  printf "%-20s | %-16s | %-16s | %-10s | %-10s\n" ("Destination" :: String) ("Start Time" :: String) ("End Time" :: String) ("Price CHF" :: String) ("Duration m" :: String)
   putStrLn "----------------------------------------------------------------------------------------"
   forM_ sortedRows $ \r -> do
-      printf "%-20s | %-16s | %-16s | %-10d | %-10d\n" (rdDest r) (rdStart r) (rdEnd r) (rdPrice r) (rdDur r)
+    printf "%-20s | %-16s | %-16s | %-10d | %-10d\n" (rdDest r) (rdStart r) (rdEnd r) (rdPrice r) (rdDur r)
   putStrLn "========================================================================================\n"
-
   where
     isSwiss :: BestFlight -> Bool
     isSwiss bf = case flights bf of
@@ -196,9 +144,5 @@ main = do
   case mKey of
     Nothing -> do
       putStrLn "Error: SERPAPI_API_KEY environment variable not set."
-      putStrLn "Please get a free API key from https://serpapi.com/ and set it like this:"
-      putStrLn "export SERPAPI_API_KEY=\"your_key_here\""
-      putStrLn "Then run the client again."
       exitFailure
-    Just key -> do
-      fetchSwissFlightsTable key
+    Just key -> fetchSwissFlightsTable key

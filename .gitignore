@@ -19,6 +19,7 @@ stack.yaml.lock
 .DS_Store
 Thumbs.db
 TASKS.tmp.md
+.env
 
 ### Documents & LaTeX ###
 *.pdf
