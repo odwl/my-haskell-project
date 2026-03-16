@@ -29,3 +29,10 @@ TASKS.tmp.md
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+*.html
+
+### Haskell Intermediates ###
+*.hi
+*.o
+*.dyn_hi
+*.dyn_o
