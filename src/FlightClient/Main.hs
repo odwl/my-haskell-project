@@ -51,6 +51,7 @@ fetchFlights apiKey = runReq defaultHttpConfig $ do
        <> "departure_id" =: ("ZRH" :: Text)
        <> "arrival_id" =: ("BRU" :: Text)
        <> "outbound_date" =: ("2026-03-17" :: Text)
+       <> "type" =: ("2" :: Text) -- 2 = One-way flight
        <> "currency" =: ("CHF" :: Text)
        <> "hl" =: ("en" :: Text)
        <> "api_key" =: (T.pack apiKey)
