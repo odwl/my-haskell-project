@@ -124,9 +124,18 @@ printRanking dayLabel getSunshine validResults = do
 
 main :: IO ()
 main = runReq defaultHttpConfig $ do
-  let cities = [ "Zurich", "Prague", "St. Moritz", "Davos", "Brussels"
-               , "Arosa", "Lenzerheide", "Laax", "Corvatsch", "Obersaxen", "Andermatt"
-               , "Maloja"
+  let cities = [ "Amsterdam", "Andorra la Vella", "Athens", "Belgrade"
+               , "Berlin", "Bern", "Bratislava", "Brussels", "Bucharest"
+               , "Budapest", "Chisinau", "Copenhagen", "Dublin", "Helsinki"
+               , "Kyiv", "Lisbon", "Ljubljana", "London", "Luxembourg"
+               , "Madrid", "Minsk", "Monaco", "Moscow", "Nicosia"
+               , "Oslo", "Paris", "Podgorica", "Prague", "Reykjavik"
+               , "Riga", "Rome", "San Marino", "Sarajevo", "Skopje"
+               , "Sofia", "Stockholm", "Tallinn", "Tirana", "Vaduz"
+               , "Valletta", "Vatican City", "Vienna", "Vilnius", "Warsaw"
+               , "Zagreb", "Zurich", "St. Moritz", "Davos", "Arosa"
+               , "Lenzerheide", "Laax", "Corvatsch", "Obersaxen"
+               , "Andermatt", "Maloja"
                ]
   
   liftIO $ putStrLn "Fetching weather for multiple cities..."

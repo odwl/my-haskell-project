@@ -12,7 +12,7 @@ This section centralizes all the foundational papers, influential articles, and 
    *(A mind-bending proof that taking the calculus derivative of a data type's polynomial structurally generates its exact Zipper).*
 4. **Swierstra, W. (2008).** *Data types à la carte*. 
    *(A seminal paper proving how to use the algebraic Sum operator over Functors to modularly compose distinct data types and interpreters).*
-5. **Taylor, C. (2013).** *[The Algebra of Algebraic Data Types](https://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/)*. 
+5. **Taylor, C. (2013).** *[The Algebra of Algebraic Data Types](https://gist.github.com/gregberns/5e9da0c95a9a8d2b6338afe69310b945)*. 
    *(A famous blog series expanding the structural analogy by directly using high-school algebra to calculate isomorphic data types).*
 
 ### Category Theory & Deep Math

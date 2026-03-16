@@ -128,8 +128,14 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 > ```
 >
 > There are also a few other ways to implement this without explicitly writing `case ... of {}`:
-> 1. **Using `LambdaCase`**: With `{-# LANGUAGE LambdaCase #-}`, you can drop the variable name and write `\case {}`.
-> 2. **Using standard library tools (`absurd`)**: If you use the standard library's `Void` type instead of a custom `Never`, the library provides a function called `absurd :: Void -> a`. Because `absurd` can return *any* type `a`, you can simply use it to return `Void` right back! `f _ imposs _ = absurd imposs`.
+> 1. **Using `LambdaCase`**: With `{-# LANGUAGE LambdaCase #-}`, you can drop the variable name and write:
+>    ```haskell
+>    \case {}
+>    ```
+> 2. **Using standard library tools (`absurd`)**: If you use the standard library's `Void` type instead of a custom `Never`, the library provides a function called `absurd :: Void -> a`. Because `absurd` can return *any* type `a`, you can simply use it to return `Void` right back!
+>    ```haskell
+>    f _ imposs _ = absurd imposs
+>    ```
 >
 > *(For the deep technical details on how the compiler handles matching on uninhabited types, refer to the [GHC User Guide on EmptyCase](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html)).*
 >
@@ -369,8 +375,7 @@ If `Void` is the Initial Object in the `Hask` category, then the Unit type `()` 
 
 The universal property of a terminal object dictates that for *every* other object $A$ in the category, there exists exactly **one unique morphism** from $A$ to the terminal object. In Haskell, this corresponds to a function that takes any type and returns `()`:
 ```haskell
-unitMorphism :: a -> ()
-unitMorphism = const ()
+const () :: a -> ()
 ```
 There is exactly one conceptually pure way to implement this function (by ignoring the input and returning the only available value of the output type, which is precisely what the standard library's `const ()` does). The fact that every type can be deterministically mapped to `()` is what makes `()` the terminal object in `Hask`.
 
@@ -581,6 +586,26 @@ In mathematical logic, it is impossible to return a value from a function withou
 If you wrote `createNever :: a -> Never`, you could technically "implement" it by writing `createNever x = undefined` or `createNever x = createNever x`. It would compile and satisfy the type checker, but it's fundamentally cheating because it avoids returning altogether by crashing or looping forever! Because `_|_` inhabits every type, you can use it to satisfy any signature, even impossible ones.
 
 However, Haskellers typically reason about their code by assuming it terminates and doesn't crash, treating it as if it were a total language. This approach is formally justified in the well-known paper *"Fast and Loose Reasoning is Morally Correct"* [2].
+
+#### Exercise: Compiling the Impossible
+
+Haskell's `undefined` is a built-in value that evaluates to bottom (`_|_`). Because it can crash the program, the compiler assigns it the universal type `a`—meaning it can substitute for literally *anything*. This makes it incredibly useful as a temporary placeholder when developing programs.
+
+Can you write a compiling Haskell snippet that defines a function promising to convert a `String` into the impossible `Void` type, using `undefined` to satisfy the type checker?
+
+<details>
+<summary><b>View Solution</b></summary>
+
+```haskell
+import Data.Void (Void)
+
+-- Mathematically impossible to produce a Void, but the compiler accepts it!
+cheatTheSystem :: String -> Void
+cheatTheSystem _ = undefined
+```
+
+Because `undefined` evaluates to bottom, the compiler accepts it as a valid return value for *every* type, including `Void`. As long as you don't actually *call* `cheatTheSystem` with a `String` at runtime (which would immediately crash the program), the file will compile perfectly. This exact principle is how Haskellers use "typed holes" and `undefined` to incrementally build and type-check large systems before all the pieces are actually finished!
+</details>
 
 #### Interacting with Bottom safely using `IO`
 

@@ -1,0 +1,79 @@
+Usage: /google/bin/releases/gemini-cli/tools/gemini [options_for_gemini_cli]
+
+Launches Gemini CLI for google3 development, passing along any command-line
+arguments specified to this script
+
+To see the help for Gemini CLI, run:
+
+  /google/bin/releases/gemini-cli/tools/gemini -- --help
+
+so that "--help" will be passed along to the application instead of being
+consumed by this bash script.
+  Flags from /tmp/sar.gemini.34400.7da758ea5f92d947244e45881ce556b78a7d99b9/gemini_impl:
+    --beyond_quota_bucket_key (The quota bucket key to use for Beyond, in the
+      format 'team/name'.) type: string default: ''
+    --ccpa (Route all models to the CCPA backend. Can be used alongside
+      --ccpa_models.) type: bool default: false
+    --ccpa_backend (CCPA Prediction Service Backend) type: string
+      default: 'blade:google.internal.cloud.code.v1internal.cloudcode-prod'
+    --ccpa_models (Comma-separated list of model names to route to the CCPA
+      backend.) type: string default: ''
+    --check_yolo_policy (Check and apply the YOLO policy for the user. See
+      go/sre-gemini-cli-policy.) type: bool default: true
+    --cider (Enable cider integration mode. Connects to the given cider UNIX
+      socket.) type: string default: ''
+    --enable_experiments (Enable fetching Cloud Code experiments.) type: bool
+      default: true
+    --enable_sawmill_logging (Enable writing logs to sawmill) type: bool
+      default: true
+    --gaia_credential_exchanger_backend_deadline (Seconds to wait for the GAIA
+      credential exchanger backend.) type: int default: 30
+    --genai_backend (GenAI API backend to make requests to. Defaults to prod.)
+      type: string
+      default: 'blade:google.ai.generativelanguage.v1main.generativeservice-prod'
+    --gfg|devai (EXPERIMENTAL: Use the gemini-for-google-2.5 pro model via the
+      Gemini API. See b/427522246) type: bool default: false
+    --inspect_brk (Pass --inspect-brk to the Node.js process for debugging.)
+      type: bool default: false
+    --mcpdev ([DEPRECATED] The --mcpdev flag has no effect and is no longer
+      needed as we now allow MCP servers by default. This command line flag was
+      intended to help reduce the risk of launching Gemini CLI with third-party
+      MCP servers, but it ended up causing more confusion than help, and slowed
+      down teams' exploration process with internally developed MCP servers.
+      Use of third-party MCP servers in corp is still disallowed by policy.)
+      type: bool default: false
+    --model_client_use_euc (EXPERIMENTAL: Use EUC for the request to the
+      Evergreen ModelClient. Required to enable Sherlog traces.) type: bool
+      default: false
+    --model_client_use_transact_dat (EXPERIMENTAL: Use a Transact DAT for
+      requests to the Evergreen ModelClient.) type: bool default: false
+    --model_url (EXPERIMENTAL: Target a custom model at the given model URL -
+      go/evergreen-model-urls) type: string default: ''
+    --port (Port to use for the local HTTP to stubby proxy used for outbound
+      model calls. If zero, the proxy will try to pick an unused port.)
+      type: int default: 0
+    --project (GCP project name to send on outbound requests from the proxy.
+      Unused if an API key is set via GEMINI_API_KEY or a .env file.)
+      type: string default: 'shared-g3-gemini-quota'
+    --project_max_shard (If set, shard the GCP project names with the suffix
+      -%02d up to the given max shards.) type: int default: 0
+    --proxy (Proxy HTTP calls to internal models via stubby. This spawns a
+      separate proxy job.) type: bool default: true
+    --proxy_address (Address of the proxy server to use. If set, the proxy and
+      port flags are ignored.) type: string default: ''
+    --proxy_healthz_timeout (Seconds to wait for the proxy to become healthy.)
+      type: int default: 30
+    --sawmill_logname (Sawmill log destination override.) type: string
+      default: ''
+    --sawmill_sanitize_logs (Strip user prompts and API responses from logs
+      written to sawmill.) type: bool default: false
+    --use_google_internal_system_prompt (EXPERIMENTAL: When true, we use Google
+      internal system instructions. It replaces the open source system
+      instructions.) type: bool default: false
+    --use_loas_credentials (EXPERIMENTAL: Use LOAS credentials for requests to
+      Gemini API. By default, the proxy will send a GaiaMint obtained from
+      LOAS. GEMINI_API_KEY must be set since LOAS credentials are not
+      associated with the shared google3 GCP project.) type: bool
+      default: false
+    --user_agent (User agent string to send with requests.) type: string
+      default: 'GeminiCLI/google3'

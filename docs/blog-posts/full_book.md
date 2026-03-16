@@ -1,108 +1,3 @@
-# Master Outline: The Minimal Haskell Series
-
-This document serves as the master architectural blueprint for the "Minimal Haskell" blog series. The pedagogy relies on a fundamental mathematical dichotomy: mastering the **Structures** (Nouns / Cardinality) before mastering the **Algebras** (Verbs / Typeclasses / Laws).
-
-## Universe 1: Concrete Types (Kind `Type`)
-
-### Part 1: The Structures (No Laws) (`docs/01_concrete_structures.md`)
-- **Focus**: The geometry of types, counting inhabitants, and categorical analogs.
-- **Chapter 1: Types of Kind `Type`**
-  - Section 1.1: `Void` (0 Inhabitants / Initial Object) 
-  - Section 1.2: `()` (1 Inhabitant / Terminal Object)
-  - Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)
-  - Section 1.4: Infinite Inhabitants (Countable and Uncountable)
-
-### Part 2: The Algebras (Laws) (`docs/02_concrete_algebras.md`)
-- **Focus**: Attaching behavior to concrete structures using lawful typeclasses.
-- **Chapter 1: Equivalence and Ordering**
-  - `Eq`: The laws of mathematical equivalence.
-  - `Ord`: The laws of total ordering.
-- **Chapter 2: Associative Binary Operations ($+$ and $\times$)**
-  - `Semigroup`: The laws of associativity.
-  - `Monoid`: The laws of identity (`mempty` and `<>`).
-  - **The Top Minimal Implementations**: Unpacking exactly why `Bool` has 4 valid Monoids, and why 3-inhabitant types have exactly 33!
-
-***
-
-## Universe 2: Higher-Kinded Types (Kind `Type -> Type`)
-
-### Part 3: The Parameterized Structures (No Laws) (`docs/03_parameterized_structures.md`)
-- **Focus**: Parameterized shapes and "empty boxes".
-- **Chapter 2: Parameterized Types of Kind `Type -> Type`**
-  - Section 2.1: `VoidFoldable` (0 Inhabitants)
-  - Section 2.2: `Proxy` (1 Inhabitant)
-  - Section 2.3: `Const Bool a` (2 Inhabitants)
-
-### Part 4: The Algebras of Shape (`docs/04_the_holy_trinity.md`)
-- **Focus**: The "holy trinity" of shapes (Functor, Foldable, Traversable) and computational contexts (Applicative, Monad).
-
-#### Chapter 1: Functor & Bifunctor (Shape Preservation)
-- parametricity and the laws of Identity and Composition.
-- Minimal Functors: `Zero`, `Proxy`, `Const r`, `Identity`, `(->)`.
-
-#### Chapter 2: Foldable (Lossy Aggregation)
-- The adjunction mapping (`foldMap`).
-- Minimal Foldables: `Zero`, `Proxy`, `Identity`, `Const`, `Either`.
-
-#### Chapter 3: Traversable (Effectful Folding)
-- Commuting structure and effects.
-
-#### Chapter 4: Applicative (Context Aggregation)
-- Lifting values and application.
-- The `Const` Twist: Why `Applicative` relies on `Monoid`.
-
-#### Chapter 5: Monad (Effectful Sequencing)
-- Bind, Join, Kleisli, and the `Const` barrier.
-
-***
-
-## Universe 3: Functor Combinators & N-Ary Glues
-
-### Part 5: The Functor Monoids (`docs/07_n_ary_glues.md`)
-- **Focus**: The mathematical foundations of combining parameterized types.
-- **Chapter 1: The Functor Monoid (The True Engine)**
-  - Section 1.1: The Minimal Generators (`Zero`/`Sum`, `Proxy`/`Product`, `Fix`, `(->)`, `Compose`).
-- **Chapter 2: From Monoids to N-ary Glues**
-  - Section 2.1: Expanding beyond Binary (`Either`, `(,)`) to N-Ary structures.
-  - Section 2.2: The Ultimate Generator: System F.
-- **Chapter 3: The Value-Level Symmetry**
-  - Section 3.1: The Value-Level Product (`Applicative`).
-  - Section 3.2: The Value-Level Sum (`Alternative`).
-
-***
-
-## Part 6: The Deep Math (`docs/08_deep_math_and_proofs.md`)
-
-### Chapter 4: Deep Dive into Bifunctors
-#### Section 4.1: The True Nature of Bifunctors
-- **Product Categories**: A Bifunctor is just a normal functor from a product category $\mathcal{C} \times \mathcal{D} \to \mathcal{E}$.
-- **Haskell implementation**: Mapping a pair of morphisms (`bimap`) from $\mathbf{Hask} \times \mathbf{Hask} \to \mathbf{Hask}$.
-
-#### Section 4.2: The Laws of Bifunctors
-- **Identity**: `bimap id id == id`.
-- **Composition**: `bimap (f . g) (h . i) == bimap f h . bimap g i`.
-- **Equivalences**: The relationship between `bimap`, `first`, and `second`.
-
-### Chapter 5: Monoidal Categories
-#### Section 5.1: The Pentagon and Triangle Laws
-- **The Tensor Product**: Why `Either` and `(,)` are special Bifunctors.
-- **Coherence Conditions**: Associativity (Pentagon) and Unit (Triangle) laws.
-- *(Future section for deep dive into formal tensor products).*
-
-### Annex: Proofs and Derivations
-- **Summary & Bundle Taxonomy**:
-  - **Final Summary**: Shape and Preservation.
-  - **Type Bundle Taxonomy**: When to use `type`, `newtype`, or `data`.
-- **Monad Equivalence**: Bind/Join/Kleisli.
-- **Uniqueness Proof**: Formal mapping proof for `Proxy`.
-- **Identity Implies Composition**: Formal proof of the parametricity shortcut.
-- **Parametricity**: A deep dive into Natural Transformations, Ends, and Relational Fibrations.
-
-### Annex A: Proof of 2-Inhabitant Associativity
-- **The Cayley Table Proof**: Mathematical proof showing that once a two-sided identity element is locked in for a 2-inhabitant type, the remaining $2 \times 2$ grid leaves no structural room for associativity to fail.
-
-### Part 9: Bibliography (`docs/09_bibliography.md`)
-- **Focus**: Centralized list of foundational papers, influential articles, and recommended reading for the concepts discussed throughout this series.
 # Part 1: The Structures (No Laws)
 **Author:** Olivier De Wolf, odewolf@gmail.com
 
@@ -110,36 +5,46 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 - [Introduction](#introduction)
 - [A Quick Primer: What is a "Kind"?](#a-quick-primer-what-is-a-kind)
 - [Chapter 1: Types of Kind `Type`](#chapter-1-types-of-kind-type)
-  - [1. 0 Inhabitants (Uninhabited Type)](#1-0-inhabitants-uninhabited-type)
+  - [Section 1.1: `Void` (0 Inhabitants / Initial Object)](#section-11-void-0-inhabitants--initial-object)
     - [1. Custom Empty Data](#1-custom-empty-data)
-    - [2. `Data.Void` - the built-in equivalent.](#2-datavoid-the-built-in-equivalent)
+    - [2. `Data.Void` - the built-in equivalent.](#2-datavoid---the-built-in-equivalent)
       - [Exercise 1: Implementing the Impossible](#exercise-1-implementing-the-impossible)
-    - [3. Common Idioms](#3-common-idioms)
-      - [1. Type-Level Guarantees](#1-type-level-guarantees)
+    - [3. Type-Level Guarantees](#3-type-level-guarantees)
       - [Exercise 2: Avoiding `fromRight` and Partiality](#exercise-2-avoiding-fromright-and-partiality)
       - [Exercise 3: Traversing Without Failure (Bonus)](#exercise-3-traversing-without-failure-bonus)
       - [Exercise 4: Safe List Processing](#exercise-4-safe-list-processing)
-      - [2. Type-Level Phantom Types for Type Safety](#2-type-level-phantom-types-for-type-safety)
+    - [4. Type-Level Phantom Types for Type Safety](#4-type-level-phantom-types-for-type-safety)
       - [Exercise 5: Phantom Status](#exercise-5-phantom-status)
       - [Exercise 6: A Tree Without Leaves](#exercise-6-a-tree-without-leaves)
-  - [2. 1 Inhabitant (Unit Type)](#2-1-inhabitant-unit-type)
+    - [5. Category Theory: The Initial Object in Hask](#5-category-theory-the-initial-object-in-hask)
+  - [Section 1.2: `()` (1 Inhabitant / Terminal Object)](#section-12--1-inhabitant--terminal-object)
     - [1. Custom Unit Types](#1-custom-unit-types)
     - [2. The Standard Unit `()`](#2-the-standard-unit-)
     - [3. The "0-Tuple" Intuition](#3-the-0-tuple-intuition)
     - [4. Other Library Unit Types](#4-other-library-unit-types)
-    - [5. Exercises: The Power of One](#5-exercises-the-power-of-one)
+    - [5. The Curious Case of `[Void]`](#5-the-curious-case-of-void)
+    - [6. Category Theory: The Terminal Object in Hask](#6-category-theory-the-terminal-object-in-hask)
+    - [7. Exercises: The Power of One](#7-exercises-the-power-of-one)
       - [Exercise 7: A Safe `head`](#exercise-7-a-safe-head)
       - [Exercise 8: Avoiding `fromJust` with `Either`](#exercise-8-avoiding-fromjust-with-either)
-  - [3. 2 Inhabitants (Boolean Type)](#3-2-inhabitants-boolean-type)
+  - [Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)](#section-13-bool-2-inhabitants--coproduct-of-terminal-objects)
     - [1. The Standard `Bool`](#1-the-standard-bool)
+    - [2. Using `Either () ()`](#2-using-either--)
     - [3. Custom Enumerations](#3-custom-enumerations)
-  - [4. Uncountably Infinite Inhabitants](#4-uncountably-infinite-inhabitants)
-    - [1. Infinite Streams](#1-infinite-streams)
-    - [2. Infinite Functions](#2-infinite-functions)
-
-- [Annex ](#annex-)
+    - [4. Category Theory: Coproduct of Terminal Objects](#4-category-theory-coproduct-of-terminal-objects)
+  - [Section 1.4: Other Finite Inhabitants (Products and Coproducts)](#section-14-other-finite-inhabitants-products-and-coproducts)
+    - [1. A 3-Inhabitant Type](#1-a-3-inhabitant-type)
+    - [2. Playing with 4 Inhabitants](#2-playing-with-4-inhabitants)
+    - [3. Scaling to 5 Inhabitants](#3-scaling-to-5-inhabitants)
+  - [Section 1.5: Infinite Inhabitants (Countable and Uncountable)](#section-15-infinite-inhabitants-countable-and-uncountable)
+    - [1. Countably Infinite ($\aleph_0$)](#1-countably-infinite-aleph_0)
+    - [2. Uncountably Infinite ($2^{\aleph_0}$)](#2-uncountably-infinite-2aleph_0)
+      - [A. Infinite Streams](#a-infinite-streams)
+      - [B. Infinite Functions](#b-infinite-functions)
+- [Annex: The Category Hask ](#annex-the-category-hask-)
+  - [Hask: The Category of Haskell Types](#hask-the-category-of-haskell-types)
   - [The Secret Inhabitant: Bottom (`_|_`)](#the-secret-inhabitant-bottom-__)
-  - [Bibliography](#bibliography)
+    - [Interacting with Bottom safely using `IO`](#interacting-with-bottom-safely-using-io)
 
 ## Introduction
 
@@ -223,8 +128,14 @@ Because `Data.Void` has exactly 0 inhabitants just like our custom `Never` type,
 > ```
 >
 > There are also a few other ways to implement this without explicitly writing `case ... of {}`:
-> 1. **Using `LambdaCase`**: With `{-# LANGUAGE LambdaCase #-}`, you can drop the variable name and write `\case {}`.
-> 2. **Using standard library tools (`absurd`)**: If you use the standard library's `Void` type instead of a custom `Never`, the library provides a function called `absurd :: Void -> a`. Because `absurd` can return *any* type `a`, you can simply use it to return `Void` right back! `f _ imposs _ = absurd imposs`.
+> 1. **Using `LambdaCase`**: With `{-# LANGUAGE LambdaCase #-}`, you can drop the variable name and write:
+>    ```haskell
+>    \case {}
+>    ```
+> 2. **Using standard library tools (`absurd`)**: If you use the standard library's `Void` type instead of a custom `Never`, the library provides a function called `absurd :: Void -> a`. Because `absurd` can return *any* type `a`, you can simply use it to return `Void` right back!
+>    ```haskell
+>    f _ imposs _ = absurd imposs
+>    ```
 >
 > *(For the deep technical details on how the compiler handles matching on uninhabited types, refer to the [GHC User Guide on EmptyCase](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/empty_case.html)).*
 >
@@ -259,10 +170,10 @@ vacuous = fmap absurd
 *(Note on safety: Why does `vacuous` not crash if calling `absurd` crashes? Because `absurd` only crashes if you actually give it a `Never` value! If an `f Never` exists at runtime, the structure `f` must logically be "empty" of values—such as `Nothing`, an empty list `[]`, or a `Right`. Consequently, `fmap` traverses the container but never actually finds a `Never` value to apply `absurd` to, meaning the code safely evaluates without crashing!)*
 </details>
 
-#### 3. Common Idioms
-Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler. Here are some very useful common idioms using uninhabited types:
+Uninhabited (Empty) types might seem useless at first glance since you can never construct them. However, they are incredibly powerful tools for the compiler. Here are some very useful common idioms using uninhabited types: Type-Level Guarantees and Type-Level Phantom Types for Type Safety.
 
-##### 1. Type-Level Guarantees
+#### 3. Type-Level Guarantees
+
 One of the most frequent patterns when dealing with impossible states is safely extracting a value from a sum type where one branch can never happen. This section will demonstrate how to elegantly establish and resolve these type-level guarantees by leveraging the `Either Void a` structure alongside the `either absurd id` idiom. *(Note: you can seamlessly apply the exact same logic to the right side using `Either a Void` and `either id absurd`!)*
 
 By encoding the impossibility of failure directly into the type signature (e.g. `Either Void a`), you mathematically prove a computation is *guaranteed* to succeed! This approach is a far safer alternative to relying on notorious partial functions—like `head`, `fromJust`, `read`, or the list index operator `!!`—that will crash your entire program at runtime if handed unexpected input.
@@ -342,7 +253,7 @@ extractUsers = map (either absurd id)
 ```
 </details>
 
-##### 2. Type-Level Phantom Types for Type Safety
+#### 4. Type-Level Phantom Types for Type Safety
 
 In many mainstream languages like Java, C++, or Python, developers often rely on `const` modifiers, `final` keywords, or empty "marker interfaces" to tag data and enforce invariants at compile-time. Haskell achieves a much more powerful and flexible version of this exact same concept using **Phantom Types**. 
 
@@ -389,9 +300,17 @@ Because it is impossible to instantiate a `Void`, we can never use the `Leaf` co
 *(Bonus thought: Any attempt to manually construct a finite `Tree Void` in Haskell would require "cheating" the type system by explicitly placing a bottom (`_|_`) value, such as `undefined` or `error`, in the `Leaf` position!)*
 </details>
 
-### Section 1.2: `()` (1 Inhabitant / Terminal Object)
+#### 5. Category Theory: The Initial Object in Hask
 
-**Categorical Analog:** *The Terminal Object* (denoted as $1$). In Category Theory, a terminal object has exactly one unique morphism coming in *from* every other object. In Haskell, this corresponds to the fact that you can map any arbitrary Type into the Unit type simply by throwing away the input value (`\x -> ()`).
+In the mathematical framework of Category Theory, Haskell types and functions form a category colloquially known as **Hask**. In this category, the types are the "objects" and the functions are the "morphisms" (arrows) between them.
+
+Within `Hask`, `Void` plays the formal role of the **Initial Object** (often denoted as $0$). An initial object gives rise to a universal property: for *every* other object $A$ in the category, there exists exactly **one unique morphism** from the initial object to $A$. In Haskell, this corresponds perfectly to the function:
+```haskell
+absurd :: Void -> a
+```
+There is exactly one conceptually pure way to implement this function (by doing nothing, since it can never be called), making it the unique morphism guaranteed by the initial object. Conversely, there are *no* general morphisms from populated types into `Void`.
+
+### Section 1.2: `()` (1 Inhabitant / Terminal Object)
 
 A 1-inhabitant type has exactly one possible value. Inspecting the value tells you nothing new—it simply conveys "this computation finished" or acts as a structural placeholder.
 
@@ -435,7 +354,32 @@ While `()` is standard, Haskell libraries often use specialized 1-inhabitant typ
 
 Because `Acknowledged`, `()`, `Identity ()`, and `a :~: a` all have an identical cardinality of 1 (a single constructor), they are all formally **isomorphic** to one another.
 
-#### 5. Exercises: The Power of One
+#### 5. The Curious Case of `[Void]`
+
+What happens if we create a list of `Void`? Does `[Void]` exist? 
+
+Let's use Type Algebra. A list type `[a]` is defined structurally as either an empty list `[]`, or a head element `a` attached to a tail list `[a]`. Mathematically:
+`List(a) = 1 + a * List(a)`
+*(Where `1` represents the empty list `[]`, addition represents the `Either` choice, and multiplication represents pairing head and tail)*
+
+If we substitute `Void` (which has 0 inhabitants):
+`List(Void) = 1 + 0 * List(Void)`
+`List(Void) = 1 + 0`
+`List(Void) = 1`
+
+The cardinality of `[Void]` is exactly **1**. Because `Void` has no values, it is impossible to ever construct the "head" of a list of `Void`. The only value that can ever exist of type `[Void]` is the empty list `[]`. Therefore, `[Void]` is perfectly structurally isomorphic to `()`!
+
+#### 6. Category Theory: The Terminal Object in Hask
+
+If `Void` is the Initial Object in the `Hask` category, then the Unit type `()` is the **Terminal Object** (often denoted as $1$). 
+
+The universal property of a terminal object dictates that for *every* other object $A$ in the category, there exists exactly **one unique morphism** from $A$ to the terminal object. In Haskell, this corresponds to a function that takes any type and returns `()`:
+```haskell
+const () :: a -> ()
+```
+There is exactly one conceptually pure way to implement this function (by ignoring the input and returning the only available value of the output type, which is precisely what the standard library's `const ()` does). The fact that every type can be deterministically mapped to `()` is what makes `()` the terminal object in `Hask`.
+
+#### 7. Exercises: The Power of One
 
 ##### Exercise 7: A Safe `head`
 The standard library's `head :: [a] -> a` function is notorious for crashing if given an empty list because it lacks a value to return. How could you write a total, non-crashing `safeHead` function using `Either`? What minimal type is the most appropriate for the `Left` error branch if you don't actually need to provide an error message?
@@ -493,7 +437,42 @@ data SwitchState = On | Off
 data AccessLevel = Admin | User
 ```
 
-### Section 1.4: Infinite Inhabitants (Countable and Uncountable)
+#### 4. Category Theory: Coproduct of Terminal Objects
+
+In Category Theory, the sum of two objects is called a **Coproduct**. As we saw, `Bool` is isomorphic to `Either () ()`. Because `()` is the terminal object $1$, `Bool` is the coproduct of $1 + 1$. Its existence allows us to represent independent binary choices in the `Hask` category. Any type with exactly two inhabitants is conceptually isomorphic to this same $1+1$ coproduct.
+
+### Section 1.4: Other Finite Inhabitants (Products and Coproducts)
+
+We have explicitly covered types with 0, 1, and 2 inhabitants. By combining what we've learned, we can accurately determine the cardinality of *any* finite algebraic type through the mathematical laws of addition (Coproducts, represented by `Either`) and multiplication (Products, represented by tuples).
+
+#### 1. A 3-Inhabitant Type
+The standard library provides `Ordering`, a type with exactly three values representing the result of a comparison:
+```haskell
+data Ordering = LT | EQ | GT
+```
+Like `Bool`, this is a sum of terminal objects: $1 + 1 + 1 = 3$.
+
+#### 2. Playing with 4 Inhabitants
+Because $4 = 2 \times 2$, we can elegantly represent a 4-inhabitant type using the Categorical Product (a tuple) of two `Bool`s!
+```haskell
+type Four = (Bool, Bool)
+```
+This gives us exactly four values: `(True, True)`, `(True, False)`, `(False, True)`, and `(False, False)`. 
+
+Alternatively, since $4 = 1 + 3$, we could also represent it using a Coproduct (sum type) of `()` and `Ordering`:
+```haskell
+type FourSum = Either () Ordering
+```
+This also gives exactly four values: `Left ()`, `Right LT`, `Right EQ`, and `Right GT`. Because both `Four` and `FourSum` possess exactly 4 inhabitants, they are completely isomorphic!
+
+#### 3. Scaling to 5 Inhabitants
+How would you represent a type with exactly 5 inhabitants? 
+Because $5 = 2 + 3$, we could use `Either Bool Ordering`.
+Because $5 = 1 + 4$, we could also use `Either () (Bool, Bool)`.
+
+The specific structures change, but the cardinality remains absolute. This gives you the superpower of swapping data structures for mathematical equivalents depending on what is most ergonomic for your specific problem!
+
+### Section 1.5: Infinite Inhabitants (Countable and Uncountable)
 
 When we step beyond finite algebraic structures, we enter the realm of infinity. However, in mathematics and type theory, not all infinities are equal in size!
 
@@ -512,6 +491,21 @@ Because `()` carries zero information, the only piece of information an entire `
 * `[()]` represents 1
 * `[(), ()]` represents 2
 * ...and so on.
+
+*Categorical Connection:* In abstract algebra, a list of elements from a set $X$ forms the **Free Monoid** over $X$. Therefore, the type `[()]` represents the Free Monoid over the terminal object (the singleton set). Because you can endlessly append `()` to the sequence, the Free Monoid of a single generator is naturally isomorphic to the natural numbers $\mathbb{N}$ and is countably infinite!
+
+**The Unordered Pair (`UnorderedPair Integer`):**
+Another simple example is the unordered pair we discussed previously. Consider the type:
+```haskell
+data UnorderedPair a = UPair a a
+```
+If we instantiate this with a countably infinite type like `Integer`, the resulting type `UnorderedPair Integer` is also countably infinite. Even though it pairs two numbers (like `UPair 1 2`), because order doesn't mathematically matter in an *unordered* set (meaning `UPair 1 2` is equivalent to `UPair 2 1`), the total number of distinct pairs remains countably infinite!
+
+**Other Utterly Useful Envelopes:**
+If you need a countably infinite type but must conform to specific structural API shapes, you will frequently see basic infinite types wrapped in "containers" that preserve their exact cardinality (*Note: these containers are of kind `Type -> Type` which we will explore in Chapter 2, but when instantiated with an `Integer` they return to kind `Type`!*):
+* **The Ordered Pair (`(Integer, Integer)`):** Unlike our unordered pair, the standard tuple distinguishes order, meaning `(1, 2)` and `(2, 1)` are distinct values. Because mathematically $\aleph_0 \times \aleph_0 = \aleph_0$, the standard tuple remains perfectly countably infinite. It's the ubiquitous foundation for returning multiple values, representing 2D Euclidean coordinates, and building Rational numbers (fractions).
+* **The Constant Payload (`Const Integer String`):** `Const` is a highly specialized, absolutely pervasive wrapper from `Data.Functor.Const` that physically holds a value of its first type parameter (e.g. `Integer`) while completely ignoring and pretending to hold its second type parameter (`String`). It actually has exactly the same number of inhabitants as `Integer`! It is utterly indispensable in advanced Haskell (like building Lenses or writing Traversals), as it lets you "hijack" a mapping operation that expects to modify a `String`, and instead use it to accumulate a constant `Integer`.
+* **The Transparent Box (`Identity Integer`):** Often, complex abstractions like Monad Transformers require a value to be wrapped in a structural shape. The `Identity` type perfectly fills this requirement without adding any branching logic or effects, acting as a transparent zero-cost box around an `Integer`.
 
 #### 2. Uncountably Infinite ($2^{\aleph_0}$)
 
@@ -542,10 +536,44 @@ type IntegerPredicate = Integer -> Bool
 
 This is because defining a single complete function of type `Integer -> Bool` requires making an infinite number of binary choices (the outputs corresponding to the inputs `0, 1, 2...`). Thus, the total number of unique `Integer -> Bool` functions is exactly $2^{\aleph_0}$.
 
+##### C. Higher Infinities
+
+Does the hierarchy of infinity stop there? Not at all! What you are referring to are **cardinalities** (which measure the "size" of sets, while ordinals measure "well-ordered types").
+
+Thanks to **Cantor's Theorem**, we know that the power set of any set always has a *strictly greater cardinality* than the set itself. In Haskell, calculating the power set (the set of all subsets) of a type `a` is mathematically equivalent to forming the predicate function `a -> Bool`.
+
+If `Integer -> Bool` has the uncountably infinite cardinality of the continuum ($2^{\aleph_0}$), what happens if we take the power set of *that*?
+
+```haskell
+-- A cardinality strictly larger than the continuum! (2^(2^$\aleph_0$))
+type HyperPredicate = (Integer -> Bool) -> Bool
+
+-- And we can keep going infinitely!
+type MegaPredicate = ((Integer -> Bool) -> Bool) -> Bool
+```
+
+By continually nesting our functions on the left-hand side, we can theoretically represent an infinite tower of strictly increasing infinities (known in set theory as the sequence of Beth numbers $\beth_0, \beth_1, \beth_2\dots$) directly inside Haskell's type system!
+
 ***
 
 
-## Annex 
+## Annex: The Category Hask 
+
+### Hask: The Category of Haskell Types
+
+Throughout this chapter, we frequently reference **Hask**, the category of Haskell types. 
+In Category Theory, a category consists of three things:
+1.  **Objects**: In `Hask`, the objects are entirely defined by Haskell types (e.g., `Int`, `Bool`, `String`, `Void`, `()`, as well as composite types like `[Int]`, `Maybe Double`, or `Const String Bool`).
+2.  **Morphisms (Arrows)**: The morphisms between objects are standard Haskell functions (e.g., `f :: Maybe Double -> Int` is a morphism from the object `Maybe Double` to the object `Int`). Because function types are themselves objects in `Hask`, a curried function like `g :: String -> Int -> Int` is perfectly valid—it is a morphism from the object `String` to the object `Int -> Int`.
+3.  **Composition**: Morphisms must satisfy composition (in Haskell, using the `(.)` operator). If you have a morphism `f :: a -> b` and a morphism `g :: b -> c`, their composition `g . f` is a valid morphism from `a -> c`. For example, composing `show :: Int -> String` and `length :: String -> Int` forms a new morphism `(length . show) :: Int -> Int`.
+
+Furthermore, a valid category must obey two strict mathematical laws:
+*   **Identity**: Every object must have an identity morphism (`id :: a -> a`) that behaves as a no-op: `f . id == id . f == f`.
+*   **Associativity**: Function composition must be identically associative: `(f . g) . h == f . (g . h)`.
+
+Haskell was explicitly designed so its abstractions securely mirror these categorical concepts. However, there is a catch. As famously pointed out by Andrej Bauer in his seminal post *"Hask is not a category"*, is `Hask` strictly a valid category from a rigorous mathematical standpoint? The technical answer is **No**, and it's because of a phenomenon called "Bottom".
+
+*(Note: Despite this technicality, the paper "Fast and Loose Reasoning is Morally Correct" (Danielsson et al., 2006) formally justifies why we can safely abstract away Bottom when reasoning about programs. Therefore, throughout this entire document, we will follow standard functional programming convention and **assume that Hask is a valid category**.)*
 
 ### The Secret Inhabitant: Bottom (`_|_`)
 
@@ -558,6 +586,26 @@ In mathematical logic, it is impossible to return a value from a function withou
 If you wrote `createNever :: a -> Never`, you could technically "implement" it by writing `createNever x = undefined` or `createNever x = createNever x`. It would compile and satisfy the type checker, but it's fundamentally cheating because it avoids returning altogether by crashing or looping forever! Because `_|_` inhabits every type, you can use it to satisfy any signature, even impossible ones.
 
 However, Haskellers typically reason about their code by assuming it terminates and doesn't crash, treating it as if it were a total language. This approach is formally justified in the well-known paper *"Fast and Loose Reasoning is Morally Correct"* [2].
+
+#### Exercise: Compiling the Impossible
+
+Haskell's `undefined` is a built-in value that evaluates to bottom (`_|_`). Because it can crash the program, the compiler assigns it the universal type `a`—meaning it can substitute for literally *anything*. This makes it incredibly useful as a temporary placeholder when developing programs.
+
+Can you write a compiling Haskell snippet that defines a function promising to convert a `String` into the impossible `Void` type, using `undefined` to satisfy the type checker?
+
+<details>
+<summary><b>View Solution</b></summary>
+
+```haskell
+import Data.Void (Void)
+
+-- Mathematically impossible to produce a Void, but the compiler accepts it!
+cheatTheSystem :: String -> Void
+cheatTheSystem _ = undefined
+```
+
+Because `undefined` evaluates to bottom, the compiler accepts it as a valid return value for *every* type, including `Void`. As long as you don't actually *call* `cheatTheSystem` with a `String` at runtime (which would immediately crash the program), the file will compile perfectly. This exact principle is how Haskellers use "typed holes" and `undefined` to incrementally build and type-check large systems before all the pieces are actually finished!
+</details>
 
 #### Interacting with Bottom safely using `IO`
 
@@ -579,91 +627,9 @@ By doing this, a complete crash (`_|_`) is safely intercepted and converted into
 
 ***
 > For references, papers, and further reading on these algebraic structures, refer to [Part 9: Bibliography](09_bibliography.md).
-# Part 3: The Parameterized Structures (No Laws)
-
-**Author:** Olivier De Wolf, odewolf@gmail.com
-
-## Chapter 2: Parameterized Types of Kind `Type -> Type`
-
-These are type constructors that require one type argument `a` before they become concrete types. Because they take another type as an argument, they are categorically referred to as **Higher-Kinded Types (HKTs)**. The number of inhabitants discussed here applies *regardless* of what `a` is instantiated to (i.e. the type parameter `a` is completely ignored at the value level).
-
-### Section 2.1: `VoidFoldable` (0 Inhabitants)
-
-These parameterized types cannot be constructed, no matter what `a` is. 
-
-#### 1. Standard Parameterized Empty Data
-```haskell
-data VoidFoldable a
-```
-
-#### 2. Using GADT Syntax
-```haskell
-{-# LANGUAGE GADTs #-}
-data VoidFoldable a where {}
-```
-
-#### 3. Phantom Wrapping `Data.Void`
-```haskell
-import Data.Void (Void)
-newtype VoidFoldable a = VoidFoldable Void
-```
-
-#### 4. Reusing Standard Library Structures
-GHC provides existing parameterized empty types for generic programming, like `V1`, or we can combine `Const` and `Void`.
-```haskell
-import GHC.Generics (V1)
-import Data.Functor.Const (Const)
-import Data.Void (Void)
-
--- V1 a 
--- Const Void a
-```
-
-### Section 2.2: `Proxy` (1 Inhabitant)
-
-These parameterized types have exactly one value, irrespective of `a`.
-
-#### 1. `Data.Proxy`
-`Proxy` is used to pass *type-level* information around at runtime without needing an actual value of that type.
-```haskell
-import Data.Proxy (Proxy(..))
--- The type is `Proxy a`, the only value is `Proxy`
-myProxy :: Proxy Int
-myProxy = Proxy
-```
-
-#### 2. `Constants` and `Generics`
-GHC generic programming uses `U1` to represent constructors with no fields. Alteratively, `Const () a` yields exactly 1 inhabitant.
-```haskell
-import GHC.Generics (U1(..))
-import Data.Functor.Const (Const(..))
-
--- U1 a (value is U1)
--- Const () a (value is Const ())
-```
-
-### Section 2.3: `Const Bool a` (2 Inhabitants)
-
-These parameterized types have precisely two values, regardless of `a`.
-
-#### 1. Custom Parameterized Tags
-```haskell
-data TwoOptions a = Option1 | Option2
-```
-
-#### 2. `Const Bool a`
-The `Const` functor holding a `Bool` gives exactly two possible states.
-```haskell
-import Data.Functor.Const (Const(..))
-
--- Const False :: Const Bool a
--- Const True  :: Const Bool a
-```
-
-***
 # Part 2: The Algebras (Laws) for Concrete Types
 
-Welcome to the second part of Universe 1. In Part 1, we defined our core **Structures**—the bare mathematical geometry of how many values a type can hold. We looked at the Initial Object (`Void`), the Terminal Object (`()`), and the Coproduct of Terminal Objects (`Bool`).
+Welcome to the second part of Universe 1. In Part 1, we defined our core **Structures**—the bare mathematical geometry of how many values a type can hold. We looked at the Initial Object (`Void`), the Terminal Object (`()`), the Coproduct of Terminal Objects (`Bool`), and both Countable (e.g., `[()]`, `Integer`) and Uncountable (e.g., `Stream Bool`, `Integer -> Bool`) infinite inhabitants.
 
 But structures alone are sterile. To actually perform computation, we need **Algebras**. An algebra assigns specific *behaviors* to our structures. In Haskell, we implement these algebras using Typeclasses. But unlike simple interfaces in other programming languages, a true algebra must come with **Mathematical Laws** to ensure the behavior is predictably sound.
 
@@ -675,6 +641,8 @@ Before we can combine values or map over structures, the most fundamental operat
 
 ### Section 1.1: `Eq` (The Laws of Mathematical Equivalence)
 
+Before looking at the operations of `Eq`, we must ask: what *kinds* of types can have an `Eq` instance? Because the operators compare fully instantiated runtime values, any type implementing `Eq` **must be a simple kind `Type`**. We cannot test if two uninstantiated type constructors (like `Maybe`) are equal; we can only test if two concrete values (like `Maybe Int`) are equal.
+
 The `Eq` typeclass provides the `(==)` and `(/=)` operators.
 
 ```haskell
@@ -683,6 +651,8 @@ class Eq a where
     (/=) :: a -> a -> Bool
     {-# MINIMAL (==) | (/=) #-}
 ```
+
+Notice the `{-# MINIMAL (==) | (/=) #-}` pragma. This means we only *need* to implement one of the two operators. If we write `(==)`, Haskell provides a default implementation `x /= y = not (x == y)` (and vice versa).
 
 To be a valid instance, it must rigorously satisfy the three mathematical laws of an **equivalence relation**:
 
@@ -693,10 +663,118 @@ To be a valid instance, it must rigorously satisfy the three mathematical laws o
 3. **Transitivity**: Equality chains perfectly.
    If `x == y` and `y == z`, then `x == z`.
 
+**Testing the Laws (`tasty-quickcheck` & `testBatch`)**
+
+As we discussed in the Introduction, these laws are mathematically absolute. But we don't need to manually verify them! We can write property tests using `tasty-quickcheck` to systematically generate random values and mechanically assert all three laws hold. For many standard typeclasses, libraries even provide pre-built test batches.
+```haskell
+-- Automatically tests Reflexivity, Symmetry, and Transitivity!
+testBatch (eq (undefined :: MyData))
+```
+
 **The Minimal Implementations:**
-- **0 Inhabitants (`Void`)**: Since we can never instantiate two `Void` values, `Eq` is trivially (vacuously) satisfied.
-- **1 Inhabitant (`()`)**: There is only one possible value, so `() == ()` is always `True`.
-- **2 Inhabitants (`Bool`)**: We must ensure `True == True` and `False == False`, while cross-comparisons yield `False`.
+- **0 Inhabitants (`Void`)**: As explored in Part 1 (Functions Returning an Uninhabited Type), any function computing a value from `Void` is mathematically valid via the Principle of Explosion. Since the signature becomes `(==) :: Void -> Void -> Bool`, substituting `Void` requires at least one `Void` as input. Using `absurd` (or the empty case), this gives us the *only* implementation possible:
+  ```haskell
+  instance Eq Void where
+      v1 == _ = absurd v1
+  ```
+  And because we can never instantiate the values at runtime to break them, the property laws of `Eq` are trivially (vacuously) satisfied:
+  * **Reflexivity**: $\forall v$, $v == v$? We can never provide any $v$, so the statement is vacuously true.
+  * **Symmetry**: $\forall (v_1, v_2)$, $v_1 == v_2 \Rightarrow v_2 == v_1$? We can never provide $v_1$ or $v_2$, so yes.
+  * **Transitivity**: $\forall (v_1, v_2, v_3)$, $v_1 == v_2 \land v_2 == v_3 \Rightarrow v_1 == v_3$? We can never provide $v_1$, $v_2$, or $v_3$, so yes.
+
+  **Exercise 1: Point-Free `(==)`**
+  How would you manually implement `(==) :: Void -> Void -> Bool` in a fully point-free style using only `absurd` and `const`?
+  
+  <details>
+  <summary><b>View Solution</b></summary>
+  
+  `absurd` has the type `Void -> a`, which can be specialized to `Void -> Bool`.
+  `const` takes a value and ignores its second argument, with type `x -> y -> x`.
+  By passing `absurd` to `const`, we get a function `const absurd` with the signature `y -> (Void -> Bool)`. When used in our instance, `y` aligns with `Void`, giving `Void -> Void -> Bool`. Thus:
+  ```haskell
+  instance Eq Void where
+      (==) = const absurd
+  ```
+  </details>
+
+  **Exercise 2: The Derived `(/=)`**
+  Since `Eq` has a minimal pragma prescribing either `(==)` or `(/=)`, Haskell will automatically derive `(/=)` from our `(==)` implementation. What is the effective full implementation of `Eq Void` that the compiler generates?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+  
+  Haskell uses the default implementation `x /= y = not (x == y)`. Combined with our implementation of `(==)`, the full effective code becomes:
+  ```haskell
+  instance Eq Void where
+      v1 == _ = absurd v1
+      v1 /= v2 = not (absurd v1)
+  ```
+  </details>
+
+- **1 Inhabitant (`()`)**: There is only one possible value, so `() == ()` is always `True`. This trivially respects all the laws.
+
+  **Exercise 3: The Trivial Inequality**
+  Without relying on `(==)`, how would you implement the simplest possible `(/=) :: () -> () -> Bool` directly?
+  
+  <details>
+  <summary><b>View Solution</b></summary>
+  
+  Since both inputs must be `()`, they are always exactly the same value. Thus, they can never be not equal. The implementation is universally `False`:
+  ```haskell
+  instance Eq () where
+      () /= () = False
+  -- or simply:
+  --  _ /= _ = False
+  ```
+  </details>
+
+  **Exercise 4: Breaking the Unit Laws**
+  Is it possible to write a mathematically invalid `Eq` instance for `()`? If so, what is it and which law does it break?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  Yes! Although there's only one way to define equality that obeys the mathematical laws, Haskell still lets you write whatever code you want:
+  ```haskell
+  instance Eq () where
+      () == () = False
+  ```
+  This immediately breaks **Reflexivity**, which strictly mandates that for all values $x$, $x == x$ must evaluate to `True`. Because our instance returns `False`, it is an unlawful, mathematically invalid `Eq`!
+  </details>
+
+- **2 Inhabitants (`Bool`)**: **Reflexivity** strictly forces our hand to define `True == True` and `False == False`. This leaves us with exactly two lawful possibilities for how we handle the cross-comparisons (`True == False`). Both of these configurations naturally fulfill the remaining laws (Symmetry and Transitivity), giving us two valid cases:
+  1. **The Useful Case (`_ == _ = False` for differing values)**: By defining the cross-comparisons to evaluate to `False`, we preserve `True` and `False` as two completely distinct semantic concepts.
+  2. **The Non-Useful Case (`_ == _ = True` for differing values)**: Mathematically, if we evaluate this to `True`, we construct a perfectly lawful equality where `True` and `False` belong to the exact same *equivalence class*. While `Bool` would still structurally have two distinct memory tags internally, this algebraically groups them together into a single *Quotient Type*. It mathematically collapses the concept of `Bool` into behaving like a 1-inhabitant type whenever evaluated through `(==)`. This is a perfectly correct and mathematically lawful instance, but it is hardly useful in any programming context since we would entirely lose the ability to differentiate branches!
+
+  **Exercise 5: The Logic Gate**
+  Focusing on the "useful" implementation of `Eq` for `Bool`, the `(==)` and `(/=)` operators are both functions of type `Bool -> Bool -> Bool`. If you were building a physical circuit board, what standard logic gates do these two operators correspond to?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+  
+  * `(==)` outputs `True` only if both inputs are the same (both `True` or both `False`). This corresponds perfectly to an **XNOR (Exclusive-NOR)** gate (also called the logical biconditional).
+  * `(/=)` outputs `True` only if the inputs differ (`True/False` or `False/True`). This corresponds perfectly to an **XOR (Exclusive-OR)** gate!
+  </details>
+
+- **$\infty$ Inhabitants (`Fraction`)**: When a type has many inhabitants, the default compiler-derived `Eq` (which checks identical memory structure) may not reflect true mathematical parity. We often have to manually implement structural equality.
+
+  **Exercise 6: A Meaningful Custom `Eq`**
+  Suppose you are working with fractions defined as a numerator and denominator:
+  ```haskell
+  data Fraction = Fraction Integer Integer
+  ```
+  If we let the compiler automatically derive an `Eq` instance for us, it would only check if the exact fields match. Under that default instance, `Fraction 1 2 == Fraction 2 4` would evaluate to `False`. How would you write a custom `Eq` instance that mathematically reflects truly equivalent fractions?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  Two fractions $a/b$ and $c/d$ are equal if their cross-multiplication matches ($a \times d = b \times c$).
+  ```haskell
+  instance Eq Fraction where
+      Fraction a b == Fraction c d = (a * d) == (b * c)
+  ```
+  By defining equality based on the mathematical properties of the values rather than their literal data layout, we ensure a robust equivalence relation that fully obeys Reflexivity, Symmetry, and Transitivity!
+  </details>
 
 ### Section 1.2: `Ord` (The Laws of Total Ordering)
 
@@ -716,6 +794,10 @@ class Eq a => Ord a where
     {-# MINIMAL compare | (<=) #-}
 ```
 
+Notice the `Ordering` type at the top of the block. This is a standard built-in Haskell enumeration with exactly three inhabitants: `LT` (Less Than), `EQ` (Equal To), and `GT` (Greater Than). It exists purely to represent the concrete result of evaluating which of two values comes first.
+
+Just like with `Eq`, the `{-# MINIMAL compare | (<=) #-}` pragma dictates what we need to provide. To satisfy the compiler and get a full `Ord` instance with all seven functions, we only need to implement *either* the `compare` function *or* the `(<=)` operator. If we define `compare`, all other functions like `<`, `>`, and `max` are automatically derived from it.
+
 It is a fundamental rule that any type with an `Ord` instance *must* also have an `Eq` instance.
 
 Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` and adds:
@@ -728,6 +810,53 @@ Mathematically, `Ord` defines a **Total Order**. It inherits the rules of `Eq` a
 - **0 Inhabitants (`Void`)**: Vacuously true.
 - **1 Inhabitant (`()`)**: `()` is always equal to (and therefore `<=` to) `()`.
 - **2 Inhabitants (`Bool`)**: `False` is canonically ordered before `True` (`False <= True`).
+
+- **3 Inhabitants (`RPS`)**: Three inhabitants is the minimum number required to demonstrate a cyclic relationship, meaning we can mathematically break a Total Order!
+
+  **Exercise 7: Breaking the Total Order**
+  Consider a hypothetical game of Rock-Paper-Scissors. Can we mathematically construct a valid sequence of all choices? Let's try writing an `Ord` instance:
+  ```haskell
+  data RPS = Rock | Paper | Scissors deriving (Eq)
+
+  instance Ord RPS where
+      compare Rock Paper = LT     -- Rock loses to Paper  (Rock < Paper)
+      compare Paper Scissors = LT -- Paper loses to Scissors (Paper < Scissors)
+      compare Scissors Rock = LT  -- Scissors loses to Rock (Scissors < Rock)
+      compare x y | x == y    = EQ
+                  | otherwise = GT
+  ```
+  While this compiles and type-checks, which of the mathematical laws of a Total Order (`Ord`) does it violate?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  It violates **Transitivity**!
+  Our instance defines `Rock <= Paper` and `Paper <= Scissors`. By the mathematical rule of Transitivity, it would follow that `Rock <= Scissors` must be true.
+  However, our code specifically defines `compare Scissors Rock = LT` (meaning `Scissors < Rock`, and thus `Rock > Scissors`), making `Rock <= Scissors` evaluate to `False`! Therefore, Rock-Paper-Scissors is a mathematical *cycle*, rendering it physically impossible to fulfill a sequence of Total Order!
+  </details>
+
+  **Exercise 8: Deriving the Rest from `compare`**
+  Assume you have provided a valid `compare :: a -> a -> Ordering` for your type. How would you mathematically define the other operators (`<`, `<=`, `>`, `>=`, `max`, `min`) solely in terms of `compare`?
+
+  <details>
+  <summary><b>View Solution</b></summary>
+
+  ```haskell
+  x <  y = compare x y == LT
+  x <= y = compare x y /= GT
+  x >  y = compare x y == GT
+  x >= y = compare x y /= LT
+
+  max x y = case compare x y of
+                LT -> y
+                _  -> x
+
+  min x y = case compare x y of
+                GT -> y
+                _  -> x
+  ```
+  This beautifully shows how the entirety of total ordering logic neatly cascades out of a single comparison query!
+  </details>
 
 Because we have firmly established how to compare and order concrete values, we can finally move on to *combining* them.
 
@@ -892,6 +1021,88 @@ Therefore, every time you combine two concrete values using `<>`, you are musica
 
 
 
+# Part 3: The Parameterized Structures (No Laws)
+
+**Author:** Olivier De Wolf, odewolf@gmail.com
+
+## Chapter 2: Parameterized Types of Kind `Type -> Type`
+
+These are type constructors that require one type argument `a` before they become concrete types. Because they take another type as an argument, they are categorically referred to as **Higher-Kinded Types (HKTs)**. The number of inhabitants discussed here applies *regardless* of what `a` is instantiated to (i.e. the type parameter `a` is completely ignored at the value level).
+
+### Section 2.1: `VoidFoldable` (0 Inhabitants)
+
+These parameterized types cannot be constructed, no matter what `a` is. 
+
+#### 1. Standard Parameterized Empty Data
+```haskell
+data VoidFoldable a
+```
+
+#### 2. Using GADT Syntax
+```haskell
+{-# LANGUAGE GADTs #-}
+data VoidFoldable a where {}
+```
+
+#### 3. Phantom Wrapping `Data.Void`
+```haskell
+import Data.Void (Void)
+newtype VoidFoldable a = VoidFoldable Void
+```
+
+#### 4. Reusing Standard Library Structures
+GHC provides existing parameterized empty types for generic programming, like `V1`, or we can combine `Const` and `Void`.
+```haskell
+import GHC.Generics (V1)
+import Data.Functor.Const (Const)
+import Data.Void (Void)
+
+-- V1 a 
+-- Const Void a
+```
+
+### Section 2.2: `Proxy` (1 Inhabitant)
+
+These parameterized types have exactly one value, irrespective of `a`.
+
+#### 1. `Data.Proxy`
+`Proxy` is used to pass *type-level* information around at runtime without needing an actual value of that type.
+```haskell
+import Data.Proxy (Proxy(..))
+-- The type is `Proxy a`, the only value is `Proxy`
+myProxy :: Proxy Int
+myProxy = Proxy
+```
+
+#### 2. `Constants` and `Generics`
+GHC generic programming uses `U1` to represent constructors with no fields. Alteratively, `Const () a` yields exactly 1 inhabitant.
+```haskell
+import GHC.Generics (U1(..))
+import Data.Functor.Const (Const(..))
+
+-- U1 a (value is U1)
+-- Const () a (value is Const ())
+```
+
+### Section 2.3: `Const Bool a` (2 Inhabitants)
+
+These parameterized types have precisely two values, regardless of `a`.
+
+#### 1. Custom Parameterized Tags
+```haskell
+data TwoOptions a = Option1 | Option2
+```
+
+#### 2. `Const Bool a`
+The `Const` functor holding a `Bool` gives exactly two possible states.
+```haskell
+import Data.Functor.Const (Const(..))
+
+-- Const False :: Const Bool a
+-- Const True  :: Const Bool a
+```
+
+***
 # Part 4: The Algebras of Shape
 
 ## 1. Introduction
@@ -1064,7 +1275,7 @@ instance Functor Zero where
 *   *Identity*: `fmap id z` where `z :: Zero a`. Pattern matching on `z` (empty case) immediately satisfies the law as no value exists to violate it.
 *   *Composition*: Guaranteed automatically by parametricity ("Theorems for free!") since the Identity law is satisfied.
 
-**Category Theory Equivalent**: This represents the constant functor \$\Delta_0\$. It maps every object in the category space to the Initial Object \$0\$ (the empty set \$\emptyset\$) and every morphism to the empty function \$id_0\$.
+**Category Theory Equivalent**: This represents the constant functor $\Delta_0$. It maps every object in the category space to the Initial Object $0$ (the empty set $\emptyset$) and every morphism to the empty function $id_0$.
 
 #### 2. The Empty Box: `Proxy`
 *(One constructor, Zero computational data, Zero contextual data).*
@@ -1089,7 +1300,7 @@ instance Functor Proxy where
 
 *(Note: As proven by Wadler's "Theorems for free!", satisfying the Identity law automatically guarantees the Composition law for any parametrically polymorphic functor. We explicitly verify both here and throughout this section purely for the sake of a complete, explicit proof).*
 
-**Category Theory Equivalent**: This represents the constant functor \$\Delta_1\$. It maps every object in the category space to the Terminal Object \$1\$ (the singleton set \$\{*\}\$) and every morphism to \$id_1\$.
+**Category Theory Equivalent**: This represents the constant functor $\Delta_1$. It maps every object in the category space to the Terminal Object $1$ (the singleton set $\{*\}$) and every morphism to $id_1$.
 
 #### 3. The Constant Context: `Const r`
 *(Zero computational data, Some contextual data `r`).*
@@ -1118,7 +1329,7 @@ instance Functor (Const r) where
 
 *(We will see in Section 1.3 how these three specific specializations intimately link to the numbers $0$, $1$, and $2$ in algebraic arithmetic!)*
 
-**Category Theory Equivalent**: This represents the general constant functor \$\Delta_r\$. It collapses the entire category, mapping every object to the specific fixed object \$r\$, and every morphism mathematically to the identity morphism \$id_r\$.
+**Category Theory Equivalent**: This represents the general constant functor $\Delta_r$. It collapses the entire category, mapping every object to the specific fixed object $r$, and every morphism mathematically to the identity morphism $id_r$.
 
 #### 4. The Wrapper: `Identity`
 *(One computational data, Zero contextual data).*
@@ -1138,7 +1349,7 @@ instance Functor Identity where
 *   *Identity*: `fmap id (Identity x) == Identity (id x) == Identity x == id (Identity x)`
 *   *Composition*: `fmap (f . g) (Identity x) == Identity ((f . g) x) == Identity (f (g x)) == fmap f (Identity (g x)) == fmap f (fmap g (Identity x))`
 
-**Category Theory Equivalent**: This represents the Identity Functor \$Id_{\mathbf{C}}\$. It strictly maps every object to itself (\$X \mapsto X\$) and every morphism to itself (\$f \mapsto f\$). It is the perfectly transparent container.
+**Category Theory Equivalent**: This represents the Identity Functor $Id_{\mathbf{C}}$. It strictly maps every object to itself ($X \mapsto X$) and every morphism to itself ($f \mapsto f$). It is the perfectly transparent container.
 
 #### 5. The Exponential: `(->) r` (The Reader)
 *(Infinite computational data, delayed by domain `r`).*
@@ -1156,7 +1367,7 @@ instance Functor ((->) r) where
 *   *Identity*: `fmap id g == id . g == g == id g`
 *   *Composition*: Guaranteed automatically by parametricity ("Theorems for free!") since the Identity law is satisfied.
 
-**Category Theory Equivalent**: This represents the Covariant \$Hom\$-functor \$Hom(r, -)\$. In any category, \$Hom(A, B)\$ represents the set of all morphisms passing from object \$A\$ to object \$B\$. In Haskell, fixing the input type \$r\$ forms the functor mapping \$a \mapsto Hom(r, a)\$.
+**Category Theory Equivalent**: This represents the Covariant $Hom$-functor $Hom(r, -)$. In any category, $Hom(A, B)$ represents the set of all morphisms passing from object $A$ to object $B$. In Haskell, fixing the input type $r$ forms the functor mapping $a \mapsto Hom(r, a)$.
 
 ##### Exponential Blends and Higher-Order Exponentials
 To truly illustrate the power of parametricity, consider what happens when we combine our building blocks (Sums, Products, and Exponentials). Even for these complex concepts, parametricity completely forces the only mathematically valid implementation!
@@ -2660,7 +2871,7 @@ This section centralizes all the foundational papers, influential articles, and 
    *(A mind-bending proof that taking the calculus derivative of a data type's polynomial structurally generates its exact Zipper).*
 4. **Swierstra, W. (2008).** *Data types à la carte*. 
    *(A seminal paper proving how to use the algebraic Sum operator over Functors to modularly compose distinct data types and interpreters).*
-5. **Taylor, C. (2013).** *[The Algebra of Algebraic Data Types](https://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/)*. 
+5. **Taylor, C. (2013).** *[The Algebra of Algebraic Data Types](https://gist.github.com/gregberns/5e9da0c95a9a8d2b6338afe69310b945)*. 
    *(A famous blog series expanding the structural analogy by directly using high-school algebra to calculate isomorphic data types).*
 
 ### Category Theory & Deep Math

@@ -38,6 +38,20 @@ data SerpApiResponse = SerpApiResponse
 instance FromJSON SerpApiResponse
 
 --------------------------------------------------------------------------------
+-- Swiss Destinations
+--------------------------------------------------------------------------------
+
+-- | Returns European towns that have direct flights from Zurich with Swiss International Air Lines.
+swissEuropeanDestinationsFromZurich :: [String]
+swissEuropeanDestinationsFromZurich =
+  [ "Amsterdam", "Athens", "Barcelona", "Berlin", "Brussels", "Budapest"
+  , "Copenhagen", "Dublin", "Dubrovnik", "Florence", "Graz", "Istanbul"
+  , "Larnaca", "Lisbon", "London", "Madrid", "Manchester", "Milan"
+  , "Nice", "Oslo", "Palma de Mallorca", "Paris", "Prague", "Pristina"
+  , "Rome", "Sarajevo", "Sofia", "Stockholm", "Tirana", "Venice", "Vienna", "Warsaw"
+  ]
+
+--------------------------------------------------------------------------------
 -- Main Logic
 --------------------------------------------------------------------------------
 

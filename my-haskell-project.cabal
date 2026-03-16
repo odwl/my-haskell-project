@@ -167,4 +167,5 @@ executable flight-client
     req,
     aeson,
     text,
-    bytestring
+    bytestring,
+    time
