@@ -1,12 +1,13 @@
-{-# LANGUAGE EmptyCase, DerivingVia #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE EmptyCase #-}
 
 module Lambda.ListAverage where
 
 import Control.Monad (foldM, (>=>))
 import Control.Monad.State
+import Data.Foldable (foldl', foldr')
 import Data.Functor.Const (Const (..), getConst)
 import Data.Monoid (Sum (..), getSum)
-import Data.Foldable (foldl', foldr')
 
 -----------------------------------
 -- Minimum Void
@@ -55,8 +56,8 @@ sumFoldl :: [Double] -> Double
 sumFoldl = foldl' (+) 0
 
 -- | Returns the length of the list using foldl
-lenFoldl :: [Double] -> Int 
-lenFoldl = foldl' (const . (+1)) 0
+lenFoldl :: [Double] -> Int
+lenFoldl = foldl' (const . (+ 1)) 0
 
 -- | Returns the sum of all elements using foldr
 sumFoldr :: [Double] -> Double
@@ -64,7 +65,7 @@ sumFoldr = foldr' (+) 0
 
 -- | Returns the length of the list using foldr
 lenFoldr :: [Double] -> Int
-lenFoldr = foldr' (const (+1)) 0
+lenFoldr = foldr' (const (+ 1)) 0
 
 -- | Returns the sum of all elements using foldMap
 sumMonoid :: [Double] -> Double
@@ -73,7 +74,6 @@ sumMonoid = getSum . foldMap Sum
 -- | Returns the length of the list using foldMap
 lenMonoid :: [Double] -> Int
 lenMonoid = getSum . foldMap (const (Sum 1))
-
 
 -- | Returns the sum using Applicative '<*>' on Const (Sum Double)
 -- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
@@ -92,7 +92,7 @@ sumMonad = getSum . foldl (\acc x -> acc >>= \a -> Sum (a + x)) (Sum 0)
 -- foldM :: (Foldable t, Monad m) => (b -> a -> m b) -> b -> t a -> m b
 sumFoldM :: [Double] -> Double
 sumFoldM = getSum . foldM (\acc x -> return (acc + x)) 0
- 
+
 -- | Returns the sum of all elements using foldr and Kleisli composition (>=>)
 -- foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
 -- (>=>) :: Monad m => (a -> m b) -> (b -> m c) -> a -> m c
