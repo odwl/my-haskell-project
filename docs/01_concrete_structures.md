@@ -22,8 +22,9 @@
     - [2. The Standard Unit `()`](#2-the-standard-unit-)
     - [3. The "0-Tuple" Intuition](#3-the-0-tuple-intuition)
     - [4. Other Library Unit Types](#4-other-library-unit-types)
-    - [5. Category Theory: The Terminal Object in Hask](#5-category-theory-the-terminal-object-in-hask)
-    - [6. Exercises: The Power of One](#6-exercises-the-power-of-one)
+    - [5. The Curious Case of `[Void]`](#5-the-curious-case-of-void)
+    - [6. Category Theory: The Terminal Object in Hask](#6-category-theory-the-terminal-object-in-hask)
+    - [7. Exercises: The Power of One](#7-exercises-the-power-of-one)
       - [Exercise 7: A Safe `head`](#exercise-7-a-safe-head)
       - [Exercise 8: Avoiding `fromJust` with `Either`](#exercise-8-avoiding-fromjust-with-either)
   - [Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)](#section-13-bool-2-inhabitants--coproduct-of-terminal-objects)
@@ -347,7 +348,22 @@ While `()` is standard, Haskell libraries often use specialized 1-inhabitant typ
 
 Because `Acknowledged`, `()`, `Identity ()`, and `a :~: a` all have an identical cardinality of 1 (a single constructor), they are all formally **isomorphic** to one another.
 
-#### 5. Category Theory: The Terminal Object in Hask
+#### 5. The Curious Case of `[Void]`
+
+What happens if we create a list of `Void`? Does `[Void]` exist? 
+
+Let's use Type Algebra. A list type `[a]` is defined structurally as either an empty list `[]`, or a head element `a` attached to a tail list `[a]`. Mathematically:
+`List(a) = 1 + a * List(a)`
+*(Where `1` represents the empty list `[]`, addition represents the `Either` choice, and multiplication represents pairing head and tail)*
+
+If we substitute `Void` (which has 0 inhabitants):
+`List(Void) = 1 + 0 * List(Void)`
+`List(Void) = 1 + 0`
+`List(Void) = 1`
+
+The cardinality of `[Void]` is exactly **1**. Because `Void` has no values, it is impossible to ever construct the "head" of a list of `Void`. The only value that can ever exist of type `[Void]` is the empty list `[]`. Therefore, `[Void]` is perfectly structurally isomorphic to `()`!
+
+#### 6. Category Theory: The Terminal Object in Hask
 
 If `Void` is the Initial Object in the `Hask` category, then the Unit type `()` is the **Terminal Object** (often denoted as $1$). 
 
@@ -358,7 +374,7 @@ unitMorphism = const ()
 ```
 There is exactly one conceptually pure way to implement this function (by ignoring the input and returning the only available value of the output type, which is precisely what the standard library's `const ()` does). The fact that every type can be deterministically mapped to `()` is what makes `()` the terminal object in `Hask`.
 
-#### 6. Exercises: The Power of One
+#### 7. Exercises: The Power of One
 
 ##### Exercise 7: A Safe `head`
 The standard library's `head :: [a] -> a` function is notorious for crashing if given an empty list because it lacks a value to return. How could you write a total, non-crashing `safeHead` function using `Either`? What minimal type is the most appropriate for the `Left` error branch if you don't actually need to provide an error message?
