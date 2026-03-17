@@ -4,8 +4,8 @@ module Main where
 
 import Control.Monad (forM, forM_)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.List (sortBy)
-import Data.Maybe (catMaybes, mapMaybe)
+import Data.List (minimumBy, sortBy)
+import Data.Maybe (catMaybes, fromMaybe, listToMaybe, mapMaybe)
 import Data.Ord (comparing)
 import qualified Data.Text as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
@@ -78,7 +78,7 @@ fetchBestFlightsTable key = do
   let todayStr = formatTime defaultTimeLocale "%Y-%m-%d" (addUTCTime (7 * days) now)
   let nextWeekStr = formatTime defaultTimeLocale "%Y-%m-%d" (addUTCTime (14 * days) now)
 
-  liftIO $ putStrLn $ "Finding best direct return flights from Zurich..."
+  liftIO $ putStrLn "Finding best direct return flights from Zurich..."
   liftIO $ putStrLn $ "Outbound: " ++ todayStr ++ " | Return: " ++ nextWeekStr
   liftIO $ putStrLn "Querying European destinations (this may take a moment)..."
 
@@ -99,12 +99,12 @@ fetchBestFlightsTable key = do
 
     respData <- searchFlightsM opts
 
-    let allFs = maybe [] id (best_flights respData) ++ maybe [] id (other_flights respData)
+    let allFs = fromMaybe [] (best_flights respData) ++ fromMaybe [] (other_flights respData)
 
     if null allFs
       then return Nothing
       else do
-        let best = head (sortBy (comparing price) allFs)
+        let best = minimumBy (comparing price) allFs
         return $ Just (cityName, best)
 
   liftIO $ do
@@ -122,7 +122,7 @@ fetchBestFlightsTable key = do
     toRowData (dest, bf) = do
       p <- price bf
       fs <- flights bf
-      f <- if null fs then Nothing else Just (head fs)
+      f <- listToMaybe fs
       a <- airline f
       dep <- departure_airport f
       arr <- arrival_airport f
@@ -135,7 +135,7 @@ main :: IO ()
 main = do
   mode <- lookupEnv "FLIGHT_CLIENT_MODE"
   mKey <- lookupEnv "SERPAPI_API_KEY"
-  let key = maybe "mock-key" id mKey
+  let key = fromMaybe "mock-key" mKey
 
   case mode of
     Just "mock" -> do

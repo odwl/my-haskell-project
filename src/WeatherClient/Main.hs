@@ -7,7 +7,8 @@ import Control.Monad (forM, forM_)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson
 import Data.List (sortBy)
-import Data.Ord (comparing)
+import Data.Maybe (catMaybes, fromMaybe)
+import Data.Ord (Down (..), comparing)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -23,7 +24,7 @@ data GeocodeResult = GeocodeResult
 
 instance FromJSON GeocodeResult
 
-data GeocodeResponse = GeocodeResponse
+newtype GeocodeResponse = GeocodeResponse
   { results :: Maybe [GeocodeResult]
   }
   deriving (Show, Generic)
@@ -40,7 +41,7 @@ data CurrentWeather = CurrentWeather
 
 instance FromJSON CurrentWeather
 
-data DailyWeather = DailyWeather
+newtype DailyWeather = DailyWeather
   { sunshine_duration :: Maybe [Maybe Double]
   }
   deriving (Show, Generic)
@@ -99,9 +100,7 @@ fetchCityWeather city = do
             let secs = case daily wData >>= sunshine_duration of
                   Just xs ->
                     if length xs > dayOffset
-                      then case xs !! dayOffset of
-                        Just s -> s
-                        Nothing -> 0.0
+                      then fromMaybe 0.0 (xs !! dayOffset)
                       else 0.0
                   Nothing -> 0.0
              in (fromIntegral (round (secs / 3600.0 * 10.0) :: Int) :: Double) / 10.0
@@ -121,7 +120,7 @@ fetchCityWeather city = do
 -- | Helper to print the ranking for a specific day
 printRanking :: Text -> (CityWeather -> Double) -> [CityWeather] -> IO ()
 printRanking dayLabel getSunshine validResults = do
-  let ranked = sortBy (flip (comparing getSunshine)) validResults
+  let ranked = sortBy (comparing (Down . getSunshine)) validResults
   TIO.putStrLn $ "\n=== Weather Ranked by Sunshine Duration (" <> dayLabel <> ", Decreasing) ==="
   forM_ ranked $ \cw -> do
     TIO.putStrLn $
@@ -199,7 +198,7 @@ main = runReq defaultHttpConfig $ do
   resultsMb <- forM cities fetchCityWeather
 
   -- filter out un-found cities
-  let validResults = [cw | Just cw <- resultsMb]
+  let validResults = catMaybes resultsMb
 
   liftIO $ do
     printRanking "Today" sunshineToday validResults

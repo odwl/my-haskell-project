@@ -12,7 +12,7 @@ import Network.HTTP.Req
 -- SerpApi Response Data Types
 --------------------------------------------------------------------------------
 
-data AirportInfo = AirportInfo
+newtype AirportInfo = AirportInfo
   { time :: Maybe Text
   }
   deriving (Show, Generic)
