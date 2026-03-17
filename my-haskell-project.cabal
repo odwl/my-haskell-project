@@ -167,6 +167,8 @@ executable flight-client
   main-is: Main.hs
   other-modules:
     SerpApi
+    Mock
+    Types
   hs-source-dirs: src/FlightClient
   default-language: Haskell2010
   build-depends:
