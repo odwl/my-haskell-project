@@ -63,7 +63,7 @@ data FlightSearchOptions = FlightSearchOptions
   }
 
 -- | Capability to search for flights (Dependency Injection)
-class Monad m => MonadFlightSearch m where
+class (Monad m) => MonadFlightSearch m where
   searchFlightsM :: FlightSearchOptions -> m SerpApiResponse
 
 --------------------------------------------------------------------------------
@@ -105,5 +105,3 @@ searchFlights opts = do
 
 instance MonadFlightSearch IO where
   searchFlightsM opts = runReq defaultHttpConfig (searchFlights opts)
-
-

@@ -12,13 +12,13 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 -- Import the API module
 
-import Types
 import Mock
-import SerpApi () -- Keep for instances if any, but Types has what we need. Actually let's just use Types.
+import SerpApi ()
+-- Keep for instances if any, but Types has what we need. Actually let's just use Types.
 import System.Environment (lookupEnv)
-
 import System.Exit (exitFailure)
 import Text.Printf (printf)
+import Types
 
 --------------------------------------------------------------------------------
 -- Swiss Destinations
@@ -62,7 +62,6 @@ swissEuropeanDestinationsFromZurich =
     -- ("Antalya", "AYT"),
     -- ("Cairo", "CAI"),
     -- ("Tbilisi", "TBS")
-
   ]
 
 --------------------------------------------------------------------------------
@@ -137,7 +136,7 @@ main = do
   mode <- lookupEnv "FLIGHT_CLIENT_MODE"
   mKey <- lookupEnv "SERPAPI_API_KEY"
   let key = maybe "mock-key" id mKey
-  
+
   case mode of
     Just "mock" -> do
       putStrLn "--- RUNNING IN MOCK MODE ---"
