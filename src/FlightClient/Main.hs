@@ -39,8 +39,8 @@ swissEuropeanDestinationsFromZurich =
     ("Florence", "FLR"),
     ("Graz", "GRZ"),
     ("Istanbul", "IST"),
-    ("Larnaca", "LCA")
-    -- ("Lisbon", "LIS"),
+    ("Larnaca", "LCA"),
+    ("Lisbon", "LIS")
     -- ("London", "LHR"),
     -- ("Madrid", "MAD"),
     -- ("Manchester", "MAN"),
