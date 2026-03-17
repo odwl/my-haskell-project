@@ -37,3 +37,12 @@ TASKS.tmp.md
 *.o
 *.dyn_hi
 *.dyn_o
+
+# Private Handoff and Planning Docs
+agent_handoff.md
+expectations*.md
+*_prd.txt
+*_alignment.txt
+*_doc.txt
+*_design.txt
+get_drive_files.py
