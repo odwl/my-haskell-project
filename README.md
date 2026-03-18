@@ -1,6 +1,8 @@
 # Haskell Functional Programming Exercises
 
-This project is a comprehensive collection of Haskell exercises focused on core functional programming abstractions, including **Functors**, **Applicatives**, **Monads**, **State**, and **Parsers**.
+**Repository:** [https://github.com/odwl/my-haskell-project](https://github.com/odwl/my-haskell-project)
+
+This project is a comprehensive collection of Haskell exercises and practical CLI tools. It is focused on core functional programming abstractions (including **Functors**, **Applicatives**, **Monads**, **State**, and **Parsers**), and integrates practical functionality like fetching flights and querying the weather.
 
 ## 📂 Project Structure
 
@@ -23,6 +25,14 @@ This project is a comprehensive collection of Haskell exercises focused on core 
     - [Pangram](https://exercism.org/tracks/haskell/exercises/pangram)
     - [Reverse String](https://exercism.org/tracks/haskell/exercises/reverse-string)
     - [Zipper](https://exercism.org/tracks/haskell/exercises/zipper)
+- **src/FlightClient/**
+    - An application to find and retrieve flight data.
+    - Connects to Google Flights via **SerpApi** to extract available flights from Zurich (ZRH) to various European destinations.
+- **src/WeatherClient/**
+    - A CLI utility to fetch weather conditions for a given city.
+- **Python Utilities:**
+    - `get_last_5_emails.py`: Script to retrieve the latest 5 emails from Gmail.
+    - `get_reto_emails.py`: Specialized script to retrieve recent emails from Reto.
 - **test/Lambda/**
     - `FunctorTest.hs`: Law-based tests for `MaybeList` and other functors, and unit tests for `Maybe` arithmetic.
     - `HoverDamTest.hs`: Strategy-based property tests for the Hover Dam simulation, supporting multiple entry probabilities (`Linear`, `Step`, `TwoStep`).
@@ -85,6 +95,15 @@ We've implemented explicit structural utilities for manipulating tuples as both 
 3. **Interactive REPL**
    ```bash
    cabal repl
+   ```
+4. **Run the Flight Client**
+   Make sure you have a `SERPAPI_KEY` environment variable set, or add it to `.env`.
+   ```bash
+   cabal run flight-client
+   ```
+5. **Run the Weather Client**
+   ```bash
+   cabal run weather-client
    ```
 
 ## 🧪 Testing Framework
