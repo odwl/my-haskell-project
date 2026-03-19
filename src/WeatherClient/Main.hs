@@ -32,24 +32,24 @@ newtype GeocodeResponse = GeocodeResponse
 instance FromJSON GeocodeResponse
 
 data CurrentWeather = CurrentWeather
-  { temperature :: Double,
-    windspeed :: Double,
-    winddirection :: Double,
-    weathercode :: Int
+  { temperature_2m :: Double,
+    wind_speed_10m :: Double,
+    snow_depth :: Maybe Double
   }
   deriving (Show, Generic)
 
 instance FromJSON CurrentWeather
 
-newtype DailyWeather = DailyWeather
-  { sunshine_duration :: Maybe [Maybe Double]
+data DailyWeather = DailyWeather
+  { sunshine_duration :: Maybe [Maybe Double],
+    snowfall_sum :: Maybe [Maybe Double]
   }
   deriving (Show, Generic)
 
 instance FromJSON DailyWeather
 
 data WeatherResponse = WeatherResponse
-  { current_weather :: CurrentWeather,
+  { current :: CurrentWeather,
     daily :: Maybe DailyWeather
   }
   deriving (Show, Generic)
@@ -62,7 +62,11 @@ data CityWeather = CityWeather
     cityWind :: Double,
     sunshineToday :: Double,
     sunshineTomorrow :: Double,
-    sunshineAfterTomorrow :: Double
+    sunshineAfterTomorrow :: Double,
+    snowToday :: Double,
+    snowTomorrow :: Double,
+    snowAfterTomorrow :: Double,
+    currentSnowDepth :: Double
   }
   deriving (Show)
 
@@ -86,13 +90,13 @@ fetchCityWeather city = do
       let wOpts =
             "latitude" =: (latitude (loc :: GeocodeResult) :: Double)
               <> "longitude" =: (longitude (loc :: GeocodeResult) :: Double)
-              <> "current_weather" =: True
-              <> "daily" =: ("sunshine_duration" :: Text)
+              <> "current" =: ("temperature_2m,wind_speed_10m,snow_depth" :: Text)
+              <> "daily" =: ("sunshine_duration,snowfall_sum" :: Text)
               <> "timezone" =: ("auto" :: Text)
 
       wRes <- req GET wUrl NoReqBody jsonResponse wOpts
       let wData = responseBody wRes :: WeatherResponse
-      let current = current_weather wData
+      let curr = current wData
 
       -- Extract sunshine duration for the next three days
       let getSunHrs :: Int -> Double
@@ -105,29 +109,46 @@ fetchCityWeather city = do
                   Nothing -> 0.0
              in (fromIntegral (round (secs / 3600.0 * 10.0) :: Int) :: Double) / 10.0
 
+      let getSnowCm :: Int -> Double
+          getSnowCm dayOffset =
+            case daily wData >>= snowfall_sum of
+              Just xs ->
+                if length xs > dayOffset
+                  then fromMaybe 0.0 (xs !! dayOffset)
+                  else 0.0
+              Nothing -> 0.0
+
+      let baseSnowDepthCm = fromMaybe 0.0 (snow_depth curr) * 100.0
+
       return $
         Just
           CityWeather
             { cityName = name (loc :: GeocodeResult),
-              cityTemp = temperature current,
-              cityWind = windspeed current,
+              cityTemp = temperature_2m curr,
+              cityWind = wind_speed_10m curr,
               sunshineToday = getSunHrs 0,
               sunshineTomorrow = getSunHrs 1,
-              sunshineAfterTomorrow = getSunHrs 2
+              sunshineAfterTomorrow = getSunHrs 2,
+              snowToday = getSnowCm 0,
+              snowTomorrow = getSnowCm 1,
+              snowAfterTomorrow = getSnowCm 2,
+              currentSnowDepth = baseSnowDepthCm
             }
     _ -> return Nothing
 
--- | Helper to print the ranking for a specific day
-printRanking :: Text -> (CityWeather -> Double) -> [CityWeather] -> IO ()
-printRanking dayLabel getSunshine validResults = do
-  let ranked = sortBy (comparing (Down . getSunshine)) validResults
-  TIO.putStrLn $ "\n=== Weather Ranked by Sunshine Duration (" <> dayLabel <> ", Decreasing) ==="
+-- | Helper to print the ranking for current snow depth
+printSnowRanking :: [CityWeather] -> IO ()
+printSnowRanking validResults = do
+  let ranked = sortBy (comparing (Down . currentSnowDepth)) validResults
+  TIO.putStrLn "\n=== Weather Ranked by Current Snow Base Depth (Decreasing) ==="
   forM_ ranked $ \cw -> do
     TIO.putStrLn $
       cityName cw
         <> " -> "
-        <> T.pack (show (getSunshine cw))
-        <> " hrs (Temp: "
+        <> T.pack (show (round (currentSnowDepth cw) :: Int))
+        <> " cm base ("
+        <> T.pack (show (round (snowToday cw) :: Int))
+        <> " cm fresh today, Temp: "
         <> T.pack (show (cityTemp cw))
         <> " °C, Wind: "
         <> T.pack (show (cityWind cw))
@@ -136,52 +157,7 @@ printRanking dayLabel getSunshine validResults = do
 main :: IO ()
 main = runReq defaultHttpConfig $ do
   let cities =
-        [ "Amsterdam",
-          "Andorra la Vella",
-          "Athens",
-          "Belgrade",
-          "Berlin",
-          "Bern",
-          "Bratislava",
-          "Brussels",
-          "Bucharest",
-          "Budapest",
-          "Chisinau",
-          "Copenhagen",
-          "Dublin",
-          "Helsinki",
-          "Kyiv",
-          "Lisbon",
-          "Ljubljana",
-          "London",
-          "Luxembourg",
-          "Madrid",
-          "Minsk",
-          "Monaco",
-          "Moscow",
-          "Nicosia",
-          "Oslo",
-          "Paris",
-          "Podgorica",
-          "Prague",
-          "Reykjavik",
-          "Riga",
-          "Rome",
-          "San Marino",
-          "Sarajevo",
-          "Skopje",
-          "Sofia",
-          "Stockholm",
-          "Tallinn",
-          "Tirana",
-          "Vaduz",
-          "Valletta",
-          "Vatican City",
-          "Vienna",
-          "Vilnius",
-          "Warsaw",
-          "Zagreb",
-          "Zurich",
+        [ 
           "St. Moritz",
           "Davos",
           "Arosa",
@@ -201,6 +177,4 @@ main = runReq defaultHttpConfig $ do
   let validResults = catMaybes resultsMb
 
   liftIO $ do
-    printRanking "Today" sunshineToday validResults
-    printRanking "Tomorrow" sunshineTomorrow validResults
-    printRanking "Day After Tomorrow" sunshineAfterTomorrow validResults
+    printSnowRanking validResults
