@@ -37,11 +37,23 @@ userAddressCityTests =
             (1, ("Hi", "Ho"), 2) ^. _2 . _1 @?= "Hi",
           testCase "Tuple lens test set" $ do
             let updatedTuple = set (_2 . _1) 5 (1, ("Hi", "Ho"), 2)
+            let updatedTuple2 = (1, ("Hi", "Ho"), 2) & _2 . _1 .~ 5
             updatedTuple ^. _2 . _1 @?= 5
             updatedTuple @?= (1, (5, "Ho"), 2)
+            updatedTuple2 ^. _2 . _1 @?= 5
+            updatedTuple2 @?= (1, (5, "Ho"), 2), 
+          testCase "Tuple lens test mult" $ do
+            let baseTuple = (1, (5, "Ho"), 2)
+            let updatedTuple = over (_2 . _1) (*11) baseTuple
+            let updatedTuple2 = baseTuple & _2 . _1 %~ (*11)
+            updatedTuple ^. _2 . _1 @?= 55
+            updatedTuple @?= (1, (55, "Ho"), 2)
+            updatedTuple2 ^. _2 . _1 @?= 55
+            updatedTuple2 @?= (1, (55, "Ho"), 2)
         ]
     ]
 
 
 -- Change "Hi" to a integer value of your choice and bind the result to a name. Again, try the
--- operator and function.
+-- operator and function.d) Finally, use the lens on the updated tuple, to multiply the integer value you set in the last
+-- task with 11.
