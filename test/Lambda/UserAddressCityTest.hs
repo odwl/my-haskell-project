@@ -43,13 +43,12 @@ userAddressCityTests =
             updatedTuple2 ^. _2 . _1 @?= 5
             updatedTuple2 @?= (1, (5, "Ho"), 2), 
           testCase "Tuple lens test mult" $ do
-            let baseTuple = (1, (5, "Ho"), 2)
-            let updatedTuple = over (_2 . _1) (*11) baseTuple
-            let updatedTuple2 = baseTuple & _2 . _1 %~ (*11)
+            let updatedTuple = over (_2 . _1) (*11) (1, (5, "Ho"), 2)
             updatedTuple ^. _2 . _1 @?= 55
-            updatedTuple @?= (1, (55, "Ho"), 2)
-            updatedTuple2 ^. _2 . _1 @?= 55
-            updatedTuple2 @?= (1, (55, "Ho"), 2)
+            updatedTuple @?= (1, (55, "Ho"), 2),
+          testCase "Tuple lens test list" $ do
+            let res = view (_1 . ix 0) (["Hi", "Ho"], ["He", "Hu"])
+            res @?= "Hi"
         ]
     ]
 
@@ -57,3 +56,6 @@ userAddressCityTests =
 -- Change "Hi" to a integer value of your choice and bind the result to a name. Again, try the
 -- operator and function.d) Finally, use the lens on the updated tuple, to multiply the integer value you set in the last
 -- task with 11.
+-- e) Now we change things up a little bit. The tuple now contains lists of stings, with "Hi" being
+-- in the first one: (["Hi", "Ho"], ["He", "Hu"]). Change your lens so it still focuses on
+-- "Hi".
