@@ -34,6 +34,14 @@ userAddressCityTests =
         ],
       testGroup "Tuple Tests"
         [ testCase "Tuple lens test" $ do
-            (1, ("Hi", "Ho"), 2) ^. _2 . _1 @?= "Hi"
+            (1, ("Hi", "Ho"), 2) ^. _2 . _1 @?= "Hi",
+          testCase "Tuple lens test set" $ do
+            let updatedTuple = set (_2 . _1) 5 (1, ("Hi", "Ho"), 2)
+            updatedTuple ^. _2 . _1 @?= 5
+            updatedTuple @?= (1, (5, "Ho"), 2)
         ]
     ]
+
+
+-- Change "Hi" to a integer value of your choice and bind the result to a name. Again, try the
+-- operator and function.
