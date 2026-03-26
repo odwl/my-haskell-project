@@ -140,3 +140,18 @@ addNumber x = modify (\(s, c) -> (s + x, c + 1))
 
 sumAndCountMonadic :: [Double] -> (Double, Int)
 sumAndCountMonadic xs = execState (mapM_ addNumber xs) (0, 0)
+
+-----------------------------------
+-- Traversable
+-----------------------------------
+-- https://duplode.github.io/posts/traversable-a-remix.html
+-- https://www.fceia.unr.edu.ar/~mauro/pubs/TraverseLaws.pdf
+
+-- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
+-- sequenceA :: (Traversable t, Applicative f) => t (f a) -> f (t a)
+-- sequence :: (Traversable t, Monad m) => t (m a) -> m (t a)
+-- mapM :: (Traversable t, Monad m) => (a -> m b) -> t a -> m (t b)
+-- mapM_ :: (Traversable t, Monad m) => (a -> m b) -> t a -> m ()
+-- traverse_ :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f ()
+-- sequenceA_ :: (Traversable t, Applicative f) => t (f a) -> f ()
+-- sequenceM_ :: (Traversable t, Monad m) => t (m a) -> m ()

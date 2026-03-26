@@ -10,6 +10,7 @@ import Lambda.ParserTest (parserTests)
 import Lambda.RandomWalkTest (randomWalkTests)
 import Lambda.StateTest (stateTests)
 import Lambda.SubdistTest (subdistTests)
+import Lambda.UserAddressCityTest (userAddressCityTests)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -75,5 +76,6 @@ lambdaSuite =
       randomWalkTests,
       subdistTests,
       hoverDamTests,
-      listAverageTests
+      listAverageTests,
+      userAddressCityTests
     ]

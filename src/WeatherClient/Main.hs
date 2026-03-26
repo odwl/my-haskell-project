@@ -157,8 +157,7 @@ printSnowRanking validResults = do
 main :: IO ()
 main = runReq defaultHttpConfig $ do
   let cities =
-        [ 
-          "St. Moritz",
+        [ "St. Moritz",
           "Davos",
           "Arosa",
           "Lenzerheide",
