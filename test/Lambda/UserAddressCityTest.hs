@@ -62,9 +62,23 @@ userAddressCityTests =
             let res4 = view (_1 . traversed . filtered (== "Hi")) (["Hi", "He"], ["He", "Hu"])
             res4 @?= "Hi"
             let res5 = preview (_1 . traversed . filtered (== "Hi")) (["Hi", "Hi"], ["He", "Hu"])
-            res5 @?= Just "Hi"
+            res5 @?= Just "Hi",
+          testCase "Tuple lens test mult" $ do
+            let res = toListOf (both . ix 0) (["Hi", "Ho"], ["He", "Hu"])
+            res @?= ["Hi", "He"]
+            let res1 = (["Hi", "Ho"], ["He", "Hu"]) ^.. both . ix 0
+            res1 @?= ["Hi", "He"]
+            let res2 = over (both . ix 0) (++ "!") (["Hi", "Ho"], ["He", "Hu"])
+            res2 @?= (["Hi!", "Ho"], ["He!", "Hu"])
+            let res25 = (["Hi", "Ho"], ["He", "Hu"]) & both . ix 0 %~ (++ "!")
+            res25 @?= (["Hi!", "Ho"], ["He!", "Hu"])
+            let res26 = (["Hi", "Ho"], ["He", "Hu"]) & both . ix 0 .~ "XX"
+            res26 @?= (["XX", "Ho"], ["XX", "Hu"])
+            -- Since `preview` returns a `Maybe`, we use `liftA2 (,)` to safely combine the two Maybes into a Tuple!
+            let res3 = toListOf (each . ix 0) (["Hi", "Ho"], ["He", "Hu"], ["Hi", "Ho"])
+            res3 @?= ["Hi", "He", "Hi"]
         ]
     ]
 
--- g) Finally, we no longer want to focus on just one element, but on "Hi" and "He" at the same
--- time. Write a lens that does exactly this.
+            -- g) Finally, we no longer want to focus on just one element, but on "Hi" and "He" at the same
+            -- time. Write a lens that does exactly this.
