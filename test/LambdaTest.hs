@@ -10,7 +10,7 @@ import Lambda.ParserTest (parserTests)
 import Lambda.RandomWalkTest (randomWalkTests)
 import Lambda.StateTest (stateTests)
 import Lambda.SubdistTest (subdistTests)
-import Lambda.UserAddressCityTest (userAddressCityTests)
+import Lambda.LensTest (lensTests)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -67,15 +67,15 @@ lambdaSuite =
       safeHeadTests,
       yFactTests,
       testDoubleApplication,
-      safeDivTests,
       functorTests,
+      hoverDamTests,
+      interpreterTests,
+      lensTests,
+      listAverageTests,
       monadTests,
       parserTests,
-      stateTests,
-      interpreterTests,
       randomWalkTests,
-      subdistTests,
-      hoverDamTests,
-      listAverageTests,
-      userAddressCityTests
+      safeDivTests,
+      stateTests,
+      subdistTests
     ]

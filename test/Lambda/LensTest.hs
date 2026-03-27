@@ -1,17 +1,17 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 
-module Lambda.UserAddressCityTest (userAddressCityTests) where
+module Lambda.LensTest (lensTests) where
 
 import Control.Lens
-import Lambda.UserAddressCity
+import Lambda.Lens
 import Test.Tasty
 import Test.Tasty.HUnit
 
-userAddressCityTests :: TestTree
-userAddressCityTests =
+lensTests :: TestTree
+lensTests =
   testGroup
-    "UserAddressCity Tests"
+    "Lens Tests"
     [ testGroup
         "Record Tests"
         [ testCase "Create and access nested fields via dot notation" $ do
@@ -77,8 +77,47 @@ userAddressCityTests =
             -- Since `preview` returns a `Maybe`, we use `liftA2 (,)` to safely combine the two Maybes into a Tuple!
             let res3 = toListOf (each . ix 0) (["Hi", "Ho"], ["He", "Hu"], ["Hi", "Ho"])
             res3 @?= ["Hi", "He", "Hi"]
+        ],
+      testGroup
+        "FileSystem Tests"
+        [ testCase "Extract metadata from FileSystem using Prism" $ do
+            let myFileSystem = File $ Doc Text (Metadata "config.json" "admin") ""
+            -- Must use ^? (preview) because _File is a Prism and might fail if the node is a Folder!
+            myFileSystem ^? _File . metadata @?= Just (Metadata "config.json" "admin")
+            myFileSystem ^? _File . metadata . fileName @?= Just "config.json"
+            example ^? _File . metadata @?= Nothing
+            example ^? _Folder . _2 . ix 0 . _File . metadata . fileName @?= Just ".zshenv",
+          testCase "search" $ do
+              -- Use our custom recursive Traversal!
+              let res = toListOf (allDocuments . metadata . fileName) example
+              res @?= [".zshenv", ".zshenv", ".zsh_history"]
+        ],
+      testGroup
+        "Recursive Search Tests"
+        [ testCase "searchFile finds all matching documents" $ do
+            let found = searchFile example ".zshenv"
+            length found @?= 2
+            -- Verify they are actually the correct documents
+            (found ^.. traversed . metadata . owner) @?= ["root", "luke"],
+          
+          testCase "documentFlatList extracts all documents" $ do
+            let allDocs = documentFlatList example
+            length allDocs @?= 3
+            (allDocs ^.. traversed . metadata . fileName) @?= [".zshenv", ".zshenv", ".zsh_history"],
+
+          testCase "documentExist correctly identifies existing files" $ do
+            documentExist example ".zsh_history" @?= True
+            documentExist example "does_not_exist.txt" @?= False
         ]
     ]
 
-            -- g) Finally, we no longer want to focus on just one element, but on "Hi" and "He" at the same
-            -- time. Write a lens that does exactly this.
+example :: FileSystem
+example = Folder "root" 
+  [ File $ Doc Text (Metadata ".zshenv" "root") ""
+  , Folder "home" 
+    [ Folder "luke" 
+      [ File $ Doc Text (Metadata ".zshenv" "luke") "export EDITOR=nvim"
+      , File $ Doc Text (Metadata ".zsh_history" "luke") "sudo dnf rm java"
+      ]
+    ]
+  ]

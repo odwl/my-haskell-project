@@ -49,7 +49,7 @@ library
     Lambda.RandomWalk
     Lambda.State
     Lambda.Subdist
-    Lambda.UserAddressCity
+    Lambda.Lens
 
   hs-source-dirs: src
   default-language: Haskell2010
@@ -82,13 +82,13 @@ test-suite lambda-test
     Lambda.FunctorTestUtils
     Lambda.HoverDamTest
     Lambda.InterpreterTest
+    Lambda.LensTest
     Lambda.ListAverageTest
     Lambda.MonadTest
     Lambda.ParserTest
     Lambda.RandomWalkTest
     Lambda.StateTest
     Lambda.SubdistTest
-    Lambda.UserAddressCityTest
     LambdaTest
 
   build-depends:
@@ -137,13 +137,13 @@ test-suite all-tests
     Lambda.FunctorTestUtils
     Lambda.HoverDamTest
     Lambda.InterpreterTest
+    Lambda.LensTest
     Lambda.ListAverageTest
     Lambda.MonadTest
     Lambda.ParserTest
     Lambda.RandomWalkTest
     Lambda.StateTest
     Lambda.SubdistTest
-    Lambda.UserAddressCityTest
     LambdaTest
 
   build-depends:
