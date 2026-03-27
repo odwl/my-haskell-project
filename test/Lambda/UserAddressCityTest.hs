@@ -47,11 +47,12 @@ userAddressCityTests =
             updatedTuple ^. _2 . _1 @?= 55
             updatedTuple @?= (1, (55, "Ho"), 2),
           testCase "Tuple lens test list" $ do
-            let res = view (_1 . ix 0) (["Hi", "Ho"], ["He", "Hu"])
+            let res = view (_1 . folded) (["Hi", "Ho"], ["He", "Hu"])
             res @?= "Hi"
+            let res2 = preview (_1 . folded) (["Hi", "Ho"], ["He", "Hu"])
+            res2 @?= Just "Hi"
         ]
     ]
-
 
 -- Change "Hi" to a integer value of your choice and bind the result to a name. Again, try the
 -- operator and function.d) Finally, use the lens on the updated tuple, to multiply the integer value you set in the last
