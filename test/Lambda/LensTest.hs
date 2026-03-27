@@ -88,8 +88,8 @@ lensTests =
             example ^? _File . metadata @?= Nothing
             example ^? _Folder . _2 . ix 0 . _File . metadata . fileName @?= Just ".zshenv",
           testCase "search" $ do
-              -- Use our custom recursive Traversal!
-              let res = toListOf (allDocuments . metadata . fileName) example
+              -- Use our new custom Fold!
+              let res = toListOf fileNameFold example
               res @?= [".zshenv", ".zshenv", ".zsh_history"]
         ],
       testGroup

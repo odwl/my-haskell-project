@@ -3,10 +3,12 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Lambda.Lens where
 
 import Control.Lens
+import GHC.Generics (Generic)
 
 -----------------------------------
 -- Lenses
@@ -60,40 +62,30 @@ data Document = Doc { _docType :: DocType, _metadata :: Metadata, _content :: St
 
 data FileSystem = File Document 
                 | Folder String [FileSystem]
-                deriving (Show, Eq)
+                deriving (Show, Eq, Generic)
 
 makeLenses ''Metadata
 makeLenses ''Document
 makePrisms ''FileSystem
 
--- A manual, recursive Traversal that focuses on every Document in a FileSystem tree.
-allDocuments :: Traversal' FileSystem Document -- is a function (Document -> g Document) -> FileSystem -> g FileSystem  (where g is applicative)
-allDocuments f (File d) = File <$> f d
--- Here we use `traversed` to iterate over the List of children,
--- and recursively apply `allDocuments` to each child!
-allDocuments f (Folder folderName contents) = Folder folderName <$> traversed (allDocuments f) contents
+instance Plated FileSystem where
+    plate f (Folder name contents) = Folder name <$> traversed f contents
+    plate _ (File d)               = pure (File d)
+
+-- A Plated fold that focuses on every Document in a FileSystem tree.
+documentFold :: Fold FileSystem Document
+documentFold = cosmos . _File
 
 searchFile :: FileSystem -> String -> [Document]
 searchFile fs targetName = 
-    toListOf (allDocuments . filtered (\doc -> doc ^. metadata . fileName == targetName)) fs
+    toListOf (documentFold . filtered ((== targetName) . view (metadata . fileName))) fs
 
 documentFlatList :: FileSystem -> [Document]
-documentFlatList fs = toListOf allDocuments fs -- fs ^.. allDocuments
+documentFlatList fs = fs ^.. documentFold
+
+fileNameFold :: Fold FileSystem String
+fileNameFold = documentFold . metadata . fileName
 
 -- Idiomatic lens: Focus all the way to the string, then just check strings!
 documentExist :: FileSystem -> String -> Bool
-documentExist fs targetName = elemOf (allDocuments . metadata . fileName) targetName fs
-
--- Here are the 3 main ways to write that point-free predicate:
--- 1. Standard Composition:  ((== targetName) . view (metadata . fileName))
--- 2. Lens 'has' + 'only':   has (metadata . fileName . only targetName)
--- 3. The best lens way:     Focus all the way down and use (== targetName) directly!
-
--- -- | A simple file system data type.
--- data FileSystem = File { _name :: String, _size :: Int }
---                 | Folder { _name :: String, _contents :: [FileSystem] }
---                 deriving (Show)
-
--- -- Generate lenses for the FileSystem data type.
--- makeLenses ''FileSystem
-
+documentExist fs targetName = elemOf fileNameFold targetName fs
