@@ -4,13 +4,13 @@ import Lambda
 import Lambda.FunctorTest (functorTests)
 import Lambda.HoverDamTest (hoverDamTests)
 import Lambda.InterpreterTest (interpreterTests)
+import Lambda.LensTest (lensTests)
 import Lambda.ListAverageTest (listAverageTests)
 import Lambda.MonadTest (monadTests)
 import Lambda.ParserTest (parserTests)
 import Lambda.RandomWalkTest (randomWalkTests)
 import Lambda.StateTest (stateTests)
 import Lambda.SubdistTest (subdistTests)
-import Lambda.LensTest (lensTests)
 import Test.Tasty
 import Test.Tasty.HUnit
 

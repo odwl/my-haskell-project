@@ -64,7 +64,7 @@ exampleTests =
   testGroup
     "Examples"
     [ testCase explanation $ reverseString input @?= expected
-    | Case {..} <- cases
+      | Case {..} <- cases
     ]
 
 data Case = Case {explanation :: String, input :: String, expected :: String}

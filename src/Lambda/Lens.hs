@@ -1,14 +1,13 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Lambda.Lens where
 
 import Control.Lens
-
 
 -----------------------------------
 -- Lenses
@@ -35,7 +34,6 @@ exampleAccess :: User -> City
 -- exampleAccess = view (address . city)
 exampleAccess u = u ^. (address . city)
 
-
 -- | Example usage to get the city name.
 exampleAccessName :: User -> String
 exampleAccessName = view (address . city . name)
@@ -54,31 +52,31 @@ updateCityName u cName = set (address . city . name) cName u
 -- file:///Users/odwl/Downloads/main.pdf
 -----------------------------------
 
-data Metadata = Metadata { _fileName :: String, _owner :: String } deriving (Show, Eq)
+data Metadata = Metadata {_fileName :: String, _owner :: String} deriving (Show, Eq)
 
-data DocType = Text | Binary deriving (Show, Eq) 
+data DocType = Text | Binary deriving (Show, Eq)
 
-data Document = Doc { _docType :: DocType, _metadata :: Metadata, _content :: String } deriving (Show, Eq)
+data Document = Doc {_docType :: DocType, _metadata :: Metadata, _content :: String} deriving (Show, Eq)
 
 -- The recursive, polymorphic tree data structure
-data File a = File a 
-            | Folder String [File a]
-            deriving (Show, Eq)
+data File a
+  = File a
+  | Folder String [File a]
+  deriving (Show, Eq)
 
 -- The type synonym to make the code cleaner
 type FileSystem = File Document
-
 
 makeLenses ''Metadata
 makeLenses ''Document
 makePrisms ''File
 
 instance Foldable File where
-    foldMap f (File doc) = f doc
-    foldMap f (Folder _ cs) = foldMap (foldMap f) cs
+  foldMap f (File doc) = f doc
+  foldMap f (Folder _ cs) = foldMap (foldMap f) cs
 
 flattenFolders :: File Document -> [Document]
-flattenFolders doc = foldMap (:[]) doc
+flattenFolders = foldMap (: [])
 
 flattenFolders2 :: File Document -> [Document]
 flattenFolders2 doc = doc ^.. folded
@@ -87,10 +85,10 @@ searchFiles' :: String -> File Document -> [Document]
 searchFiles' targetName doc = filter ((== targetName) . view (metadata . fileName)) (flattenFolders doc)
 
 instance Plated FileSystem where
-    plate = _Folder . _2 . traversed
+  plate = _Folder . _2 . traversed
 
 -- A Plated fold that focuses on every Document in a FileSystem tree.
-documentFold :: Fold FileSystem Document 
+documentFold :: Fold FileSystem Document
 documentFold = cosmos . _File
 
 documentFlatList :: FileSystem -> [Document]
@@ -100,8 +98,8 @@ fileNameFold :: Fold FileSystem String
 fileNameFold = documentFold . metadata . fileName
 
 searchFile :: FileSystem -> String -> [Document]
-searchFile fs targetName = 
-    toListOf (documentFold . filtered ((== targetName) . view (metadata . fileName))) fs
+searchFile fs targetName =
+  toListOf (documentFold . filtered ((== targetName) . view (metadata . fileName))) fs
 
 -- Idiomatic lens: Focus all the way to the string, then just check strings!
 documentExist :: FileSystem -> String -> Bool

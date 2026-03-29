@@ -1,5 +1,11 @@
 .PHONY: all build test lint format check watch docs
 
+# Haskell Toolchain Setup
+GHCUP_BIN := $(HOME)/.ghcup/bin
+export PATH := $(GHCUP_BIN):$(HOME)/.cabal/bin:$(PATH)
+export LIBRARY_PATH := $(CURDIR)/.local-lib:$(LIBRARY_PATH)
+
+
 # Build the project
 build:
 	cabal build

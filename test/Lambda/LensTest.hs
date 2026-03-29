@@ -10,24 +10,26 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-
 instance Arbitrary DocType where
-    arbitrary = Test.Tasty.QuickCheck.elements [Text, Binary]
+  arbitrary = Test.Tasty.QuickCheck.elements [Text, Binary]
 
 instance Arbitrary Metadata where
-    arbitrary = Metadata <$> arbitrary <*> arbitrary
+  arbitrary = Metadata <$> arbitrary <*> arbitrary
 
 instance Arbitrary Document where
-    arbitrary = Doc <$> arbitrary <*> arbitrary <*> arbitrary
+  arbitrary = Doc <$> arbitrary <*> arbitrary <*> arbitrary
 
-instance Arbitrary a => Arbitrary (File a) where
-    arbitrary = sized file'
-      where
-        file' 0 = File <$> arbitrary
-        file' n = oneof [ File <$> arbitrary
-                        , Folder <$> arbitrary <*> resize (n `div` 2) (listOf arbitrary)
-                        ]
+instance (Arbitrary a) => Arbitrary (File a) where
+  arbitrary = sized file'
+    where
+      file' 0 = File <$> arbitrary
+      file' n =
+        oneof
+          [ File <$> arbitrary,
+            Folder <$> arbitrary <*> resize (n `div` 2) (listOf arbitrary)
+          ]
 
+{-# ANN lensTests "HLint: ignore Use safeHead" #-}
 lensTests :: TestTree
 lensTests =
   testGroup
@@ -108,9 +110,9 @@ lensTests =
             example ^? _File . metadata @?= Nothing
             example ^? _Folder . _2 . ix 0 . _File . metadata . fileName @?= Just ".zshenv",
           testCase "search" $ do
-              -- Use our new custom Fold!
-              let res = toListOf fileNameFold example
-              res @?= [".zshenv", ".zshenv", ".zsh_history"]
+            -- Use our new custom Fold!
+            let res = toListOf fileNameFold example
+            res @?= [".zshenv", ".zshenv", ".zsh_history"]
         ],
       testGroup
         "Recursive Search Tests"
@@ -119,37 +121,35 @@ lensTests =
             length found @?= 2
             -- Verify they are actually the correct documents
             (found ^.. traversed . metadata . owner) @?= ["root", "luke"],
-          
           testCase "documentFlatList extracts all documents" $ do
             let allDocs = documentFlatList example
             length allDocs @?= 3
             (allDocs ^.. traversed . metadata . fileName) @?= [".zshenv", ".zshenv", ".zsh_history"],
-
           testCase "documentExist correctly identifies existing files" $ do
             documentExist example ".zsh_history" @?= True
             documentExist example "does_not_exist.txt" @?= False,
-            
           testProperty "flattenFolders == documentFlatList" $ \fs ->
             flattenFolders (fs :: FileSystem) === documentFlatList fs,
-
           testProperty "flattenFolders2 == documentFlatList" $ \fs ->
             flattenFolders2 (fs :: FileSystem) === documentFlatList fs,
-
           testProperty "flattenFolders2 == flattenFolders" $ \fs ->
             flattenFolders2 (fs :: FileSystem) === flattenFolders fs,
-            
           testProperty "searchFiles' == searchFile" $ \targetName fs ->
             searchFiles' targetName (fs :: FileSystem) === searchFile fs targetName
         ]
     ]
 
 example :: FileSystem
-example = Folder "root" 
-  [ File $ Doc Text (Metadata ".zshenv" "root") ""
-  , Folder "home" 
-    [ Folder "luke" 
-      [ File $ Doc Text (Metadata ".zshenv" "luke") "export EDITOR=nvim"
-      , File $ Doc Text (Metadata ".zsh_history" "luke") "sudo dnf rm java"
-      ]
+example =
+  Folder
+    "root"
+    [ File $ Doc Text (Metadata ".zshenv" "root") "",
+      Folder
+        "home"
+        [ Folder
+            "luke"
+            [ File $ Doc Text (Metadata ".zshenv" "luke") "export EDITOR=nvim",
+              File $ Doc Text (Metadata ".zsh_history" "luke") "sudo dnf rm java"
+            ]
+        ]
     ]
-  ]
