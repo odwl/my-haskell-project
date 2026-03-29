@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# OPTIONS_GHC -Wno-type-defaults #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Lambda.LensTest (lensTests) where
 
@@ -7,6 +8,25 @@ import Control.Lens
 import Lambda.Lens
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
+
+
+instance Arbitrary DocType where
+    arbitrary = Test.Tasty.QuickCheck.elements [Text, Binary]
+
+instance Arbitrary Metadata where
+    arbitrary = Metadata <$> arbitrary <*> arbitrary
+
+instance Arbitrary Document where
+    arbitrary = Doc <$> arbitrary <*> arbitrary <*> arbitrary
+
+instance Arbitrary a => Arbitrary (File a) where
+    arbitrary = sized file'
+      where
+        file' 0 = File <$> arbitrary
+        file' n = oneof [ File <$> arbitrary
+                        , Folder <$> arbitrary <*> resize (n `div` 2) (listOf arbitrary)
+                        ]
 
 lensTests :: TestTree
 lensTests =
@@ -107,7 +127,19 @@ lensTests =
 
           testCase "documentExist correctly identifies existing files" $ do
             documentExist example ".zsh_history" @?= True
-            documentExist example "does_not_exist.txt" @?= False
+            documentExist example "does_not_exist.txt" @?= False,
+            
+          testProperty "flattenFolders == documentFlatList" $ \fs ->
+            flattenFolders (fs :: FileSystem) === documentFlatList fs,
+
+          testProperty "flattenFolders2 == documentFlatList" $ \fs ->
+            flattenFolders2 (fs :: FileSystem) === documentFlatList fs,
+
+          testProperty "flattenFolders2 == flattenFolders" $ \fs ->
+            flattenFolders2 (fs :: FileSystem) === flattenFolders fs,
+            
+          testProperty "searchFiles' == searchFile" $ \targetName fs ->
+            searchFiles' targetName (fs :: FileSystem) === searchFile fs targetName
         ]
     ]
 

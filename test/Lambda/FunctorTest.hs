@@ -12,7 +12,7 @@ import Control.Monad.Reader (reader)
 import Control.Monad.Writer (runWriter)
 import Data.Functor.Identity (Identity (..), runIdentity)
 import Data.Maybe (fromMaybe, isNothing)
-import Lambda.Functor (DamState (..), MaybeList (..), MyConst (..), MyEither (..), MyIdentity (..), MyLog (..), MyMaybe (..), MyMaybe2 (..), MyProxy (..), MyReader (..), Op (..), Water, calc, capacity, checkOverflow, emptyDam, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM, writerComputation)
+import Lambda.Functor (DamState (..), MaybeList (..), MyConst (..), MyEither (..), MyIdentity (..), MyLog (..), MyMaybe (..), MyMaybe2 (..), MyProxy (..), MyReader (..), Op (..), Water, calc2, capacity, checkOverflow, emptyDam, fishB, myDiv, oneDay, sqrtInvAddOne, sqrtInvAddOneKleisli, takeWhileM, writerComputation)
 import Lambda.FunctorTestUtils (eqMyReader, eqReader)
 import Lambda.Subdist (Subdist, certainly, makeSubdist, runSubdist)
 import Test.QuickCheck.Checkers
@@ -29,14 +29,14 @@ tastyBatch (name, tests) = testProperties name tests
 -- ==========================================
 
 prop_calcCommutative :: Int -> Int -> Property
-prop_calcCommutative l r = calc l r === calc r l
+prop_calcCommutative l r = calc2 l r === calc2 r l
 
 prop_calcCorrect :: Int -> Int -> Property
 prop_calcCorrect l r =
   let expected = case (myDiv l r, myDiv r l) of
         (Just v1, Just v2) -> Just (v1 + v2)
         _ -> Nothing
-   in calc l r === expected
+   in calc2 l r === expected
 
 mathFunctionsTests :: TestTree
 mathFunctionsTests =
@@ -47,10 +47,10 @@ mathFunctionsTests =
       testCase "myDiv 9 3 (The if-clause)" $ myDiv (9 :: Int) 3 @?= Nothing,
       testProperty "calc is commutative" prop_calcCommutative,
       testProperty "calc matches manual calculation" prop_calcCorrect,
-      testCase "calc 4 2 (2 + 0)" $ calc (4 :: Int) 2 @?= Just 2,
-      testCase "calc 1 1 (1 + 1)" $ calc (1 :: Int) 1 @?= Just 2,
-      testCase "calc 6 2 (myDiv 6 2 is 3 -> Nothing)" $ calc (6 :: Int) 2 @?= Nothing,
-      testCase "calc 4 0 (Nothing)" $ calc (4 :: Int) 0 @?= Nothing
+      testCase "calc2 4 2 (2 + 0)" $ calc2 (4 :: Int) 2 @?= Just 2,
+      testCase "calc2 1 1 (1 + 1)" $ calc2 (1 :: Int) 1 @?= Just 2,
+      testCase "calc2 6 2 (myDiv 6 2 is 3 -> Nothing)" $ calc2 (6 :: Int) 2 @?= Nothing,
+      testCase "calc2 4 0 (Nothing)" $ calc2 (4 :: Int) 0 @?= Nothing
     ]
 
 -- ==========================================

@@ -8,7 +8,7 @@
 module Lambda.Lens where
 
 import Control.Lens
-import GHC.Generics (Generic)
+
 
 -----------------------------------
 -- Lenses
@@ -60,31 +60,48 @@ data DocType = Text | Binary deriving (Show, Eq)
 
 data Document = Doc { _docType :: DocType, _metadata :: Metadata, _content :: String } deriving (Show, Eq)
 
-data FileSystem = File Document 
-                | Folder String [FileSystem]
-                deriving (Show, Eq, Generic)
+-- The recursive, polymorphic tree data structure
+data File a = File a 
+            | Folder String [File a]
+            deriving (Show, Eq)
+
+-- The type synonym to make the code cleaner
+type FileSystem = File Document
+
 
 makeLenses ''Metadata
 makeLenses ''Document
-makePrisms ''FileSystem
+makePrisms ''File
+
+instance Foldable File where
+    foldMap f (File doc) = f doc
+    foldMap f (Folder _ cs) = foldMap (foldMap f) cs
+
+flattenFolders :: File Document -> [Document]
+flattenFolders doc = foldMap (:[]) doc
+
+flattenFolders2 :: File Document -> [Document]
+flattenFolders2 doc = doc ^.. folded
+
+searchFiles' :: String -> File Document -> [Document]
+searchFiles' targetName doc = filter ((== targetName) . view (metadata . fileName)) (flattenFolders doc)
 
 instance Plated FileSystem where
-    plate f (Folder name contents) = Folder name <$> traversed f contents
-    plate _ (File d)               = pure (File d)
+    plate = _Folder . _2 . traversed
 
 -- A Plated fold that focuses on every Document in a FileSystem tree.
-documentFold :: Fold FileSystem Document
+documentFold :: Fold FileSystem Document 
 documentFold = cosmos . _File
-
-searchFile :: FileSystem -> String -> [Document]
-searchFile fs targetName = 
-    toListOf (documentFold . filtered ((== targetName) . view (metadata . fileName))) fs
 
 documentFlatList :: FileSystem -> [Document]
 documentFlatList fs = fs ^.. documentFold
 
 fileNameFold :: Fold FileSystem String
 fileNameFold = documentFold . metadata . fileName
+
+searchFile :: FileSystem -> String -> [Document]
+searchFile fs targetName = 
+    toListOf (documentFold . filtered ((== targetName) . view (metadata . fileName))) fs
 
 -- Idiomatic lens: Focus all the way to the string, then just check strings!
 documentExist :: FileSystem -> String -> Bool

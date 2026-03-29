@@ -15,7 +15,7 @@ module Lambda.Functor
     myDiv,
     mySum,
     myMult,
-    calc,
+    calc2,
     sqrtInvAddOne,
     sqrtInvAddOneKleisli,
     fishB,
@@ -105,8 +105,8 @@ mySum a b = Just (a + b)
 myMult :: (Integral a) => a -> a -> Maybe a
 myMult a b = Just (a * b)
 
-calc :: (Integral a) => a -> a -> Maybe a
-calc l r = do
+calc2 :: (Integral a) => a -> a -> Maybe a
+calc2 l r = do
   x <- myDiv l r
   y <- myDiv r l
   mySum x y

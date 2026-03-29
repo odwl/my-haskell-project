@@ -32,6 +32,10 @@ watch:
 watch-test:
 	ghcid --command="cabal repl lambda-test" --test=":main" --restart=src
 
+# Run tests on file change but isolate only "Lens Tests"
+watch-lens:
+	ghcid --command="cabal repl lambda-test" --test=':main -p "Lens Tests"' --restart=src
+
 # Clean build artifacts
 clean:
 	cabal clean
