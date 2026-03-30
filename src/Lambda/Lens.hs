@@ -1,6 +1,6 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -75,7 +75,6 @@ makeLenses ''Metadata
 makeLenses ''Document
 makePrisms ''File
 
-
 flattenFolders :: File Document -> [Document]
 -- flattenFolders = foldMap (: [])
 flattenFolders = toList
@@ -84,7 +83,8 @@ flattenFolders2 :: File Document -> [Document]
 flattenFolders2 doc = doc ^.. folded
 
 searchFiles' :: String -> File Document -> [Document]
-searchFiles' targetName doc = filter ((== targetName) . view (metadata . fileName)) (flattenFolders doc)
+searchFiles' targetName doc =
+  (filter ((== targetName) . view (metadata . fileName))) $ (flattenFolders doc)
 
 instance Plated FileSystem where
   plate = _Folder . _2 . traversed
