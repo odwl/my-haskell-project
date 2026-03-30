@@ -117,7 +117,7 @@ lensTests =
       testGroup
         "Recursive Search Tests"
         [ testCase "searchFile finds all matching documents" $ do
-            let found = searchFile example ".zshenv"
+            let found = searchFile ".zshenv" example
             length found @?= 2
             -- Verify they are actually the correct documents
             (found ^.. traversed . metadata . owner) @?= ["root", "luke"],
@@ -128,18 +128,14 @@ lensTests =
           testCase "documentExist correctly identifies existing files" $ do
             documentExist example ".zsh_history" @?= True
             documentExist example "does_not_exist.txt" @?= False,
-          testProperty "flattenFolders == documentFlatList" $ \fs ->
-            flattenFolders (fs :: FileSystem) === documentFlatList fs,
           testProperty "flattenFolders2 == documentFlatList" $ \fs ->
-            flattenFolders2 (fs :: FileSystem) === documentFlatList fs,
-          testProperty "flattenFolders2 == flattenFolders" $ \fs ->
-            flattenFolders2 (fs :: FileSystem) === flattenFolders fs,
+            flattenFolders2 (fs :: File Document) === documentFlatList fs,
           testProperty "searchFiles' == searchFile" $ \targetName fs ->
-            searchFiles' targetName (fs :: FileSystem) === searchFile fs targetName
+            searchFiles' targetName (fs :: File Document) === searchFile targetName fs
         ]
     ]
 
-example :: FileSystem
+example :: File Document
 example =
   Folder
     "root"

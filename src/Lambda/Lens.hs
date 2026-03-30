@@ -68,41 +68,39 @@ data File a
   | Folder String [File a]
   deriving (Show, Eq, Functor, Foldable, Traversable)
 
--- The type synonym to make the code cleaner
-type FileSystem = File Document
 
 makeLenses ''Metadata
 makeLenses ''Document
 makePrisms ''File
 
-flattenFolders :: File Document -> [Document]
--- flattenFolders = foldMap (: [])
-flattenFolders = toList
+-- flattenFolders :: File Document -> [Document]
+-- -- flattenFolders = foldMap (: [])
+-- flattenFolders = toList
 
 flattenFolders2 :: File Document -> [Document]
 flattenFolders2 doc = doc ^.. folded
 
 searchFiles' :: String -> File Document -> [Document]
-searchFiles' targetName doc =
-  (filter ((== targetName) . view (metadata . fileName))) $ (flattenFolders doc)
+searchFiles' targetName =
+  filter ((== targetName) . view (metadata . fileName)) . toList
 
-instance Plated FileSystem where
+searchFile :: String -> File Document -> [Document]
+searchFile targetName =
+  toListOf (documentFold . filtered ((== targetName) . view (metadata . fileName)))
+
+instance Plated (File Document) where
   plate = _Folder . _2 . traversed
 
--- A Plated fold that focuses on every Document in a FileSystem tree.
-documentFold :: Fold FileSystem Document
+-- A Plated fold that focuses on every Document in a File Document tree.
+documentFold :: Fold (File Document) Document
 documentFold = cosmos . _File
 
-documentFlatList :: FileSystem -> [Document]
+documentFlatList :: File Document -> [Document]
 documentFlatList fs = fs ^.. documentFold
 
-fileNameFold :: Fold FileSystem String
+fileNameFold :: Fold (File Document) String
 fileNameFold = documentFold . metadata . fileName
 
-searchFile :: FileSystem -> String -> [Document]
-searchFile fs targetName =
-  toListOf (documentFold . filtered ((== targetName) . view (metadata . fileName))) fs
-
 -- Idiomatic lens: Focus all the way to the string, then just check strings!
-documentExist :: FileSystem -> String -> Bool
+documentExist :: File Document -> String -> Bool
 documentExist fs targetName = elemOf fileNameFold targetName fs
