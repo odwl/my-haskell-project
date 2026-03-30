@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -8,6 +11,7 @@
 module Lambda.Lens where
 
 import Control.Lens
+import Data.Foldable (toList)
 
 -----------------------------------
 -- Lenses
@@ -62,7 +66,7 @@ data Document = Doc {_docType :: DocType, _metadata :: Metadata, _content :: Str
 data File a
   = File a
   | Folder String [File a]
-  deriving (Show, Eq)
+  deriving (Show, Eq, Functor, Foldable, Traversable)
 
 -- The type synonym to make the code cleaner
 type FileSystem = File Document
@@ -71,12 +75,10 @@ makeLenses ''Metadata
 makeLenses ''Document
 makePrisms ''File
 
-instance Foldable File where
-  foldMap f (File doc) = f doc
-  foldMap f (Folder _ cs) = foldMap (foldMap f) cs
 
 flattenFolders :: File Document -> [Document]
-flattenFolders = foldMap (: [])
+-- flattenFolders = foldMap (: [])
+flattenFolders = toList
 
 flattenFolders2 :: File Document -> [Document]
 flattenFolders2 doc = doc ^.. folded
