@@ -50,4 +50,10 @@ clean:
 # Build documentation
 docs:
 	@which pdflatex > /dev/null || (echo "pdflatex not found. Please install a LaTeX distribution." && exit 1)
-	for f in docs/*.tex; do pdflatex -interaction=nonstopmode -output-directory=docs $$f; done
+	for f in docs/*.tex; do \
+		pdflatex -interaction=nonstopmode -output-directory=docs $$f; \
+		pdflatex -interaction=nonstopmode -output-directory=docs $$f; \
+	done
+
+
+

@@ -1,6 +1,12 @@
 % Options for packages loaded elsewhere
 \PassOptionsToPackage{unicode}{hyperref}
 \PassOptionsToPackage{hyphens}{url}
+\usepackage{newunicodechar}
+\newunicodechar{∘}{\ensuremath{\circ}}
+\newunicodechar{≅}{\ensuremath{\cong}}
+\newunicodechar{⋄}{\ensuremath{\diamond}}
+
+
 %
 \documentclass[
 ]{article}
@@ -91,12 +97,18 @@
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
 \fi
+\usepackage{hyperref}
 \usepackage{bookmark}
+
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
 \hypersetup{
-  hidelinks,
+  colorlinks=true,
+  linkcolor=blue,
+  filecolor=magenta,
+  urlcolor=cyan,
   pdfcreator={LaTeX via pandoc}}
+
 
 \author{}
 \date{}
