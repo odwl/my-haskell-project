@@ -128,8 +128,12 @@ lensTests =
           testCase "documentExist correctly identifies existing files" $ do
             documentExist example ".zsh_history" @?= True
             documentExist example "does_not_exist.txt" @?= False,
+          testCase "flattenFileNames extracts all filenames" $ do
+            flattenFileNames example @?= [".zshenv", ".zshenv", ".zsh_history"],
           testProperty "flattenFolders2 == documentFlatList" $ \fs ->
             flattenFolders2 (fs :: File Document) === documentFlatList fs,
+          testProperty "flattenFileNames == documentFold filenames" $ \fs ->
+            flattenFileNames (fs :: File Document) === (fs ^.. documentFold . metadata . fileName),
           testProperty "searchFiles' == searchFile" $ \targetName fs ->
             searchFiles' targetName (fs :: File Document) === searchFile targetName fs
         ]

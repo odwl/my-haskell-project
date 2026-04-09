@@ -53,11 +53,11 @@ In type theory and functional programming, a profound dichotomy exists that mirr
 1. **The Structures (Nouns):** A concrete data type (like `Bool`, `Maybe`, or `Void`) simply defines a "shape in memory" by explicitly declaring how many distinct values (inhabitants) it can hold. It has no strict mathematical laws governing how it must behave; its only rules are structural.
 2. **The Algebras (Verbs/Adjectives):** A typeclass (like `Eq`, `Semigroup`, or `Functor`) defines an interface of behavior mapping across these structures. Because these define behavior, they explicitly come with **Mathematical Laws** to ensure that behavior is predictable and compositionally sound.
 
-This document focuses firmly on the first half of that dichotomy: **The Structures.** We will explore how classifying types purely by the number of distinct values they can hold at runtime provides a phenomenally strong foundation for building robust abstractions.
+This document explores both halves of that dichotomy: **The Structures** and **The Algebras**. We will see how classifying types by their inhabitants provides the foundation, and how layering mathematical laws over those shapes creates the powerful abstractions we use in functional programming.
 
 While minimal types (like those with 0 or 1 inhabitant) are omnipresent in pure functional languages like Haskell, they can often feel counter-intuitive or overly abstract to newcomers. Why would we want a type that holds zero values? What is the point of a type with exactly one? This document aims to demystify these concepts. To aid in your learning journey, several hands-on exercises are suggested throughout this guide.
 
-**Intended Audience:** From a pedagogical perspective, this guide is tailored for intermediate Haskell learners and practical software engineers. If you've ever struggled to understand *why* concepts like `Void` or `Proxy` exist in the standard library—rather than just *how* to compile them—this resource provides the foundation. After mastering the *Structures* outlined here, you will be perfectly prepared to study the *Algebras* (Typeclasses and their laws) that bring them to life.
+**Intended Audience:** From a pedagogical perspective, this guide is tailored for intermediate Haskell learners and practical software engineers. If you've ever struggled to understand *why* concepts like `Void` or `Proxy` exist in the standard library—rather than just *how* to compile them—this resource provides the foundation. We will first master the *Structures*, and then dive deep into the *Algebras* that bring them to life.
 
 ## A Quick Primer: What is a "Kind"?
 
@@ -919,22 +919,22 @@ What are the top minimal implementations of a Monoid? Of course, because we math
 A type with exactly 2 values (like `Bool` with `True` and `False`) has $2 \times 2 = 4$ possible input combinations for a binary function. For each input, it must choose one of 2 outputs, yielding $2^4 = 16$ mathematically possible binary operations.
 
 Here is the exhaustive list of all 16 possible logical operations for a Boolean type:
-1. **Contradiction** (⊥): Always returns `False` (ignores both inputs).
-2. **NOR** (↓): Returns `True` only if both are `False`.
-3. **Converse Nonimplication** (↚): Returns `True` only if $B$ is True and $A$ is False.
-4. **Negation A** (¬A): Always returns `Not A` (ignores the second argument).
-5. **Material Nonimplication** (↛): Returns `True` only if $A$ is True and $B$ is False.
-6. **Negation B** (¬B): Always returns `Not B` (ignores the first argument).
-7. **XOR** (⊕): Returns `True` if inputs are different.
-8. **NAND** (↑): Returns `False` only if both are `True`.
-9. **AND** (∧): Returns `True` only if both are `True`.
-10. **Equivalence** (↔): Returns `True` if inputs are the same.
+1. **Contradiction** ($\bot$): Always returns `False` (ignores both inputs).
+2. **NOR** ($\downarrow$): Returns `True` only if both are `False`.
+3. **Converse Nonimplication** ($\nleftarrow$): Returns `True` only if $B$ is True and $A$ is False.
+4. **Negation A** ($\neg$A): Always returns `Not A` (ignores the second argument).
+5. **Material Nonimplication** ($\nrightarrow$): Returns `True` only if $A$ is True and $B$ is False.
+6. **Negation B** ($\neg$B): Always returns `Not B` (ignores the first argument).
+7. **XOR** ($\oplus$): Returns `True` if inputs are different.
+8. **NAND** ($\uparrow$): Returns `False` only if both are `True`.
+9. **AND** ($\wedge$): Returns `True` only if both are `True`.
+10. **Equivalence** ($\leftrightarrow$): Returns `True` if inputs are the same.
 11. **Projection B** (B): Always returns $B$ (ignores the first argument).
-12. **Material Implication** (→): Returns `False` only if $A$ is True and $B$ is False.
+12. **Material Implication** ($\to$): Returns `False` only if $A$ is True and $B$ is False.
 13. **Projection A** (A): Always returns $A$ (ignores the second argument).
-14. **Converse Implication** (←): Returns `False` only if $B$ is True and $A$ is False.
-15. **OR** (∨): Returns `True` if at least one is `True`.
-16. **Tautology** (⊤): Always returns `True` (ignores both inputs).
+14. **Converse Implication** ($\leftarrow$): Returns `False` only if $B$ is True and $A$ is False.
+15. **OR** ($\vee$): Returns `True` if at least one is `True`.
+16. **Tautology** ($\top$): Always returns `True` (ignores both inputs).
 
 In fact, any 2-inhabitant operation that possesses a valid two-sided identity is mathematically *guaranteed* to be associative! (See the mathematical proof of this anomaly in **Annex A**).
 
@@ -942,14 +942,14 @@ To find our Monoids, we can mathematically filter these down by rigorously testi
 
 **1. Which ones fail the Left Identity requirement? ($e \diamond x = x$)**
 An operation must have some constant $e$ (`True` or `False`) that leaves the right side $x$ unchanged. 
-Exactly **9 operations utterly fail** to have a left identity. These include the ones that ignore the right argument (Contradiction, Tautology, Projection A, Negation A), as well as NOR, NAND, Negation B, Material Nonimplication (↛), and Converse Implication (←).
+Exactly **9 operations utterly fail** to have a left identity. These include the ones that ignore the right argument (Contradiction, Tautology, Projection A, Negation A), as well as NOR, NAND, Negation B, Material Nonimplication ($\nrightarrow$), and Converse Implication ($\leftarrow$).
 Discarding those 9 leaves us with exactly 7 operations possessing a valid left identity.
 
 **2. Which ones fail the Right Identity requirement? ($x \diamond e = x$)**
 Of the 7 surviving operations, 3 of them fail to have a corresponding right identity element:
 *   **Projection B** (B): Has a left identity but evaluation always yields $e \neq x$ on the right.
-*   **Material Implication** (→): `T → x = x` (Left Identity is `T`), but `x → T = True` (Fails Right Identity).
-*   **Converse Nonimplication** (↚): `F ↚ x = x` (Left Identity is `F`), but `x ↚ F = False` (Fails Right Identity).
+*   **Material Implication** ($\to$): `T $\to$ x = x` (Left Identity is `T`), but `x $\to$ T = True` (Fails Right Identity).
+*   **Converse Nonimplication** ($\nleftarrow$): `F $\nleftarrow$ x = x` (Left Identity is `F`), but `x $\nleftarrow$ F = False` (Fails Right Identity).
 
 Discarding those 3 leaves us with exactly 4 operations that possess a complete, **two-sided** identity element. At parameter size 2, proving that these surviving 4 operations also satisfy the final Monoid Law (Associativity) becomes trivial.
 

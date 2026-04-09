@@ -103,6 +103,10 @@
 
 \begin{document}
 
+{
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
 \section{Part 1: The Structures (No
 Laws)}\label{part-1-the-structures-no-laws}
 
@@ -124,15 +128,15 @@ Laws)}\label{part-1-the-structures-no-laws}
   \begin{itemize}
   \tightlist
   \item
-    \hyperref[1-0-inhabitants-uninhabited-type]{1. 0 Inhabitants
-    (Uninhabited Type)}
+    \hyperref[section-11-void-0-inhabitants--initial-object]{Section
+    1.1: \texttt{Void} (0 Inhabitants / Initial Object)}
 
     \begin{itemize}
     \tightlist
     \item
       \hyperref[1-custom-empty-data]{1. Custom Empty Data}
     \item
-      \hyperref[2-datavoid-the-built-in-equivalent]{2.
+      \hyperref[2-datavoid---the-built-in-equivalent]{2.
       \texttt{Data.Void} - the built-in equivalent.}
 
       \begin{itemize}
@@ -142,12 +146,10 @@ Laws)}\label{part-1-the-structures-no-laws}
         Implementing the Impossible}
       \end{itemize}
     \item
-      \hyperref[3-common-idioms]{3. Common Idioms}
+      \hyperref[3-type-level-guarantees]{3. Type-Level Guarantees}
 
       \begin{itemize}
       \tightlist
-      \item
-        \hyperref[1-type-level-guarantees]{1. Type-Level Guarantees}
       \item
         \hyperref[exercise-2-avoiding-fromright-and-partiality]{Exercise
         2: Avoiding \texttt{fromRight} and Partiality}
@@ -157,18 +159,26 @@ Laws)}\label{part-1-the-structures-no-laws}
       \item
         \hyperref[exercise-4-safe-list-processing]{Exercise 4: Safe List
         Processing}
-      \item
-        \hyperref[2-type-level-phantom-types-for-type-safety]{2.
-        Type-Level Phantom Types for Type Safety}
+      \end{itemize}
+    \item
+      \hyperref[4-type-level-phantom-types-for-type-safety]{4.
+      Type-Level Phantom Types for Type Safety}
+
+      \begin{itemize}
+      \tightlist
       \item
         \hyperref[exercise-5-phantom-status]{Exercise 5: Phantom Status}
       \item
         \hyperref[exercise-6-a-tree-without-leaves]{Exercise 6: A Tree
         Without Leaves}
       \end{itemize}
+    \item
+      \hyperref[5-category-theory-the-initial-object-in-hask]{5.
+      Category Theory: The Initial Object in Hask}
     \end{itemize}
   \item
-    \hyperref[2-1-inhabitant-unit-type]{2. 1 Inhabitant (Unit Type)}
+    \hyperref[section-12--1-inhabitant--terminal-object]{Section 1.2:
+    \texttt{()} (1 Inhabitant / Terminal Object)}
 
     \begin{itemize}
     \tightlist
@@ -181,7 +191,13 @@ Laws)}\label{part-1-the-structures-no-laws}
     \item
       \hyperref[4-other-library-unit-types]{4. Other Library Unit Types}
     \item
-      \hyperref[5-exercises-the-power-of-one]{5. Exercises: The Power of
+      \hyperref[5-the-curious-case-of-void]{5. The Curious Case of
+      \texttt{{[}Void{]}}}
+    \item
+      \hyperref[6-category-theory-the-terminal-object-in-hask]{6.
+      Category Theory: The Terminal Object in Hask}
+    \item
+      \hyperref[7-exercises-the-power-of-one]{7. Exercises: The Power of
       One}
 
       \begin{itemize}
@@ -195,38 +211,75 @@ Laws)}\label{part-1-the-structures-no-laws}
       \end{itemize}
     \end{itemize}
   \item
-    \hyperref[3-2-inhabitants-boolean-type]{3. 2 Inhabitants (Boolean
-    Type)}
+    \hyperref[section-13-bool-2-inhabitants--coproduct-of-terminal-objects]{Section
+    1.3: \texttt{Bool} (2 Inhabitants / Coproduct of Terminal Objects)}
 
     \begin{itemize}
     \tightlist
     \item
       \hyperref[1-the-standard-bool]{1. The Standard \texttt{Bool}}
     \item
+      \hyperref[2-using-either--]{2. Using \texttt{Either\ ()\ ()}}
+    \item
       \hyperref[3-custom-enumerations]{3. Custom Enumerations}
+    \item
+      \hyperref[4-category-theory-coproduct-of-terminal-objects]{4.
+      Category Theory: Coproduct of Terminal Objects}
     \end{itemize}
   \item
-    \hyperref[4-uncountably-infinite-inhabitants]{4. Uncountably
-    Infinite Inhabitants}
+    \hyperref[section-14-other-finite-inhabitants-products-and-coproducts]{Section
+    1.4: Other Finite Inhabitants (Products and Coproducts)}
 
     \begin{itemize}
     \tightlist
     \item
-      \hyperref[1-infinite-streams]{1. Infinite Streams}
+      \hyperref[1-a-3-inhabitant-type]{1. A 3-Inhabitant Type}
     \item
-      \hyperref[2-infinite-functions]{2. Infinite Functions}
+      \hyperref[2-playing-with-4-inhabitants]{2. Playing with 4
+      Inhabitants}
+    \item
+      \hyperref[3-scaling-to-5-inhabitants]{3. Scaling to 5 Inhabitants}
+    \end{itemize}
+  \item
+    \hyperref[section-15-infinite-inhabitants-countable-and-uncountable]{Section
+    1.5: Infinite Inhabitants (Countable and Uncountable)}
+
+    \begin{itemize}
+    \tightlist
+    \item
+      \hyperref[1-countably-infinite-aleph_0]{1. Countably Infinite
+      (\(\aleph_0\))}
+    \item
+      \hyperref[2-uncountably-infinite-2aleph_0]{2. Uncountably Infinite
+      (\(2^{\aleph_0}\))}
+
+      \begin{itemize}
+      \tightlist
+      \item
+        \hyperref[a-infinite-streams]{A. Infinite Streams}
+      \item
+        \hyperref[b-infinite-functions]{B. Infinite Functions}
+      \end{itemize}
     \end{itemize}
   \end{itemize}
 \item
-  \hyperref[annex-]{Annex}
+  \hyperref[annex-the-category-hask-]{Annex: The Category Hask}
 
   \begin{itemize}
   \tightlist
   \item
+    \hyperref[hask-the-category-of-haskell-types]{Hask: The Category of
+    Haskell Types}
+  \item
     \hyperref[the-secret-inhabitant-bottom-__]{The Secret Inhabitant:
     Bottom (\texttt{\_\textbar{}\_})}
-  \item
-    \hyperref[bibliography]{Bibliography}
+
+    \begin{itemize}
+    \tightlist
+    \item
+      \hyperref[interacting-with-bottom-safely-using-io]{Interacting
+      with Bottom safely using \texttt{IO}}
+    \end{itemize}
   \end{itemize}
 \end{itemize}
 
@@ -254,10 +307,11 @@ with mathematical laws).
   to ensure that behavior is predictable and compositionally sound.
 \end{enumerate}
 
-This document focuses firmly on the first half of that dichotomy:
-\textbf{The Structures.} We will explore how classifying types purely by
-the number of distinct values they can hold at runtime provides a
-phenomenally strong foundation for building robust abstractions.
+This document explores both halves of that dichotomy: \textbf{The
+Structures} and \textbf{The Algebras}. We will see how classifying types
+by their inhabitants provides the foundation, and how layering
+mathematical laws over those shapes creates the powerful abstractions we
+use in functional programming.
 
 While minimal types (like those with 0 or 1 inhabitant) are omnipresent
 in pure functional languages like Haskell, they can often feel
@@ -272,9 +326,8 @@ is tailored for intermediate Haskell learners and practical software
 engineers. If you've ever struggled to understand \emph{why} concepts
 like \texttt{Void} or \texttt{Proxy} exist in the standard
 library---rather than just \emph{how} to compile them---this resource
-provides the foundation. After mastering the \emph{Structures} outlined
-here, you will be perfectly prepared to study the \emph{Algebras}
-(Typeclasses and their laws) that bring them to life.
+provides the foundation. We will first master the \emph{Structures}, and
+then dive deep into the \emph{Algebras} that bring them to life.
 
 \subsection{A Quick Primer: What is a
 ``Kind''?}\label{a-quick-primer-what-is-a-kind}
@@ -438,14 +491,15 @@ expression:
 There are also a few other ways to implement this without explicitly
 writing \texttt{case\ ...\ of\ \{\}}: 1. \textbf{Using
 \texttt{LambdaCase}}: With \texttt{\{-\#\ LANGUAGE\ LambdaCase\ \#-\}},
-you can drop the variable name and write
-\texttt{\textbackslash{}case\ \{\}}. 2. \textbf{Using standard library
-tools (\texttt{absurd})}: If you use the standard library's
-\texttt{Void} type instead of a custom \texttt{Never}, the library
-provides a function called
+you can drop the variable name and write:
+\texttt{haskell\ \ \ \ \textbackslash{}case\ \{\}} 2. \textbf{Using
+standard library tools (\texttt{absurd})}: If you use the standard
+library's \texttt{Void} type instead of a custom \texttt{Never}, the
+library provides a function called
 \texttt{absurd\ ::\ Void\ -\textgreater{}\ a}. Because \texttt{absurd}
 can return \emph{any} type \texttt{a}, you can simply use it to return
-\texttt{Void} right back! \texttt{f\ \_\ imposs\ \_\ =\ absurd\ imposs}.
+\texttt{Void} right back!
+\texttt{haskell\ \ \ \ f\ \_\ imposs\ \_\ =\ absurd\ imposs}
 
 \emph{(For the deep technical details on how the compiler handles
 matching on uninhabited types, refer to the
@@ -507,14 +561,13 @@ values---such as \texttt{Nothing}, an empty list \texttt{{[}{]}}, or a
 never actually finds a \texttt{Never} value to apply \texttt{absurd} to,
 meaning the code safely evaluates without crashing!)}
 
-\paragraph{3. Common Idioms}\label{common-idioms}
-
 Uninhabited (Empty) types might seem useless at first glance since you
 can never construct them. However, they are incredibly powerful tools
 for the compiler. Here are some very useful common idioms using
-uninhabited types:
+uninhabited types: Type-Level Guarantees and Type-Level Phantom Types
+for Type Safety.
 
-\subparagraph{1. Type-Level Guarantees}\label{type-level-guarantees}
+\paragraph{3. Type-Level Guarantees}\label{type-level-guarantees}
 
 One of the most frequent patterns when dealing with impossible states is
 safely extracting a value from a sum type where one branch can never
@@ -676,7 +729,7 @@ proving none were lost.
 \end{Highlighting}
 \end{Shaded}
 
-\subparagraph{2. Type-Level Phantom Types for Type
+\paragraph{4. Type-Level Phantom Types for Type
 Safety}\label{type-level-phantom-types-for-type-safety}
 
 In many mainstream languages like Java, C++, or Python, developers often
@@ -762,16 +815,35 @@ system by explicitly placing a bottom (\texttt{\_\textbar{}\_}) value,
 such as \texttt{undefined} or \texttt{error}, in the \texttt{Leaf}
 position!)}
 
+\paragraph{5. Category Theory: The Initial Object in
+Hask}\label{category-theory-the-initial-object-in-hask}
+
+In the mathematical framework of Category Theory, Haskell types and
+functions form a category colloquially known as \textbf{Hask}. In this
+category, the types are the ``objects'' and the functions are the
+``morphisms'' (arrows) between them.
+
+Within \texttt{Hask}, \texttt{Void} plays the formal role of the
+\textbf{Initial Object} (often denoted as \(0\)). An initial object
+gives rise to a universal property: for \emph{every} other object \(A\)
+in the category, there exists exactly \textbf{one unique morphism} from
+the initial object to \(A\). In Haskell, this corresponds perfectly to
+the function:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{absurd ::} \DataTypeTok{Void} \OtherTok{{-}\textgreater{}}\NormalTok{ a}
+\end{Highlighting}
+\end{Shaded}
+
+There is exactly one conceptually pure way to implement this function
+(by doing nothing, since it can never be called), making it the unique
+morphism guaranteed by the initial object. Conversely, there are
+\emph{no} general morphisms from populated types into \texttt{Void}.
+
 \subsubsection{\texorpdfstring{Section 1.2: \texttt{()} (1 Inhabitant /
 Terminal
 Object)}{Section 1.2: () (1 Inhabitant / Terminal Object)}}\label{section-1.2-1-inhabitant-terminal-object}
-
-\textbf{Categorical Analog:} \emph{The Terminal Object} (denoted as
-\(1\)). In Category Theory, a terminal object has exactly one unique
-morphism coming in \emph{from} every other object. In Haskell, this
-corresponds to the fact that you can map any arbitrary Type into the
-Unit type simply by throwing away the input value
-(\texttt{\textbackslash{}x\ -\textgreater{}\ ()}).
 
 A 1-inhabitant type has exactly one possible value. Inspecting the value
 tells you nothing new---it simply conveys ``this computation finished''
@@ -867,7 +939,58 @@ Because \texttt{Acknowledged}, \texttt{()}, \texttt{Identity\ ()}, and
 1 (a single constructor), they are all formally \textbf{isomorphic} to
 one another.
 
-\paragraph{5. Exercises: The Power of
+\paragraph{\texorpdfstring{5. The Curious Case of
+\texttt{{[}Void{]}}}{5. The Curious Case of {[}Void{]}}}\label{the-curious-case-of-void}
+
+What happens if we create a list of \texttt{Void}? Does
+\texttt{{[}Void{]}} exist?
+
+Let's use Type Algebra. A list type \texttt{{[}a{]}} is defined
+structurally as either an empty list \texttt{{[}{]}}, or a head element
+\texttt{a} attached to a tail list \texttt{{[}a{]}}. Mathematically:
+\texttt{List(a)\ =\ 1\ +\ a\ *\ List(a)} \emph{(Where \texttt{1}
+represents the empty list \texttt{{[}{]}}, addition represents the
+\texttt{Either} choice, and multiplication represents pairing head and
+tail)}
+
+If we substitute \texttt{Void} (which has 0 inhabitants):
+\texttt{List(Void)\ =\ 1\ +\ 0\ *\ List(Void)}
+\texttt{List(Void)\ =\ 1\ +\ 0} \texttt{List(Void)\ =\ 1}
+
+The cardinality of \texttt{{[}Void{]}} is exactly \textbf{1}. Because
+\texttt{Void} has no values, it is impossible to ever construct the
+``head'' of a list of \texttt{Void}. The only value that can ever exist
+of type \texttt{{[}Void{]}} is the empty list \texttt{{[}{]}}.
+Therefore, \texttt{{[}Void{]}} is perfectly structurally isomorphic to
+\texttt{()}!
+
+\paragraph{6. Category Theory: The Terminal Object in
+Hask}\label{category-theory-the-terminal-object-in-hask}
+
+If \texttt{Void} is the Initial Object in the \texttt{Hask} category,
+then the Unit type \texttt{()} is the \textbf{Terminal Object} (often
+denoted as \(1\)).
+
+The universal property of a terminal object dictates that for
+\emph{every} other object \(A\) in the category, there exists exactly
+\textbf{one unique morphism} from \(A\) to the terminal object. In
+Haskell, this corresponds to a function that takes any type and returns
+\texttt{()}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{const}\OtherTok{ () ::}\NormalTok{ a }\OtherTok{{-}\textgreater{}}\NormalTok{ ()}
+\end{Highlighting}
+\end{Shaded}
+
+There is exactly one conceptually pure way to implement this function
+(by ignoring the input and returning the only available value of the
+output type, which is precisely what the standard library's
+\texttt{const\ ()} does). The fact that every type can be
+deterministically mapped to \texttt{()} is what makes \texttt{()} the
+terminal object in \texttt{Hask}.
+
+\paragraph{7. Exercises: The Power of
 One}\label{exercises-the-power-of-one}
 
 \subparagraph{\texorpdfstring{Exercise 7: A Safe
@@ -978,8 +1101,83 @@ blindness''), it's highly idiomatic in Haskell to define custom
 \end{Highlighting}
 \end{Shaded}
 
-\subsubsection{Section 1.4: Infinite Inhabitants (Countable and
-Uncountable)}\label{section-1.4-infinite-inhabitants-countable-and-uncountable}
+\paragraph{4. Category Theory: Coproduct of Terminal
+Objects}\label{category-theory-coproduct-of-terminal-objects}
+
+In Category Theory, the sum of two objects is called a
+\textbf{Coproduct}. As we saw, \texttt{Bool} is isomorphic to
+\texttt{Either\ ()\ ()}. Because \texttt{()} is the terminal object
+\(1\), \texttt{Bool} is the coproduct of \(1 + 1\). Its existence allows
+us to represent independent binary choices in the \texttt{Hask}
+category. Any type with exactly two inhabitants is conceptually
+isomorphic to this same \(1+1\) coproduct.
+
+\subsubsection{Section 1.4: Other Finite Inhabitants (Products and
+Coproducts)}\label{section-1.4-other-finite-inhabitants-products-and-coproducts}
+
+We have explicitly covered types with 0, 1, and 2 inhabitants. By
+combining what we've learned, we can accurately determine the
+cardinality of \emph{any} finite algebraic type through the mathematical
+laws of addition (Coproducts, represented by \texttt{Either}) and
+multiplication (Products, represented by tuples).
+
+\paragraph{1. A 3-Inhabitant Type}\label{a-3-inhabitant-type}
+
+The standard library provides \texttt{Ordering}, a type with exactly
+three values representing the result of a comparison:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{data} \DataTypeTok{Ordering} \OtherTok{=} \DataTypeTok{LT} \OperatorTok{|} \DataTypeTok{EQ} \OperatorTok{|} \DataTypeTok{GT}
+\end{Highlighting}
+\end{Shaded}
+
+Like \texttt{Bool}, this is a sum of terminal objects:
+\(1 + 1 + 1 = 3\).
+
+\paragraph{2. Playing with 4
+Inhabitants}\label{playing-with-4-inhabitants}
+
+Because \(4 = 2 \times 2\), we can elegantly represent a 4-inhabitant
+type using the Categorical Product (a tuple) of two \texttt{Bool}s!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{Four} \OtherTok{=}\NormalTok{ (}\DataTypeTok{Bool}\NormalTok{, }\DataTypeTok{Bool}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+This gives us exactly four values: \texttt{(True,\ True)},
+\texttt{(True,\ False)}, \texttt{(False,\ True)}, and
+\texttt{(False,\ False)}.
+
+Alternatively, since \(4 = 1 + 3\), we could also represent it using a
+Coproduct (sum type) of \texttt{()} and \texttt{Ordering}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{type} \DataTypeTok{FourSum} \OtherTok{=} \DataTypeTok{Either}\NormalTok{ () }\DataTypeTok{Ordering}
+\end{Highlighting}
+\end{Shaded}
+
+This also gives exactly four values: \texttt{Left\ ()},
+\texttt{Right\ LT}, \texttt{Right\ EQ}, and \texttt{Right\ GT}. Because
+both \texttt{Four} and \texttt{FourSum} possess exactly 4 inhabitants,
+they are completely isomorphic!
+
+\paragraph{3. Scaling to 5 Inhabitants}\label{scaling-to-5-inhabitants}
+
+How would you represent a type with exactly 5 inhabitants? Because
+\(5 = 2 + 3\), we could use \texttt{Either\ Bool\ Ordering}. Because
+\(5 = 1 + 4\), we could also use \texttt{Either\ ()\ (Bool,\ Bool)}.
+
+The specific structures change, but the cardinality remains absolute.
+This gives you the superpower of swapping data structures for
+mathematical equivalents depending on what is most ergonomic for your
+specific problem!
+
+\subsubsection{Section 1.5: Infinite Inhabitants (Countable and
+Uncountable)}\label{section-1.5-infinite-inhabitants-countable-and-uncountable}
 
 When we step beyond finite algebraic structures, we enter the realm of
 infinity. However, in mathematics and type theory, not all infinities
@@ -1005,6 +1203,14 @@ information an entire \texttt{{[}(){]}} list can possibly hold is its
 length. It is perfectly isomorphic to the Natural numbers: *
 \texttt{{[}{]}} represents 0 * \texttt{{[}(){]}} represents 1 *
 \texttt{{[}(),\ (){]}} represents 2 * \ldots and so on.
+
+\emph{Categorical Connection:} In abstract algebra, a list of elements
+from a set \(X\) forms the \textbf{Free Monoid} over \(X\). Therefore,
+the type \texttt{{[}(){]}} represents the Free Monoid over the terminal
+object (the singleton set). Because you can endlessly append \texttt{()}
+to the sequence, the Free Monoid of a single generator is naturally
+isomorphic to the natural numbers \(\mathbb{N}\) and is countably
+infinite!
 
 \textbf{The Unordered Pair (\texttt{UnorderedPair\ Integer}):} Another
 simple example is the unordered pair we discussed previously. Consider
@@ -1106,9 +1312,89 @@ number of binary choices (the outputs corresponding to the inputs
 \texttt{Integer\ -\textgreater{}\ Bool} functions is exactly
 \(2^{\aleph_0}\).
 
+\subparagraph{C. Higher Infinities}\label{c.-higher-infinities}
+
+Does the hierarchy of infinity stop there? Not at all! What you are
+referring to are \textbf{cardinalities} (which measure the ``size'' of
+sets, while ordinals measure ``well-ordered types'').
+
+Thanks to \textbf{Cantor's Theorem}, we know that the power set of any
+set always has a \emph{strictly greater cardinality} than the set
+itself. In Haskell, calculating the power set (the set of all subsets)
+of a type \texttt{a} is mathematically equivalent to forming the
+predicate function \texttt{a\ -\textgreater{}\ Bool}.
+
+If \texttt{Integer\ -\textgreater{}\ Bool} has the uncountably infinite
+cardinality of the continuum (\(2^{\aleph_0}\)), what happens if we take
+the power set of \emph{that}?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} A cardinality strictly larger than the continuum! (2\^{}(2\^{}$\textbackslash{}aleph\_0$))}
+\KeywordTok{type} \DataTypeTok{HyperPredicate} \OtherTok{=}\NormalTok{ (}\DataTypeTok{Integer} \OtherTok{{-}\textgreater{}} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{{-}\textgreater{}} \DataTypeTok{Bool}
+
+\CommentTok{{-}{-} And we can keep going infinitely!}
+\KeywordTok{type} \DataTypeTok{MegaPredicate} \OtherTok{=}\NormalTok{ ((}\DataTypeTok{Integer} \OtherTok{{-}\textgreater{}} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{{-}\textgreater{}} \DataTypeTok{Bool}\NormalTok{) }\OtherTok{{-}\textgreater{}} \DataTypeTok{Bool}
+\end{Highlighting}
+\end{Shaded}
+
+By continually nesting our functions on the left-hand side, we can
+theoretically represent an infinite tower of strictly increasing
+infinities (known in set theory as the sequence of Beth numbers
+\(\beth_0, \beth_1, \beth_2\dots\)) directly inside Haskell's type
+system!
+
 \begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
 
-\subsection{Annex}\label{annex}
+\subsection{Annex: The Category Hask}\label{annex-the-category-hask}
+
+\subsubsection{Hask: The Category of Haskell
+Types}\label{hask-the-category-of-haskell-types}
+
+Throughout this chapter, we frequently reference \textbf{Hask}, the
+category of Haskell types. In Category Theory, a category consists of
+three things: 1. \textbf{Objects}: In \texttt{Hask}, the objects are
+entirely defined by Haskell types (e.g., \texttt{Int}, \texttt{Bool},
+\texttt{String}, \texttt{Void}, \texttt{()}, as well as composite types
+like \texttt{{[}Int{]}}, \texttt{Maybe\ Double}, or
+\texttt{Const\ String\ Bool}). 2. \textbf{Morphisms (Arrows)}: The
+morphisms between objects are standard Haskell functions (e.g.,
+\texttt{f\ ::\ Maybe\ Double\ -\textgreater{}\ Int} is a morphism from
+the object \texttt{Maybe\ Double} to the object \texttt{Int}). Because
+function types are themselves objects in \texttt{Hask}, a curried
+function like
+\texttt{g\ ::\ String\ -\textgreater{}\ Int\ -\textgreater{}\ Int} is
+perfectly valid---it is a morphism from the object \texttt{String} to
+the object \texttt{Int\ -\textgreater{}\ Int}. 3. \textbf{Composition}:
+Morphisms must satisfy composition (in Haskell, using the \texttt{(.)}
+operator). If you have a morphism \texttt{f\ ::\ a\ -\textgreater{}\ b}
+and a morphism \texttt{g\ ::\ b\ -\textgreater{}\ c}, their composition
+\texttt{g\ .\ f} is a valid morphism from
+\texttt{a\ -\textgreater{}\ c}. For example, composing
+\texttt{show\ ::\ Int\ -\textgreater{}\ String} and
+\texttt{length\ ::\ String\ -\textgreater{}\ Int} forms a new morphism
+\texttt{(length\ .\ show)\ ::\ Int\ -\textgreater{}\ Int}.
+
+Furthermore, a valid category must obey two strict mathematical laws: *
+\textbf{Identity}: Every object must have an identity morphism
+(\texttt{id\ ::\ a\ -\textgreater{}\ a}) that behaves as a no-op:
+\texttt{f\ .\ id\ ==\ id\ .\ f\ ==\ f}. * \textbf{Associativity}:
+Function composition must be identically associative:
+\texttt{(f\ .\ g)\ .\ h\ ==\ f\ .\ (g\ .\ h)}.
+
+Haskell was explicitly designed so its abstractions securely mirror
+these categorical concepts. However, there is a catch. As famously
+pointed out by Andrej Bauer in his seminal post \emph{``Hask is not a
+category''}, is \texttt{Hask} strictly a valid category from a rigorous
+mathematical standpoint? The technical answer is \textbf{No}, and it's
+because of a phenomenon called ``Bottom''.
+
+\emph{(Note: Despite this technicality, the paper ``Fast and Loose
+Reasoning is Morally Correct'' (Danielsson et al., 2006) formally
+justifies why we can safely abstract away Bottom when reasoning about
+programs. Therefore, throughout this entire document, we will follow
+standard functional programming convention and \textbf{assume that Hask
+is a valid category}.)}
 
 \subsubsection{\texorpdfstring{The Secret Inhabitant: Bottom
 (\texttt{\_\textbar{}\_})}{The Secret Inhabitant: Bottom (\_\textbar\_)}}\label{the-secret-inhabitant-bottom-__}
@@ -1138,6 +1424,39 @@ However, Haskellers typically reason about their code by assuming it
 terminates and doesn't crash, treating it as if it were a total
 language. This approach is formally justified in the well-known paper
 \emph{``Fast and Loose Reasoning is Morally Correct''} {[}2{]}.
+
+\paragraph{Exercise: Compiling the
+Impossible}\label{exercise-compiling-the-impossible}
+
+Haskell's \texttt{undefined} is a built-in value that evaluates to
+bottom (\texttt{\_\textbar{}\_}). Because it can crash the program, the
+compiler assigns it the universal type \texttt{a}---meaning it can
+substitute for literally \emph{anything}. This makes it incredibly
+useful as a temporary placeholder when developing programs.
+
+Can you write a compiling Haskell snippet that defines a function
+promising to convert a \texttt{String} into the impossible \texttt{Void}
+type, using \texttt{undefined} to satisfy the type checker?
+
+View Solution
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{import} \DataTypeTok{Data.Void}\NormalTok{ (}\DataTypeTok{Void}\NormalTok{)}
+
+\CommentTok{{-}{-} Mathematically impossible to produce a Void, but the compiler accepts it!}
+\OtherTok{cheatTheSystem ::} \DataTypeTok{String} \OtherTok{{-}\textgreater{}} \DataTypeTok{Void}
+\NormalTok{cheatTheSystem \_ }\OtherTok{=} \FunctionTok{undefined}
+\end{Highlighting}
+\end{Shaded}
+
+Because \texttt{undefined} evaluates to bottom, the compiler accepts it
+as a valid return value for \emph{every} type, including \texttt{Void}.
+As long as you don't actually \emph{call} \texttt{cheatTheSystem} with a
+\texttt{String} at runtime (which would immediately crash the program),
+the file will compile perfectly. This exact principle is how Haskellers
+use ``typed holes'' and \texttt{undefined} to incrementally build and
+type-check large systems before all the pieces are actually finished!
 
 \paragraph{\texorpdfstring{Interacting with Bottom safely using
 \texttt{IO}}{Interacting with Bottom safely using IO}}\label{interacting-with-bottom-safely-using-io}
@@ -1177,11 +1496,9 @@ intercepted and converted into a \texttt{Left\ SomeException} within the
 
 \begin{quote}
 For references, papers, and further reading on these algebraic
-structures, refer to \href{09_bibliography.md}{Part 9: Bibliography}.
+structures, refer to \href{09_bibliography.md}{Part 9: Bibliography}. \#
+Part 2: The Algebras (Laws) for Concrete Types
 \end{quote}
-
-\section{Part 2: The Algebras (Laws) for Concrete
-Types}\label{part-2-the-algebras-laws-for-concrete-types}
 
 Welcome to the second part of Universe 1. In Part 1, we defined our core
 \textbf{Structures}---the bare mathematical geometry of how many values
@@ -1741,27 +2058,30 @@ binary function. For each input, it must choose one of 2 outputs,
 yielding \(2^4 = 16\) mathematically possible binary operations.
 
 Here is the exhaustive list of all 16 possible logical operations for a
-Boolean type: 1. \textbf{Contradiction} (⊥): Always returns
-\texttt{False} (ignores both inputs). 2. \textbf{NOR} (↓): Returns
-\texttt{True} only if both are \texttt{False}. 3. \textbf{Converse
-Nonimplication} (↚): Returns \texttt{True} only if \(B\) is True and
-\(A\) is False. 4. \textbf{Negation A} (¬A): Always returns
-\texttt{Not\ A} (ignores the second argument). 5. \textbf{Material
-Nonimplication} (↛): Returns \texttt{True} only if \(A\) is True and
-\(B\) is False. 6. \textbf{Negation B} (¬B): Always returns
-\texttt{Not\ B} (ignores the first argument). 7. \textbf{XOR} (⊕):
-Returns \texttt{True} if inputs are different. 8. \textbf{NAND} (↑):
-Returns \texttt{False} only if both are \texttt{True}. 9. \textbf{AND}
-(∧): Returns \texttt{True} only if both are \texttt{True}. 10.
-\textbf{Equivalence} (↔): Returns \texttt{True} if inputs are the same.
-11. \textbf{Projection B} (B): Always returns \(B\) (ignores the first
-argument). 12. \textbf{Material Implication} (→): Returns \texttt{False}
-only if \(A\) is True and \(B\) is False. 13. \textbf{Projection A} (A):
-Always returns \(A\) (ignores the second argument). 14. \textbf{Converse
-Implication} (←): Returns \texttt{False} only if \(B\) is True and \(A\)
-is False. 15. \textbf{OR} (∨): Returns \texttt{True} if at least one is
-\texttt{True}. 16. \textbf{Tautology} (⊤): Always returns \texttt{True}
-(ignores both inputs).
+Boolean type: 1. \textbf{Contradiction} (\(\bot\)): Always returns
+\texttt{False} (ignores both inputs). 2. \textbf{NOR} (\(\downarrow\)):
+Returns \texttt{True} only if both are \texttt{False}. 3.
+\textbf{Converse Nonimplication} (\(\nleftarrow\)): Returns
+\texttt{True} only if \(B\) is True and \(A\) is False. 4.
+\textbf{Negation A} (\(\neg\)A): Always returns \texttt{Not\ A} (ignores
+the second argument). 5. \textbf{Material Nonimplication}
+(\(\nrightarrow\)): Returns \texttt{True} only if \(A\) is True and
+\(B\) is False. 6. \textbf{Negation B} (\(\neg\)B): Always returns
+\texttt{Not\ B} (ignores the first argument). 7. \textbf{XOR}
+(\(\oplus\)): Returns \texttt{True} if inputs are different. 8.
+\textbf{NAND} (\(\uparrow\)): Returns \texttt{False} only if both are
+\texttt{True}. 9. \textbf{AND} (\(\wedge\)): Returns \texttt{True} only
+if both are \texttt{True}. 10. \textbf{Equivalence}
+(\(\leftrightarrow\)): Returns \texttt{True} if inputs are the same. 11.
+\textbf{Projection B} (B): Always returns \(B\) (ignores the first
+argument). 12. \textbf{Material Implication} (\(\to\)): Returns
+\texttt{False} only if \(A\) is True and \(B\) is False. 13.
+\textbf{Projection A} (A): Always returns \(A\) (ignores the second
+argument). 14. \textbf{Converse Implication} (\(\leftarrow\)): Returns
+\texttt{False} only if \(B\) is True and \(A\) is False. 15. \textbf{OR}
+(\(\vee\)): Returns \texttt{True} if at least one is \texttt{True}. 16.
+\textbf{Tautology} (\(\top\)): Always returns \texttt{True} (ignores
+both inputs).
 
 In fact, any 2-inhabitant operation that possesses a valid two-sided
 identity is mathematically \emph{guaranteed} to be associative! (See the
@@ -1776,19 +2096,21 @@ rigorously testing the identity laws!
 unchanged. Exactly \textbf{9 operations utterly fail} to have a left
 identity. These include the ones that ignore the right argument
 (Contradiction, Tautology, Projection A, Negation A), as well as NOR,
-NAND, Negation B, Material Nonimplication (↛), and Converse Implication
-(←). Discarding those 9 leaves us with exactly 7 operations possessing a
-valid left identity.
+NAND, Negation B, Material Nonimplication (\(\nrightarrow\)), and
+Converse Implication (\(\leftarrow\)). Discarding those 9 leaves us with
+exactly 7 operations possessing a valid left identity.
 
 \textbf{2. Which ones fail the Right Identity requirement?
 (\(x \diamond e = x\))} Of the 7 surviving operations, 3 of them fail to
 have a corresponding right identity element: * \textbf{Projection B}
 (B): Has a left identity but evaluation always yields \(e \neq x\) on
-the right. * \textbf{Material Implication} (→): \texttt{T\ →\ x\ =\ x}
-(Left Identity is \texttt{T}), but \texttt{x\ →\ T\ =\ True} (Fails
-Right Identity). * \textbf{Converse Nonimplication} (↚):
-\texttt{F\ ↚\ x\ =\ x} (Left Identity is \texttt{F}), but
-\texttt{x\ ↚\ F\ =\ False} (Fails Right Identity).
+the right. * \textbf{Material Implication} (\(\to\)):
+\texttt{T\ \$\textbackslash{}to\$\ x\ =\ x} (Left Identity is
+\texttt{T}), but \texttt{x\ \$\textbackslash{}to\$\ T\ =\ True} (Fails
+Right Identity). * \textbf{Converse Nonimplication} (\(\nleftarrow\)):
+\texttt{F\ \$\textbackslash{}nleftarrow\$\ x\ =\ x} (Left Identity is
+\texttt{F}), but \texttt{x\ \$\textbackslash{}nleftarrow\$\ F\ =\ False}
+(Fails Right Identity).
 
 Discarding those 3 leaves us with exactly 4 operations that possess a
 complete, \textbf{two-sided} identity element. At parameter size 2,
@@ -5396,10 +5718,8 @@ as the name changes depending on the domain:
   \textbf{``Data Types à la Carte''}: In famous research regarding
   composing programming languages dynamically from smaller ADT islands,
   the 0-ary and 2-ary records are referred to as \textbf{Functor
-  Coproducts} and Algebraic signatures.
+  Coproducts} and Algebraic signatures. \# Part 6: The Deep Math
 \end{enumerate}
-
-\section{Part 6: The Deep Math}\label{part-6-the-deep-math}
 
 \subsection{Chapter 4: Deep Dive into
 Bifunctors}\label{chapter-4-deep-dive-into-bifunctors}
@@ -5888,10 +6208,9 @@ transformations between non-equal types.
 
 \begin{quote}
 For references, papers, and further reading on these advanced concepts,
-refer to \href{09_bibliography.md}{Part 9: Bibliography}.
+refer to \href{09_bibliography.md}{Part 9: Bibliography}. \# Part 9:
+Bibliography
 \end{quote}
-
-\section{Part 9: Bibliography}\label{part-9-bibliography}
 
 This section centralizes all the foundational papers, influential
 articles, and recommended reading for the concepts discussed throughout
@@ -5926,7 +6245,7 @@ Types}\label{type-theory-algebraic-data-types}
   Functors to modularly compose distinct data types and interpreters).}
 \item
   \textbf{Taylor, C. (2013).}
-  \emph{\href{https://chris-taylor.github.io/blog/2013/02/10/the-algebra-of-algebraic-data-types/}{The
+  \emph{\href{https://gist.github.com/gregberns/5e9da0c95a9a8d2b6338afe69310b945}{The
   Algebra of Algebraic Data Types}}. \emph{(A famous blog series
   expanding the structural analogy by directly using high-school algebra
   to calculate isomorphic data types).}

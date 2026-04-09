@@ -53,11 +53,11 @@ In type theory and functional programming, a profound dichotomy exists that mirr
 1. **The Structures (Nouns):** A concrete data type (like `Bool`, `Maybe`, or `Void`) simply defines a "shape in memory" by explicitly declaring how many distinct values (inhabitants) it can hold. It has no strict mathematical laws governing how it must behave; its only rules are structural.
 2. **The Algebras (Verbs/Adjectives):** A typeclass (like `Eq`, `Semigroup`, or `Functor`) defines an interface of behavior mapping across these structures. Because these define behavior, they explicitly come with **Mathematical Laws** to ensure that behavior is predictable and compositionally sound.
 
-This document focuses firmly on the first half of that dichotomy: **The Structures.** We will explore how classifying types purely by the number of distinct values they can hold at runtime provides a phenomenally strong foundation for building robust abstractions.
+This document explores both halves of that dichotomy: **The Structures** and **The Algebras**. We will see how classifying types by their inhabitants provides the foundation, and how layering mathematical laws over those shapes creates the powerful abstractions we use in functional programming.
 
 While minimal types (like those with 0 or 1 inhabitant) are omnipresent in pure functional languages like Haskell, they can often feel counter-intuitive or overly abstract to newcomers. Why would we want a type that holds zero values? What is the point of a type with exactly one? This document aims to demystify these concepts. To aid in your learning journey, several hands-on exercises are suggested throughout this guide.
 
-**Intended Audience:** From a pedagogical perspective, this guide is tailored for intermediate Haskell learners and practical software engineers. If you've ever struggled to understand *why* concepts like `Void` or `Proxy` exist in the standard library—rather than just *how* to compile them—this resource provides the foundation. After mastering the *Structures* outlined here, you will be perfectly prepared to study the *Algebras* (Typeclasses and their laws) that bring them to life.
+**Intended Audience:** From a pedagogical perspective, this guide is tailored for intermediate Haskell learners and practical software engineers. If you've ever struggled to understand *why* concepts like `Void` or `Proxy` exist in the standard library—rather than just *how* to compile them—this resource provides the foundation. We will first master the *Structures*, and then dive deep into the *Algebras* that bring them to life.
 
 ## A Quick Primer: What is a "Kind"?
 

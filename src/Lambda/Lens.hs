@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -68,21 +66,19 @@ data File a
   | Folder String [File a]
   deriving (Show, Eq, Functor, Foldable, Traversable)
 
-
 makeLenses ''Metadata
 makeLenses ''Document
 makePrisms ''File
 
--- flattenFolders :: File Document -> [Document]
--- -- flattenFolders = foldMap (: [])
--- flattenFolders = toList
-
-flattenFolders2 :: File Document -> [Document]
-flattenFolders2 doc = doc ^.. folded
+flattenFileNames :: File Document -> [String]
+flattenFileNames = map (view (metadata . fileName)) . toList
 
 searchFiles' :: String -> File Document -> [Document]
 searchFiles' targetName =
   filter ((== targetName) . view (metadata . fileName)) . toList
+
+flattenFolders2 :: File Document -> [Document]
+flattenFolders2 doc = doc ^.. folded
 
 searchFile :: String -> File Document -> [Document]
 searchFile targetName =
