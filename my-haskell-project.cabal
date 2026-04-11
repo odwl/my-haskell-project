@@ -28,8 +28,7 @@ common share-tests-deps
     text,
     transformers,
     time,
-    lens,
-    liquidhaskell == 0.9.6.3
+    lens
 
 -- The main library for the project
 library
@@ -55,7 +54,6 @@ library
 
   hs-source-dirs: src
   default-language: Haskell2010
-  ghc-options: -fplugin=LiquidHaskell --prune-unsorted
   build-depends:
     QuickCheck,
     aeson,
@@ -63,7 +61,6 @@ library
     bytestring,
     containers,
     lens,
-    liquidhaskell == 0.9.6.3,
     log-domain,
     megaparsec,
     monad-bayes,
@@ -171,8 +168,7 @@ executable weather-client
     req,
     aeson,
     text,
-    bytestring,
-    liquidhaskell
+    bytestring
 
 executable flight-client
   import: warnings
@@ -189,5 +185,4 @@ executable flight-client
     aeson,
     text,
     bytestring,
-    time,
-    liquidhaskell
+    time
