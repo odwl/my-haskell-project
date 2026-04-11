@@ -17,13 +17,13 @@ sandBoxSuite =
             halve ([1, 2, 3] :: [Int]) @?= Nothing,
           testProperty "splits an even length list into two equal length halves" $
             \(xs :: [Int]) ->
-              (length xs `mod` 2 == 0) ==>
+              even (length xs) ==>
                 case halve xs of
                   Just (l, r) -> length l == length r
                   Nothing -> False,
           testProperty "preserves all elements" $
             \(xs :: [Int]) ->
-              (length xs `mod` 2 == 0) ==>
+              even (length xs) ==>
                 case halve xs of
                   Just (l, r) -> l ++ r == xs
                   Nothing -> False
