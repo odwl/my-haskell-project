@@ -1,10 +1,10 @@
 module Main where
 
 import ExercismTest (exercismSuite)
+import Lambda.SandBoxTest (sandBoxSuite)
 import LambdaTest (lambdaSuite)
 import Test.Tasty (defaultMain, testGroup)
 
 main :: IO ()
-main = do
-  putStrLn "DEBUG: Running all tests..."
-  defaultMain $ testGroup "All Tests" [lambdaSuite, exercismSuite]
+main = defaultMain $ testGroup "All Tests" [lambdaSuite, exercismSuite, sandBoxSuite]
+

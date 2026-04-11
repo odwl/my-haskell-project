@@ -9,6 +9,7 @@ import Lambda.ListAverageTest (listAverageTests)
 import Lambda.MonadTest (monadTests)
 import Lambda.ParserTest (parserTests)
 import Lambda.RandomWalkTest (randomWalkTests)
+import Lambda.SandBoxTest (sandBoxSuite)
 import Lambda.StateTest (stateTests)
 import Lambda.SubdistTest (subdistTests)
 import Test.Tasty
@@ -77,5 +78,6 @@ lambdaSuite =
       randomWalkTests,
       safeDivTests,
       stateTests,
-      subdistTests
+      subdistTests,
+      sandBoxSuite
     ]

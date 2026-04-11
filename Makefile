@@ -1,4 +1,7 @@
-.PHONY: all build test lint format check watch docs
+.PHONY: all build test lint format check watch docs watch-sandbox
+
+# Load local environment variables
+-include .env
 
 # Haskell Toolchain Setup
 GHCUP_BIN := $(HOME)/.ghcup/bin
@@ -32,15 +35,20 @@ repl:
 # Continuous feedback loop (requires ghcid)
 # Reads parsing options from .ghcid if present
 watch:
-	ghcid
+	ghcid --test="main"
 
 # Run tests on file change (fast TDD loop)
 watch-test:
-	ghcid --command="cabal repl lambda-test" --test=":main" --restart=src
+	ghcid --command="cabal repl lambda-test" --test=":main" --restart=src --reload=test
 
 # Run tests on file change but isolate only "Lens Tests"
 watch-lens:
-	ghcid --command="cabal repl lambda-test" --test=':main -p "Lens Tests"' --restart=src
+	ghcid --command="cabal repl lambda-test" --test=':main -p "Lens Tests"' --restart=src --reload=test
+
+# Run tests on file change but isolate only "SandBox Tests"
+watch-sandbox:
+	ghcid --command="cabal repl lambda-test" --test=':main -p SandBox' --restart=src --reload=test
+
 
 # Clean build artifacts
 clean:
@@ -54,6 +62,13 @@ docs:
 		pdflatex -interaction=nonstopmode -output-directory=docs $$f; \
 		pdflatex -interaction=nonstopmode -output-directory=docs $$f; \
 	done
+	@if [ ! -z "$(SYNC_DEST)" ]; then $(MAKE) sync; FROM_DOCS=1; fi
+
+# Sync PDF to remote destination
+sync:
+	@if [ -z "$(SYNC_DEST)" ]; then echo "Error: SYNC_DEST is not set. Usage: make sync SYNC_DEST=user@host:path"; exit 1; fi
+	@echo "Syncing PDFs to $(SYNC_DEST)..."
+	scp docs/*.pdf $(SYNC_DEST)
 
 
 

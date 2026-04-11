@@ -1,4 +1,3 @@
 --command="cabal repl all-tests"
---test="main"
 --reload=src
 --reload=test

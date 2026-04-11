@@ -46,3 +46,7 @@ expectations*.md
 *_doc.txt
 *_design.txt
 get_drive_files.py
+
+### LiquidHaskell ###
+.liquid/
+**/.liquid/
