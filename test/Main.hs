@@ -7,4 +7,3 @@ import Test.Tasty (defaultMain, testGroup)
 
 main :: IO ()
 main = defaultMain $ testGroup "All Tests" [lambdaSuite, exercismSuite, sandBoxSuite]
-

@@ -8,8 +8,16 @@ module Lambda.SandBox where
 halve :: [a] -> ([a], [a])
 halve list = splitAt (length list `div` 2) list
 
-{-@ halve' :: EvenList a -> ([a], [a]) @-}
-halve' :: [a] -> ([a], [a])
-halve' [] = ([], [])
-halve' (x : y : xs) = let (l, r) = halve' xs in (x : l, y : r)
-halve' [_] = error "List must have even length"
+-- | get the third element of a list
+third :: [a] -> a
+third l = l !! 2
+
+-- | get the third element of a list
+third' :: [a] -> a
+third' (_ : _ : x : _) = x
+
+third'' :: [a] -> a
+third'' = head . tail . tail
+
+badHalve :: ([Int], [Int])
+badHalve = halve [1, 2, 3]
