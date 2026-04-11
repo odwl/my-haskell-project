@@ -2,7 +2,7 @@
 
 module Lambda.SandBoxTest (sandBoxSuite) where
 
-import Lambda.SandBox (halve, third, third')
+import Lambda.SandBox (halve, third, third', sTail, sTail', sTail'')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
@@ -50,5 +50,21 @@ sandBoxSuite =
           testProperty "is equivalent to third" $
             \(xs :: [Int]) ->
               (length xs >= 3) ==> third' xs == third xs
+        ],
+      testGroup
+        "sTail"
+        [ testCase "returns empty list for empty list" $
+            sTail ([] :: [Int]) @?= [],
+          testCase "returns tail for non-empty list" $
+            sTail ([1, 2, 3] :: [Int]) @?= [2, 3],
+          testProperty "is equivalent to tail for non-empty lists" $
+            \(xs :: [Int]) ->
+              not (null xs) ==> sTail xs == tail xs,
+          testProperty "is equivalent to sTail'" $
+            \(xs :: [Int]) ->
+              sTail xs == sTail' xs,
+          testProperty "is equivalent to sTail''" $
+            \(xs :: [Int]) ->
+              sTail xs == sTail'' xs
         ]
     ]
