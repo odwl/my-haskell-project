@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch docs watch-sandbox
+.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism
 
 # Load local environment variables
 -include .env
@@ -43,11 +43,15 @@ watch-test:
 
 # Run tests on file change but isolate only "Lens Tests"
 watch-lens:
-	ghcid --command="cabal repl lambda-test" --test=':main -p "Lens Tests"' --restart=src --reload=test
+	TASTY_PATTERN="Lens Tests" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
 
 # Run tests on file change but isolate only "SandBox Tests"
 watch-sandbox:
-	ghcid --command="cabal repl lambda-test" --test=':main -p SandBox' --restart=src --reload=test
+	TASTY_PATTERN="SandBox" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+
+# Run tests on file change but isolate only "Exercism" tests
+watch-exercism:
+	ghcid --command="cabal repl exercism-test" --test=':main' --restart=src --reload=test
 
 
 # Clean build artifacts

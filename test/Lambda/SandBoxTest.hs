@@ -2,7 +2,7 @@
 
 module Lambda.SandBoxTest (sandBoxSuite) where
 
-import Lambda.SandBox (halve, third, third', sTail, sTail', sTail'')
+import Lambda.SandBox (halve, third, third', sTail, sTail', sTail'', luhn, luhn', luhn'', luhn''', luhn'''', luhn''''', luhnMapAccumR, luhnMapAccumRSeparated)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
@@ -66,5 +66,44 @@ sandBoxSuite =
           testProperty "is equivalent to sTail''" $
             \(xs :: [Int]) ->
               sTail xs == sTail'' xs
+        ],
+      testGroup
+        "luhn"
+        [ testCase "validates a correct Luhn number" $
+            luhn [7, 9, 9, 2, 7, 3, 9, 8, 7, 1, 3] @?= True,
+          testCase "invalidates an incorrect Luhn number" $
+            luhn [7, 9, 9, 2, 7, 3, 9, 8, 7, 1, 4] @?= False,
+          testCase "validates a simple valid number" $
+            luhn [4, 9, 9, 2, 7, 3, 9, 8, 7, 1, 6] @?= True,
+          testCase "returns True for empty list" $
+            luhn [] @?= True,
+          testCase "returns False for [1]" $
+            luhn [1] @?= False,
+          testCase "returns False for [1, 1]" $
+            luhn [1, 1] @?= False,
+          testCase "returns True for [1, 8]" $
+            luhn [1, 8] @?= True,
+          testCase "returns False for [1, 1, 1]" $
+            luhn [1, 1, 1] @?= False,
+          testCase "returns False for 4 : replicate 15 1" $
+            luhn (4 : replicate 15 1) @?= True,
+          testCase "returns False for [3, 7]" $
+            luhn [3, 7] @?= False,
+          testCase "returns True for [6, 7]" $
+            luhn [6, 7] @?= True,
+          testProperty "luhn' is equivalent to luhn" $
+            \(xs :: [Int]) -> luhn' xs == luhn xs,
+          testProperty "luhn'' is equivalent to luhn" $
+            \(xs :: [Int]) -> luhn'' xs == luhn xs,
+          testProperty "luhn''' is equivalent to luhn" $
+            \(xs :: [Int]) -> luhn''' xs == luhn xs,
+          testProperty "luhn'''' is equivalent to luhn" $
+            \(xs :: [Int]) -> luhn'''' xs == luhn xs,
+          testProperty "luhn''''' is equivalent to luhn" $
+            \(xs :: [Int]) -> luhn''''' xs == luhn xs,
+          testProperty "luhnMapAccumR is equivalent to luhn" $
+            \(xs :: [Int]) -> luhnMapAccumR xs == luhn xs,
+          testProperty "luhnMapAccumRSeparated is equivalent to luhn" $
+            \(xs :: [Int]) -> luhnMapAccumRSeparated xs == luhn xs
         ]
     ]

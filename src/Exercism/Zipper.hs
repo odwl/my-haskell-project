@@ -79,6 +79,14 @@ up (Zip (LeftCrumb v r : crumbs) tree) = Just $ Zip crumbs (BT v (Just tree) r)
 up (Zip (RightCrumb v l : crumbs) tree) = Just $ Zip crumbs (BT v l (Just tree))
 up _ = Nothing
 
+-- up :: Zipper a -> Maybe (Zipper a)
+-- up (Zip crumbs tree) = do 
+--   (crumb, rest) <- uncons crumbs
+--   return $ Zip rest $ case crumb of
+--     LeftCrumb v r  -> BT v (Just tree) r
+--     RightCrumb v l -> BT v l (Just tree)
+
+
 -- | Apply a modification function to the focused subtree.
 modifyTree :: (BinTree a -> BinTree a) -> Zipper a -> Zipper a
 modifyTree f (Zip crumbs tree) = Zip crumbs (f tree)
