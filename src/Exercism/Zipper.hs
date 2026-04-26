@@ -21,6 +21,8 @@ module Exercism.Zipper
   )
 where
 
+import Data.List (foldl', uncons)
+
 data BinTree a = BT
   { btValue :: a,
     btLeft :: Maybe (BinTree a),
@@ -40,8 +42,15 @@ fromTree :: BinTree a -> Zipper a
 fromTree = Zip []
 
 -- | Reconstruct a binary tree from a zipper.
+-- toTree :: Zipper a -> BinTree a
+-- toTree z@(Zip _ tree) = maybe tree toTree (up z)
+
+applyCrumb :: BinTree a -> Crumb a -> BinTree a
+applyCrumb tree (LeftCrumb v r) = BT v (Just tree) r
+applyCrumb tree (RightCrumb v l) = BT v l (Just tree)
+
 toTree :: Zipper a -> BinTree a
-toTree z@(Zip _ tree) = maybe tree toTree (up z)
+toTree (Zip crumbs tree) = foldl' applyCrumb tree crumbs 
 
 -- | Get the value of the node in focus.
 value :: Zipper a -> a
@@ -75,16 +84,13 @@ right (Zip crumbs (BT v ml mr)) = Zip (RightCrumb v ml : crumbs) <$> mr
 
 -- | Move the focus to the parent.
 up :: Zipper a -> Maybe (Zipper a)
-up (Zip (LeftCrumb v r : crumbs) tree) = Just $ Zip crumbs (BT v (Just tree) r)
-up (Zip (RightCrumb v l : crumbs) tree) = Just $ Zip crumbs (BT v l (Just tree))
+up (Zip (crumb : crumbs) tree) = Just $ Zip crumbs (applyCrumb tree crumb) 
 up _ = Nothing
 
 -- up :: Zipper a -> Maybe (Zipper a)
 -- up (Zip crumbs tree) = do
 --   (crumb, rest) <- uncons crumbs
---   return $ Zip rest $ case crumb of
---     LeftCrumb v r  -> BT v (Just tree) r
---     RightCrumb v l -> BT v l (Just tree)
+--   return $ Zip rest $ applyCrumb tree crumb
 
 -- | Apply a modification function to the focused subtree.
 modifyTree :: (BinTree a -> BinTree a) -> Zipper a -> Zipper a
