@@ -15,13 +15,11 @@ module Exercism.Zipper
     modifyTree,
     setTree,
     focusedTree,
-    asLeftChild,
-    asRightChild,
     mirror,
   )
 where
 
-import Data.List (foldl', uncons)
+import Data.List (foldl')
 
 data BinTree a = BT
   { btValue :: a,
@@ -56,23 +54,15 @@ toTree (Zip crumbs tree) = foldl' applyCrumb tree crumbs
 value :: Zipper a -> a
 value (Zip _ tree) = btValue tree
 
--- | Internal helper: Checks if the zipper is currently at a left child.
-asLeftChild :: Zipper a -> Maybe (Zipper a)
-asLeftChild z@(Zip (LeftCrumb {} : _) _) = Just z
-asLeftChild _ = Nothing
-
--- | Internal helper: Checks if the zipper is currently at a right child.
-asRightChild :: Zipper a -> Maybe (Zipper a)
-asRightChild z@(Zip (RightCrumb {} : _) _) = Just z
-asRightChild _ = Nothing
-
 -- | Move to the focus's previous sibling (e.g. from right child to left child).
 prev :: Zipper a -> Maybe (Zipper a)
-prev z = asRightChild z >>= up >>= left
+prev (Zip (RightCrumb v (Just l) : crumbs) tree) = Just $ Zip (LeftCrumb v (Just tree) : crumbs) l
+prev _ = Nothing
 
 -- | Move to the focus's next sibling (e.g. from left child to right child).
 next :: Zipper a -> Maybe (Zipper a)
-next z = asLeftChild z >>= up >>= right
+next (Zip (LeftCrumb v (Just r) : crumbs) tree) = Just $ Zip (RightCrumb v (Just tree) : crumbs) r
+next _ = Nothing
 
 -- | Move the focus to the left child.
 left :: Zipper a -> Maybe (Zipper a)
@@ -82,15 +72,10 @@ left (Zip crumbs (BT v ml mr)) = Zip (LeftCrumb v mr : crumbs) <$> ml
 right :: Zipper a -> Maybe (Zipper a)
 right (Zip crumbs (BT v ml mr)) = Zip (RightCrumb v ml : crumbs) <$> mr
 
--- | Move the focus to the parent.
+-- | Move the focus to the parent. 
 up :: Zipper a -> Maybe (Zipper a)
 up (Zip (crumb : crumbs) tree) = Just $ Zip crumbs (applyCrumb tree crumb) 
 up _ = Nothing
-
--- up :: Zipper a -> Maybe (Zipper a)
--- up (Zip crumbs tree) = do
---   (crumb, rest) <- uncons crumbs
---   return $ Zip rest $ applyCrumb tree crumb
 
 -- | Apply a modification function to the focused subtree.
 modifyTree :: (BinTree a -> BinTree a) -> Zipper a -> Zipper a

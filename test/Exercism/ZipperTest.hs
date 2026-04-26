@@ -2,13 +2,10 @@
 
 module Exercism.ZipperTest (zipperTests) where
 
-import Control.Applicative ((<|>))
-import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
+import Data.Maybe (fromJust, fromMaybe)
 import Exercism.Zipper
   ( BinTree (BT),
     Zipper,
-    asLeftChild,
-    asRightChild,
     focusedTree,
     fromTree,
     left,
@@ -140,10 +137,7 @@ prop_BinTreeInvariant tree =
 prop_ZipperInvariant :: Zipper Int -> Property
 prop_ZipperInvariant z =
   conjoin
-    [ property $ all (liftA2 (&&) (isJust . asLeftChild) (isNothing . asRightChild)) (left z),
-      property $ all (liftA2 (&&) (isJust . asRightChild) (isNothing . asLeftChild)) (right z),
-      property $ null (up z) == null (asLeftChild z <|> asRightChild z),
-      property $ all ((== Just z) . next) (prev z),
+    [ property $ all ((== Just z) . next) (prev z),
       property $ all ((== Just z) . prev) (next z)
     ]
 
