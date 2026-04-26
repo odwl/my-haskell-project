@@ -80,7 +80,7 @@ up (Zip (RightCrumb v l : crumbs) tree) = Just $ Zip crumbs (BT v l (Just tree))
 up _ = Nothing
 
 -- up :: Zipper a -> Maybe (Zipper a)
--- up (Zip crumbs tree) = do 
+-- up (Zip crumbs tree) = do
 --   (crumb, rest) <- uncons crumbs
 --   return $ Zip rest $ case crumb of
 --     LeftCrumb v r  -> BT v (Just tree) r
@@ -92,7 +92,8 @@ modifyTree f (Zip crumbs tree) = Zip crumbs (f tree)
 
 -- | Replace the entire focused subtree.
 setTree :: BinTree a -> Zipper a -> Zipper a
-setTree = modifyTree . const
+-- setTree newTree (Zip crumbs _) = Zip crumbs newTree
+setTree = modifyTree . const 
 
 -- | Set the value of the node in focus.
 setValue :: a -> Zipper a -> Zipper a

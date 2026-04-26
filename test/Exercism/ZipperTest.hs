@@ -13,11 +13,13 @@ import Exercism.Zipper
     fromTree,
     left,
     mirror,
+    modifyTree,
     next,
     prev,
     right,
     setLeft,
     setRight,
+    setTree,
     setValue,
     toTree,
     up,
@@ -85,6 +87,10 @@ tests =
                 (toTree . setRight (Just t5) . fromTree) t1 @?= t6,
               testCase "setValue on deep focus" $
                 (toTree . setValue 5 . fromJust . right . fromJust . left . fromTree) t1 @?= t7,
+              testCase "setTree" $
+                (toTree . setTree t5 . fromJust . right . fromTree) t1 @?= t6,
+              testCase "modifyTree" $
+                (value . modifyTree (\(BT v l r) -> BT (v + 10) l r) . fromJust . left . fromTree) t1 @?= 12,
               testCase "different paths to same zipper" $
                 (right . fromJust . up . fromJust . left . fromTree) t1 @?= (right . fromTree) t1
             ],
