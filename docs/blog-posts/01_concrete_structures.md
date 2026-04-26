@@ -23,8 +23,9 @@
     - [3. The "0-Tuple" Intuition](#3-the-0-tuple-intuition)
     - [4. Other Library Unit Types](#4-other-library-unit-types)
     - [5. The Curious Case of `[Void]`](#5-the-curious-case-of-void)
-    - [6. Category Theory: The Terminal Object in Hask](#6-category-theory-the-terminal-object-in-hask)
-    - [7. Exercises: The Power of One](#7-exercises-the-power-of-one)
+    - [6. The Curious Case of `Maybe Void`](#6-the-curious-case-of-maybe-void)
+    - [7. Category Theory: The Terminal Object in Hask](#7-category-theory-the-terminal-object-in-hask)
+    - [8. Exercises: The Power of One](#8-exercises-the-power-of-one)
       - [Exercise 7: A Safe `head`](#exercise-7-a-safe-head)
       - [Exercise 8: Avoiding `fromJust` with `Either`](#exercise-8-avoiding-fromjust-with-either)
   - [Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)](#section-13-bool-2-inhabitants--coproduct-of-terminal-objects)
@@ -358,18 +359,32 @@ Because `Acknowledged`, `()`, `Identity ()`, and `a :~: a` all have an identical
 
 What happens if we create a list of `Void`? Does `[Void]` exist? 
 
-Let's use Type Algebra. A list type `[a]` is defined structurally as either an empty list `[]`, or a head element `a` attached to a tail list `[a]`. Mathematically:
-`List(a) = 1 + a * List(a)`
+Let's use Type Algebra (see Joel Burget's article [6] for a fantastic introduction to this concept). A list type `[a]` is defined structurally as either an empty list `[]`, or a head element `a` attached to a tail list `[a]`. Mathematically:
+`List a = 1 + a * List a`
 *(Where `1` represents the empty list `[]`, addition represents the `Either` choice, and multiplication represents pairing head and tail)*
 
 If we substitute `Void` (which has 0 inhabitants):
-`List(Void) = 1 + 0 * List(Void)`
-`List(Void) = 1 + 0`
-`List(Void) = 1`
+`List Void = 1 + 0 * List Void`
+`List Void = 1 + 0`
+`List Void = 1`
 
 The cardinality of `[Void]` is exactly **1**. Because `Void` has no values, it is impossible to ever construct the "head" of a list of `Void`. The only value that can ever exist of type `[Void]` is the empty list `[]`. Therefore, `[Void]` is perfectly structurally isomorphic to `()`!
 
-#### 6. Category Theory: The Terminal Object in Hask
+#### 6. The Curious Case of `Maybe Void`
+
+What happens if we wrap `Void` in a `Maybe`? Does `Maybe Void` exist?
+
+Let's use Type Algebra again. The `Maybe a` type is defined as either `Nothing` or `Just a`. Mathematically:
+`Maybe a = 1 + a`
+*(Where `1` represents the `Nothing` constructor, and addition represents the choice between `Nothing` and `Just`)*
+
+If we substitute `Void` (which has 0 inhabitants):
+`Maybe Void = 1 + 0`
+`Maybe Void = 1`
+
+The cardinality of `Maybe Void` is exactly **1**. Because `Void` has no values, it is impossible to ever construct the `Just` branch of `Maybe Void`. The only value that can ever exist of type `Maybe Void` is `Nothing`. Therefore, `Maybe Void` is also a 1-inhabitant type and thus isomorphic to `()` and `[Void]`!
+
+#### 7. Category Theory: The Terminal Object in Hask
 
 If `Void` is the Initial Object in the `Hask` category, then the Unit type `()` is the **Terminal Object** (often denoted as $1$). 
 
@@ -379,7 +394,7 @@ const () :: a -> ()
 ```
 There is exactly one conceptually pure way to implement this function (by ignoring the input and returning the only available value of the output type, which is precisely what the standard library's `const ()` does). The fact that every type can be deterministically mapped to `()` is what makes `()` the terminal object in `Hask`.
 
-#### 7. Exercises: The Power of One
+#### 8. Exercises: The Power of One
 
 ##### Exercise 7: A Safe `head`
 The standard library's `head :: [a] -> a` function is notorious for crashing if given an empty list because it lacks a value to return. How could you write a total, non-crashing `safeHead` function using `Either`? What minimal type is the most appropriate for the `Left` error branch if you don't actually need to provide an error message?
@@ -585,7 +600,7 @@ In mathematical logic, it is impossible to return a value from a function withou
 
 If you wrote `createNever :: a -> Never`, you could technically "implement" it by writing `createNever x = undefined` or `createNever x = createNever x`. It would compile and satisfy the type checker, but it's fundamentally cheating because it avoids returning altogether by crashing or looping forever! Because `_|_` inhabits every type, you can use it to satisfy any signature, even impossible ones.
 
-However, Haskellers typically reason about their code by assuming it terminates and doesn't crash, treating it as if it were a total language. This approach is formally justified in the well-known paper *"Fast and Loose Reasoning is Morally Correct"* [2].
+However, Haskellers typically reason about their code by assuming it terminates and doesn't crash, treating it as if it were a total language. This approach is formally justified in the well-known paper *"Fast and Loose Reasoning is Morally Correct"* [13].
 
 #### Exercise: Compiling the Impossible
 
