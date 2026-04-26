@@ -28,6 +28,9 @@ data BinTree a = BT
   }
   deriving (Eq, Show)
 
+-- For a deep dive into the algebra and calculus of data types (where the derivative 
+-- of a type is its type of one-hole contexts), see:
+-- https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
 data Crumb a
   = LeftCrumb a (Maybe (BinTree a))
   | RightCrumb a (Maybe (BinTree a))
