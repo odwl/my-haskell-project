@@ -86,7 +86,6 @@ up _ = Nothing
 --     LeftCrumb v r  -> BT v (Just tree) r
 --     RightCrumb v l -> BT v l (Just tree)
 
-
 -- | Apply a modification function to the focused subtree.
 modifyTree :: (BinTree a -> BinTree a) -> Zipper a -> Zipper a
 modifyTree f (Zip crumbs tree) = Zip crumbs (f tree)
