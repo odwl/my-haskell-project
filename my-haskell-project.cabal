@@ -40,6 +40,7 @@ library
     Exercism.Pangram
     Exercism.ReverseString
     Exercism.Zipper
+    Exercism.Luhn
     Lambda
     Lambda.Functor
     Lambda.HoverDam
@@ -111,6 +112,7 @@ test-suite exercism-test
     Exercism.PangramTest
     Exercism.ReverseStringTest
     Exercism.ZipperTest
+    Exercism.LuhnTest
     ExercismTest
 
   hs-source-dirs:
@@ -135,6 +137,7 @@ test-suite all-tests
     Exercism.PangramTest
     Exercism.ReverseStringTest
     Exercism.ZipperTest
+    Exercism.LuhnTest
     ExercismTest
     Lambda.FunctorTest
     Lambda.FunctorTestUtils

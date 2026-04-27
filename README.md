@@ -25,6 +25,7 @@ This project is a comprehensive collection of Haskell exercises and practical CL
     - [Anagram](https://exercism.org/tracks/haskell/exercises/anagram)
     - [Bob](https://exercism.org/tracks/haskell/exercises/bob)
     - [Clock](https://exercism.org/tracks/haskell/exercises/clock)
+    - [Luhn](https://exercism.org/tracks/haskell/exercises/luhn)
     - [Pangram](https://exercism.org/tracks/haskell/exercises/pangram)
     - [Reverse String](https://exercism.org/tracks/haskell/exercises/reverse-string)
     - [Zipper](https://exercism.org/tracks/haskell/exercises/zipper)
@@ -44,7 +45,7 @@ This project is a comprehensive collection of Haskell exercises and practical CL
     - `ParserTest.hs`: Comprehensive test suite for the MegaParsec parser.
     - `StateTest.hs`: Tests for the custom State Monad.
 - **test/Exercism/**
-    - Automated test suites for all Exercism exercises (Anagram, Bob, Clock, Pangram, Reverse String).
+    - Automated test suites for all Exercism exercises (Anagram, Bob, Clock, Luhn, Pangram, Reverse String).
 
 ## 📘 Type Algebra & Design Documentation
 

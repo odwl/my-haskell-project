@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism
+.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda
 
 # Load local environment variables
 -include .env
@@ -40,6 +40,10 @@ watch:
 # Run tests on file change (fast TDD loop)
 watch-test:
 	ghcid --command="cabal repl lambda-test" --test=":main" --restart=src --reload=test
+
+# Run all Lambda tests on file change
+watch-lambda:
+	ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
 
 # Run tests on file change but isolate only "Lens Tests"
 watch-lens:
