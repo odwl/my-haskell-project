@@ -10,7 +10,16 @@ This document serves as the master architectural blueprint for the "Minimal Hask
   - Section 1.1: `Void` (0 Inhabitants / Initial Object) 
   - Section 1.2: `()` (1 Inhabitant / Terminal Object)
   - Section 1.3: `Bool` (2 Inhabitants / Coproduct of Terminal Objects)
-  - Section 1.4: Infinite Inhabitants (Countable and Uncountable)
+  - Section 1.4: Other Finite Inhabitants (Products and Coproducts)
+  - Section 1.5: Infinite Inhabitants (Countable and Uncountable)
+- **Chapter 2: Parameterized Types of Kind `Type -> Type`**
+  - Section 2.1: `VoidFoldable` (0 Inhabitants)
+  - Section 2.2: `Proxy` (1 Inhabitant)
+  - Section 2.3: `Const Bool a` (2 Inhabitants)
+- **Chapter 3: Parameterized Types of Kind `Type -> Type -> Type`**
+  - Section 3.1: `Empty2` (0 Inhabitants)
+  - Section 3.2: `Const2` (1 Inhabitant)
+  - Section 3.3: `Bool2` (2 Inhabitants)
 
 ### Part 2: The Algebras (Laws) (`docs/02_concrete_algebras.md`)
 - **Focus**: Attaching behavior to concrete structures using lawful typeclasses.
@@ -26,14 +35,7 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 
 ## Universe 2: Higher-Kinded Types (Kind `Type -> Type`)
 
-### Part 3: The Parameterized Structures (No Laws) (`docs/03_parameterized_structures.md`)
-- **Focus**: Parameterized shapes and "empty boxes".
-- **Chapter 2: Parameterized Types of Kind `Type -> Type`**
-  - Section 2.1: `VoidFoldable` (0 Inhabitants)
-  - Section 2.2: `Proxy` (1 Inhabitant)
-  - Section 2.3: `Const Bool a` (2 Inhabitants)
-
-### Part 4: The Algebras of Shape (`docs/04_the_holy_trinity.md`)
+### Part 3: The Algebras of Shape (`docs/03_the_holy_trinity.md`)
 - **Focus**: The "holy trinity" of shapes (Functor, Foldable, Traversable) and computational contexts (Applicative, Monad).
 
 #### Chapter 1: Functor & Bifunctor (Shape Preservation)
@@ -58,7 +60,7 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 
 ## Universe 3: Functor Combinators & N-Ary Glues
 
-### Part 5: The Functor Monoids (`docs/07_n_ary_glues.md`)
+### Part 4: The Functor Monoids (`docs/04_n_ary_glues.md`)
 - **Focus**: The mathematical foundations of combining parameterized types.
 - **Chapter 1: The Functor Monoid (The True Engine)**
   - Section 1.1: The Minimal Generators (`Zero`/`Sum`, `Proxy`/`Product`, `Fix`, `(->)`, `Compose`).
@@ -71,10 +73,9 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 
 ***
 
-## Part 6: The Deep Math (`docs/08_deep_math_and_proofs.md`)
+### Part 5: The Deep Math (`docs/05_deep_math_and_proofs.md`)
 
-### Chapter 4: Deep Dive into Bifunctors
-#### Section 4.1: The True Nature of Bifunctors
+#### Chapter 4: Deep Dive into Bifunctors
 - **Product Categories**: A Bifunctor is just a normal functor from a product category $\mathcal{C} \times \mathcal{D} \to \mathcal{E}$.
 - **Haskell implementation**: Mapping a pair of morphisms (`bimap`) from $\mathbf{Hask} \times \mathbf{Hask} \to \mathbf{Hask}$.
 
@@ -83,13 +84,11 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 - **Composition**: `bimap (f . g) (h . i) == bimap f h . bimap g i`.
 - **Equivalences**: The relationship between `bimap`, `first`, and `second`.
 
-### Chapter 5: Monoidal Categories
-#### Section 5.1: The Pentagon and Triangle Laws
+#### Chapter 5: Monoidal Categories
 - **The Tensor Product**: Why `Either` and `(,)` are special Bifunctors.
 - **Coherence Conditions**: Associativity (Pentagon) and Unit (Triangle) laws.
-- *(Future section for deep dive into formal tensor products).*
 
-### Annex: Proofs and Derivations
+#### Annex: Proofs and Derivations
 - **Summary & Bundle Taxonomy**:
   - **Final Summary**: Shape and Preservation.
   - **Type Bundle Taxonomy**: When to use `type`, `newtype`, or `data`.
@@ -98,8 +97,8 @@ This document serves as the master architectural blueprint for the "Minimal Hask
 - **Identity Implies Composition**: Formal proof of the parametricity shortcut.
 - **Parametricity**: A deep dive into Natural Transformations, Ends, and Relational Fibrations.
 
-### Annex A: Proof of 2-Inhabitant Associativity
+#### Annex A: Proof of 2-Inhabitant Associativity
 - **The Cayley Table Proof**: Mathematical proof showing that once a two-sided identity element is locked in for a 2-inhabitant type, the remaining $2 \times 2$ grid leaves no structural room for associativity to fail.
 
-### Part 9: Bibliography (`docs/09_bibliography.md`)
+### Part 6: Bibliography (`docs/06_bibliography.md`)
 - **Focus**: Centralized list of foundational papers, influential articles, and recommended reading for the concepts discussed throughout this series.

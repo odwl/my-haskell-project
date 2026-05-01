@@ -1,4 +1,4 @@
-# Part 6: The Deep Math
+# Part 5: The Deep Math
 
 ## Chapter 4: Deep Dive into Bifunctors
 
@@ -225,4 +225,4 @@ These govern how typeclass methods (like `fmap`, `bimap`, `>>=`) must behave com
 **Structural Isomorphisms (Type-level mapping)**:
 These govern the "shape" of the types themselves. When we say $B(I, A) \cong A$ (e.g., `(Either Void A) ≅ A`), we are describing **structural isomorphism**. The compiler knows that `Either Void Bool` and `Bool` are two entirely different types (`Left True` vs `True`). However, because `Void` contains no information, we can write a perfect, lossless two-way mapping between the two structures. These mappings are the exact "Left/Right Unitors". They are not equalities; they are natural transformations between non-equal types.
 
-> For references, papers, and further reading on these advanced concepts, refer to [Part 9: Bibliography](09_bibliography.md).
+> For references, papers, and further reading on these advanced concepts, refer to [Part 6: Bibliography](06_bibliography.md).

@@ -626,7 +626,7 @@ safeWrapper title = try (evaluate (legacyCrashingCall title))
 By doing this, a complete crash (`_|_`) is safely intercepted and converted into a `Left SomeException` within the `IO` boundary.
 
 ***
-> For references, papers, and further reading on these algebraic structures, refer to [Part 9: Bibliography](09_bibliography.md).
+> For references, papers, and further reading on these algebraic structures, refer to [Part 9: Bibliography](06_bibliography.md).
 # Part 2: The Algebras (Laws) for Concrete Types
 
 Welcome to the second part of Universe 1. In Part 1, we defined our core **Structures**—the bare mathematical geometry of how many values a type can hold. We looked at the Initial Object (`Void`), the Terminal Object (`()`), the Coproduct of Terminal Objects (`Bool`), and both Countable (e.g., `[()]`, `Integer`) and Uncountable (e.g., `Stream Bool`, `Integer -> Bool`) infinite inhabitants.
@@ -2856,7 +2856,7 @@ These govern how typeclass methods (like `fmap`, `bimap`, `>>=`) must behave com
 **Structural Isomorphisms (Type-level mapping)**:
 These govern the "shape" of the types themselves. When we say $B(I, A) \cong A$ (e.g., `(Either Void A) ≅ A`), we are describing **structural isomorphism**. The compiler knows that `Either Void Bool` and `Bool` are two entirely different types (`Left True` vs `True`). However, because `Void` contains no information, we can write a perfect, lossless two-way mapping between the two structures. These mappings are the exact "Left/Right Unitors". They are not equalities; they are natural transformations between non-equal types.
 
-> For references, papers, and further reading on these advanced concepts, refer to [Part 9: Bibliography](09_bibliography.md).
+> For references, papers, and further reading on these advanced concepts, refer to [Part 9: Bibliography](06_bibliography.md).
 # Part 9: Bibliography
 
 This section centralizes all the foundational papers, influential articles, and recommended reading for the concepts discussed throughout this series.
