@@ -36,7 +36,7 @@
   - [Section 1.4: Other Finite Inhabitants (Products and Coproducts)](#section-14-other-finite-inhabitants-products-and-coproducts)
   - [Section 1.5: Infinite Inhabitants (Countable and Uncountable)](#section-15-infinite-inhabitants-countable-and-uncountable)
 - [Chapter 2: Parameterized Types of Kind `Type -> Type`](#chapter-2-parameterized-types-of-kind-type---type)
-  - [Section 2.1: `VoidFoldable` (0 Inhabitants)](#section-21-voidfoldable-0-inhabitants)
+  - [Section 2.1: `EmptyHkt` (0 Inhabitants)](#section-21-emptyhkt-0-inhabitants)
   - [Section 2.2: `Proxy` (1 Inhabitant)](#section-22-proxy-1-inhabitant)
   - [Section 2.3: `Const Bool a` (2 Inhabitants)](#section-23-const-bool-a-2-inhabitants)
 - [Chapter 3: Parameterized Types of Kind `Type -> Type -> Type`](#chapter-3-parameterized-types-of-kind-type---type---type)
@@ -273,9 +273,14 @@ In many mainstream languages like Java, C++, or Python, developers often rely on
 Empty type declarations are commonly used as tags for these phantom types. A phantom type parameter is one that appears on the left side of a type definition but not on the right.
 
 ```haskell
+-- both USD and EUR are "phantom tags" because they have no constructors.
+-- They are only used as "labels" at compile-time.
 data USD -- 0 inhabitants
 data EUR -- 0 inhabitants
 
+-- Note that the `currency` type parameter is a "phantom type parameter".
+-- It is used to distinguish between different types of money,
+-- but it does not appear in the value of the data type.
 newtype Money currency = Money Double
 
 fiveDollars :: Money USD
@@ -284,10 +289,18 @@ fiveDollars = Money 5.0
 fiveEuros :: Money EUR
 fiveEuros = Money 5.0
 
+addMoney :: Money currency -> Money currency -> Money currency
+addMoney (Money x) (Money y) = Money (x + y)
+
+-- legal:
+addMoney fiveDollars fiveDollars
+-- result: Money 10.0 (type: Money USD)
+
 -- This will result in a compile-time error:
 -- error: Couldn't match type ‘EUR’ with ‘USD’
--- illegalSum = fiveDollars `addMoney` fiveEuros
+-- addMoney fiveDollars fiveEuros
 ```
+
 Because `USD` and `EUR` have no constructors, we never intended to instantiate them. We only use them as "labels" at compile-time to prevent mixing up currencies. The compiler will now throw an error if we accidentally try to add dollars and euros together, completely eliminating a whole class of bugs at zero runtime cost!
 
 
@@ -654,121 +667,4 @@ By doing this, a complete crash (`_|_`) is safely intercepted and converted into
 
 ***
 
-## Chapter 2: Parameterized Types of Kind `Type -> Type`
-
-These are type constructors that require one type argument `a` before they become concrete types. Because they take another type as an argument, they are categorically referred to as **Higher-Kinded Types (HKTs)**. The number of inhabitants discussed here applies *regardless* of what `a` is instantiated to (i.e. the type parameter `a` is completely ignored at the value level).
-
-### Section 2.1: `VoidFoldable` (0 Inhabitants)
-
-These parameterized types cannot be constructed, no matter what `a` is. 
-
-#### 1. Standard Parameterized Empty Data
-```haskell
-data VoidFoldable a
-```
-
-#### 2. Using GADT Syntax
-```haskell
-{-# LANGUAGE GADTs #-}
-data VoidFoldable a where {}
-```
-
-#### 3. Phantom Wrapping `Data.Void`
-```haskell
-import Data.Void (Void)
-newtype VoidFoldable a = VoidFoldable Void
-```
-
-#### 4. Reusing Standard Library Structures
-GHC provides existing parameterized empty types for generic programming, like `V1`, or we can combine `Const` and `Void`.
-```haskell
-import GHC.Generics (V1)
-import Data.Functor.Const (Const)
-import Data.Void (Void)
-
--- V1 a 
--- Const Void a
-```
-
-### Section 2.2: `Proxy` (1 Inhabitant)
-
-These parameterized types have exactly one value, irrespective of `a`.
-
-#### 1. `Data.Proxy`
-`Proxy` is used to pass *type-level* information around at runtime without needing an actual value of that type.
-```haskell
-import Data.Proxy (Proxy(..))
--- The type is `Proxy a`, the only value is `Proxy`
-myProxy :: Proxy Int
-myProxy = Proxy
-```
-
-#### 2. `Constants` and `Generics`
-GHC generic programming uses `U1` to represent constructors with no fields. Alteratively, `Const () a` yields exactly 1 inhabitant.
-```haskell
-import GHC.Generics (U1(..))
-import Data.Functor.Const (Const(..))
-
--- U1 a (value is U1)
--- Const () a (value is Const ())
-```
-
-### Section 2.3: `Const Bool a` (2 Inhabitants)
-
-These parameterized types have precisely two values, regardless of `a`.
-
-#### 1. Custom Parameterized Tags
-```haskell
-data TwoOptions a = Option1 | Option2
-```
-
-#### 2. `Const Bool a`
-The `Const` functor holding a `Bool` gives exactly two possible states.
-```haskell
-import Data.Functor.Const (Const(..))
-
--- Const False :: Const Bool a
--- Const True  :: Const Bool a
-```
-
-***
-
-## Chapter 3: Parameterized Types of Kind `Type -> Type -> Type`
-
-These are type constructors that require two type arguments (usually denoted `a` and `b`) before they become concrete types. The number of inhabitants discussed here applies *regardless* of what `a` and `b` are instantiated to.
-
-### Section 3.1: `Empty2` (0 Inhabitants)
-
-These types cannot be constructed, no matter what `a` and `b` are.
-
-#### 1. Standard Parameterized Empty Data
-```haskell
-data Empty2 a b
-```
-
-#### 2. Phantom Wrapping `Data.Void`
-```haskell
-import Data.Void (Void)
-newtype Empty2 a b = Empty2 Void
-```
-
-### Section 3.2: `Const2` (1 Inhabitant)
-
-These types have exactly one value, regardless of `a` and `b`.
-
-#### 1. Custom Type ignoring both arguments
-```haskell
-data Unit2 a b = Unit2
-```
-
-### Section 3.3: `Bool2` (2 Inhabitants)
-
-These types have exactly two values, regardless of `a` and `b`.
-
-#### 1. Custom Type
-```haskell
-data Choice2 a b = Choice1 | Choice2
-```
-
-***
-> For references, papers, and further reading on these algebraic structures, refer to [Part 6: Bibliography](06_bibliography.md).
+> For references, papers, and further reading on these concrete structures, refer to [Part 7: Bibliography](07_bibliography.md).
