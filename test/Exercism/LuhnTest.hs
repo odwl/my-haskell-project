@@ -6,11 +6,21 @@ import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
 import Data.Char (isSpace, isDigit)
-import Exercism.Luhn (isValid, parseInput, luhn)
+import Exercism.Luhn (isValid, parseInput, parseInputIgnore, luhn)
 
 luhnTests :: TestTree
 luhnTests = testGroup "Luhn"
   [ testGroup "Exercism Cases" $ map test cases
+  , testGroup "parseInputIgnore Cases"
+      [ testCase "ignores non-digits" $
+          parseInputIgnore "05a9" @?= Just [0, 5, 9]
+      , testCase "ignores all non-digits if long enough" $
+          parseInputIgnore "0 5 a 9" @?= Just [0, 5, 9]
+      , testCase "fails if too short after ignoring" $
+          parseInputIgnore "0a" @?= Nothing
+      , testCase "fails if empty after ignoring" $
+          parseInputIgnore "a" @?= Nothing
+      ]
   , properties
   ]
   where

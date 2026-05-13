@@ -577,6 +577,136 @@ instance Category Discrete where
 - *Left/Right Identity*: `id . Refl == Refl . Refl == Refl`
 - *Associativity*: `Refl . (Refl . Refl) == Refl . Refl == Refl == (Refl . Refl) . Refl`
 
+#### The Category of Effectful Functions: The Kleisli Category (`Kleisli m`)
+Suppose we want to represent contextual or effectful pipelines. Instead of plain, deterministic functions `a -> b`, we want our morphisms to have the form:
+```haskell
+a -> m b   -- (where `m` is a type constructor representing a computational context)
+```
+This allows us to model pipelines carrying computational contexts—such as state, exceptions, nullability, or non-determinism. Let's define a newtype wrapper for these morphisms:
+```haskell
+newtype Kleisli m a b = Kleisli { runKleisli :: a -> m b }
+```
+
+To see if `Kleisli m` can form a lawful `Category`, let's attempt to derive the instance from first principles:
+
+**1. The Identity Arrow (`id`)**
+To satisfy the `Category` laws, we must define the identity morphism `id :: Kleisli m a a`. 
+Unpacking the constructor, this requires a function of type:
+```haskell
+id_fn :: a -> m a
+```
+For this to work for an arbitrary type constructor `m`, we must have a generic way to lift a raw value `a` into the structure `m a`. This is exactly the type signature of **`pure`** (or `return`):
+```haskell
+pure :: a -> m a
+```
+Therefore, the existence of the identity arrow `id` **demands** that `m` must be `Applicative` (or at least `Pointed`)!
+
+**2. The Composition Operator (`(.)`)**
+Now, let's try to compose two morphisms:
+* `g :: Kleisli m b c`  (i.e., `runKleisli g :: b -> m c`)
+* `h :: Kleisli m a b`  (i.e., `runKleisli h :: a -> m b`)
+
+We want to produce `g . h :: Kleisli m a c` (i.e., `a -> m c`). Given an input `x :: a`:
+1. Run the first morphism: `runKleisli h x` which yields `m b`.
+2. We want to apply `runKleisli g :: b -> m c` to the `b` value wrapped inside `m b`.
+3. Since `m` is a Functor, we can map `runKleisli g` over `m b`:
+   ```haskell
+   fmap (runKleisli g) (runKleisli h x)
+   ```
+   This yields a nested structure: **`m (m c)`**.
+4. To produce the expected return type `m c`, we must flatten the nested structure `m (m c) -> m c`. 
+
+The ability to flatten nested computations is exactly the **`join`** operation:
+```haskell
+join :: m (m c) -> m c
+```
+Therefore, the existence of category composition for effectful functions **demands** that `m` must have a `join` function!
+
+**3. Monad Laws from Category Laws**
+For this category composition to satisfy the **Left/Right Identity** and **Associativity** laws, the `pure` and `join` functions must satisfy:
+* `join (pure x) == x` (Left Identity)
+* `join (fmap pure x) == x` (Right Identity)
+* `join (join x) == join (fmap join x)` (Associativity)
+
+These are precisely the **Monad Laws**! 
+
+Thus, a wrapper of type `a -> m b` can form a lawful `Category` **if and only if `m` is a Monad**. This category is known in category theory as the **Kleisli Category** of the Monad `m`:
+
+```haskell
+instance Monad m => Category (Kleisli m) where
+  id = Kleisli pure
+  Kleisli g . Kleisli h = Kleisli (h >=> g)
+```
+
+#### The Category of Context-Aware Functions: The Cokleisli Category (`Cokleisli w`)
+Symmetrically, what happens if we reverse the direction of the context wrapper? Suppose we want our morphisms to consume context rather than produce effects:
+```haskell
+w a -> b   -- (where `w` is a type constructor representing a context or neighborhood)
+```
+This allows us to model context-aware computations—such as cellular automata (e.g., Conway's Game of Life) or image-processing filters, where each output value depends on the local neighborhood/context of the input. Let's define a newtype wrapper for these morphisms:
+```haskell
+newtype Cokleisli w a b = Cokleisli { runCokleisli :: w a -> b }
+```
+
+To see if `Cokleisli w` can form a lawful `Category`, let's derive the instance from first principles:
+
+**1. The Identity Arrow (`id`)**
+To satisfy the `Category` laws, we must define the identity morphism `id :: Cokleisli w a a`. Unpacking the constructor, this requires a function of type:
+```haskell
+id_fn :: w a -> a
+```
+For this to work for an arbitrary type constructor `w`, we must have a generic way to extract a raw value `a` from the context `w a`. This is exactly the type signature of **`extract`** (the dual of `pure`):
+```haskell
+extract :: w a -> a
+```
+Therefore, the existence of the identity arrow `id` **demands** that `w` must have an `extract` function (meaning `w` is Copointed)!
+
+**2. The Composition Operator (`(.)`)**
+Now, let's compose two morphisms:
+* `g :: Cokleisli w b c`  (i.e., `runCokleisli g :: w b -> c`)
+* `h :: Cokleisli w a b`  (i.e., `runCokleisli h :: w a -> b`)
+
+We want to produce `g . h :: Cokleisli w a c` (i.e., `w a -> c`). Given an input context `x :: w a`:
+1. We have `runCokleisli h :: w a -> b`, which converts `w a` to `b`.
+2. But `g` expects a wrapped context `w b` as its input (`runCokleisli g :: w b -> c`).
+3. To bridge this gap, we need to turn our input `w a` into a nested context **`w (w a)`** (duplicating the context). Let's call this duplication function **`duplicate`** (the dual of `join`):
+   ```haskell
+   duplicate :: w x -> w (w x)
+   ```
+4. By running `duplicate x`, we get `w (w a)`.
+5. Since `w` is a Functor, we can map `runCokleisli h` over `w (w a)` using `fmap`:
+   ```haskell
+   fmap (runCokleisli h) (duplicate x)
+   ```
+   This converts the inner `w a` to `b`, yielding exactly **`w b`**!
+6. Finally, we can apply `runCokleisli g` to the resulting `w b`, yielding `c`.
+
+So, category composition **demands** that `w` has a `duplicate` function!
+
+**3. The `extend` operator**
+Just as `join` and `fmap` combine in monads to form `bind (>>=)`, in comonads we combine `duplicate` and `fmap` into a single operation called **`extend`** (the dual of bind):
+```haskell
+extend :: (w x -> y) -> w x -> w y
+extend h = duplicate >>> fmap h
+```
+Using `extend`, the composition is:
+```haskell
+instance Comonad w => Category (Cokleisli w) where
+  id = Cokleisli extract
+  Cokleisli g . Cokleisli h = Cokleisli (extend h >>> g)
+```
+
+**4. Comonad Laws from Category Laws**
+Just like monads, the Comonad laws are exactly the Category laws (Identity and Associativity) for this Cokleisli Category:
+* `extract . duplicate == id` (Left Identity)
+* `fmap extract . duplicate == id` (Right Identity)
+* `duplicate . duplicate == fmap duplicate . duplicate` (Associativity)
+
+These are precisely the **Comonad Laws**!
+
+---
+
+
 #### The Opposite (Dual) Category: `Dual cat`
 In category theory, every category has a "dual" or "opposite" category where the objects remain identical, but **every single arrow's direction is reversed**. In Haskell, we can easily represent this dualization wrapper:
 
@@ -598,8 +728,103 @@ instance Category cat => Category (Dual cat) where
 **The "Why"**:
 Composition reverses the application flow. If `f` connects `b -> c` (reversed, so it is `c -> b`) and `g` connects `a -> b` (reversed, so it is `b -> a`), their composition `f . g` maps `c -> a` (which is reversed `a -> c`). It represents the elegant duality of all pipeline dataflows!
 
+**The Ultimate Duality: Kleisli vs. Cokleisli**
+Using this `Dual` wrapper, we can witness a beautiful, symmetrical duality at play between effects and contexts!
+
+If we take the **Kleisli Category** of a Monad `m` (where arrows are effect producers `a -> m b`), and reverse its arrows using the `Dual` wrapper, we get:
+```haskell
+Dual (Kleisli m) a b  ==  Kleisli m b a  ==  b -> m a
+```
+
+If we dualize the *Monad* itself into a *Comonad* `w` (which flips all operations: `pure` becomes `extract`, and `join` becomes `duplicate`), we get the **Cokleisli Category** (where arrows are context consumers `w a -> b`).
+
+Category theory tells us that **the Cokleisli Category of a Comonad is the dual (opposite) category of the Kleisli Category of the corresponding Monad** (and vice versa)!
+```
+Opposite (Kleisli Monad)   <==== Duality ====>   Cokleisli Comonad
+```
+This shows that producing monadic effects and consuming comonadic contexts are the exact mirror opposites of one another in the universe of functional pipelines!
 
 
+
+
+
+---
+
+#### The Category of Functorial Transformations: The Full Subcategory (`FunctorSF f`)
+What happens if we define morphisms (arrows) that map from a wrapped structure directly to another wrapped structure under the same type constructor `f`? 
+```haskell
+f a -> f b   -- (where `f` is any arbitrary type constructor)
+```
+Let's represent this using a newtype wrapper:
+```haskell
+newtype FunctorSF f a b = FunctorSF { runFunctorSF :: f a -> f b }
+```
+
+To see if `FunctorSF f` can form a lawful `Category`, let's derive the instance:
+
+**1. The Identity Arrow (`id`)**
+To satisfy the `Category` laws, we must define `id :: FunctorSF f a a`. Unpacking the constructor, this requires a function of type:
+```haskell
+id_fn :: f a -> f a
+```
+Since `f a` is just a standard Haskell type, the standard identity function `id :: x -> x` (where `x = f a`) works perfectly!
+```haskell
+id = FunctorSF id
+```
+No constraints, lifters, or special algebraic structures are needed!
+
+**2. The Composition Operator (`(.)`)**
+To compose two morphisms:
+* `g :: FunctorSF f b c`  (i.e., `runFunctorSF g :: f b -> f c`)
+* `h :: FunctorSF f a b`  (i.e., `runFunctorSF h :: f a -> f b`)
+
+We want to produce `g . h :: FunctorSF f a c` (i.e., `f a -> f c`). Since both `g` and `h` are just standard functions, we can compose them using standard function composition `(.)`!
+```haskell
+FunctorSF g . FunctorSF h = FunctorSF (g . h)
+```
+Again, this composition works flawlessly with **zero constraints**!
+
+---
+
+**The Category Theory Insight: Full Subcategories**
+Because `FunctorSF f` uses standard function identity and composition under the hood, **`f` does not need to be a Functor, an Applicative, or a Monad!** In fact, `f` does not need to have any structure or operations at all; it can be a completely empty or abstract type constructor.
+
+In category theory, this is known as a **Full Subcategory** of the category of all Haskell types (`Hask`):
+* The objects of our category are restricted to types of the form `f x` (e.g., `Maybe Int`, `Maybe String`, `Maybe Double`).
+* The arrows are **all standard functions** between these restricted types.
+
+This showcases that while monadic and comonadic pipelines (`a -> m b` and `w a -> b`) require deep, custom algebraic structures to compose, mapping directly between structured types `f a -> f b` is a natural subcategory of standard function composition!
+
+**Transitioning from Category to Arrow: The Functor Requirement**
+There is a beautiful, clean algebraic boundary when we try to upgrade this Full Subcategory `FunctorSF f` into a lawful `Arrow`:
+* **To be a `Category`**: `f` does **not** need to be a Functor. Identity `f a -> f a` and composition `(f b -> f c) -> (f a -> f b) -> f a -> f c` are always available for any arbitrary type constructor `f`.
+* **To be an `Arrow`**: `f` **must** be a `Functor`! 
+
+This is because the signature of `arr` (which lifts a pure function into an arrow) has the type:
+```haskell
+arr :: (b -> c) -> FunctorSF f b c
+-- i.e.
+arr :: (b -> c) -> f b -> f c
+```
+Lifting a pure function `b -> c` to a function mapping over the structure `f b -> f c` is **precisely the definition of a `Functor`** (`fmap`). Thus, upgrading the Full Subcategory to an Arrow algebraically demands that `f` is a `Functor`!
+
+> [!NOTE]
+> **Connecting the Circle: Stream Functions and FRP**
+> This brings our entire exploration into a magnificent, complete mathematical circle!
+>
+> Consider the **Stream Function** wrapper commonly used in Functional Reactive Programming (FRP):
+> ```haskell
+> newtype SF a b = SF { runSF :: [a] -> [b] }
+> ```
+> This has exactly the form of our `FunctorSF f a b` subcategory where the type constructor `f` is specialized to the **List Functor `[]`**!
+>
+> Because of the algebraic properties we have just proven:
+> * **It is a Category**: Composing stream functions `[a] -> [b]` and `[b] -> [c]` is just standard function composition. Since standard function composition is always associative and has `id`, `SF` is guaranteed to be a lawful `Category` (completely independent of list properties!).
+> * **It is an Arrow**: To upgrade this Category to an Arrow, the type constructor `f` must be a `Functor`. Since GHC's List type `[]` is indeed a `Functor`, **`SF` is automatically and mathematically guaranteed to be a lawful `Arrow`!**
+>
+> By proving the properties of this Full Subcategory, we have elegantly proven the core mathematical and operational foundation of Stream-Based FRP from absolute first principles!
+
+---
 
 ### Section 2.2: Arrow (Splitting & Combining Pipelines)
 
@@ -694,21 +919,53 @@ This forms the foundational workspace category **Hask** mapping pure functions i
 #### 5. Monadic Effect Pipelines `Kleisli m`: The Monadic Effect Arrow  
 If `m` is a lawful `Monad`, effectful functions wrapping `a -> m b` form a powerful Category and Arrow capable of handling monadic effects (such as error scopes or logging workflows).
 
+In fact, **as we proved earlier, any Kleisli Category of a Monad is *necessarily and automatically* a lawful Arrow!** Because all Monads in Haskell are Applicative Functors, we are guaranteed to have `pure` and `fmap` to lift functions and distribute them over parallel tuples.
+
 ```haskell
 newtype Kleisli m a b = Kleisli { runKleisli :: a -> m b }
 
 -- Category Implementation
 instance Monad m => Category (Kleisli m) where
-  id = Kleisli return
-  Kleisli f . Kleisli g = Kleisli (\x -> g x >>= f)
+  id = Kleisli pure
+  Kleisli f . Kleisli g = Kleisli (g >=> f)
 
--- Arrow Implementation
+-- Arrow Implementation: Mathematically guaranteed to exist and be lawful!
 instance Monad m => Arrow (Kleisli m) where
-  arr f = Kleisli (return . f)
-  first (Kleisli f) = Kleisli (\(b, d) -> f b >>= \c -> return (c, d))
+  -- arr :: (b -> c) -> Kleisli m b c
+  arr f = Kleisli (f >>> pure)
+  
+  -- first :: Kleisli m b c -> Kleisli m (b, d) (c, d)
+  first (Kleisli f) = Kleisli (\(b, d) -> fmap (\c -> (c, d)) (f b))
 ```
 
-Monadic composition handles input sequencing and maps the pure lifter to monadic `return`, perfectly gluing effectful pipes!
+Monadic composition handles input sequencing and maps the pure lifter to monadic `pure`, perfectly gluing effectful pipes!
+
+#### 5b. Context-Aware Pipelines `Cokleisli w`: The Contextual Arrow  
+Dually, if `w` is a lawful `Comonad`, context-aware functions wrapping `w a -> b` form a highly robust Category and Arrow capable of handling contextual queries (such as cellular automata or local neighborhood calculations).
+
+Just as with Kleisli, **any Cokleisli Category of a Comonad is *necessarily and automatically* a lawful Arrow Category!** Because all Comonads in Haskell support extraction (`extract`) and context duplication (`duplicate`), we can always construct the complete, lawful Arrow instance:
+
+```haskell
+newtype Cokleisli w a b = Cokleisli { runCokleisli :: w a -> b }
+
+-- Category Implementation
+instance Comonad w => Category (Cokleisli w) where
+  id = Cokleisli extract
+  Cokleisli g . Cokleisli h = Cokleisli (extend h >>> g)
+
+-- Arrow Implementation: Symmetrically guaranteed to exist and be lawful!
+instance Comonad w => Arrow (Cokleisli w) where
+  -- arr :: (b -> c) -> Cokleisli w b c
+  arr f = Cokleisli (extract >>> f)
+  
+  -- first :: Cokleisli w b c -> Cokleisli w (b, d) (c, d)
+  first (Cokleisli f) = Cokleisli $ \w_bd ->
+    let c = f (fmap fst w_bd)     -- Map fst over context to get `w b`, then run f to get `c`
+        d = snd (extract w_bd)    -- Extract `(b, d)` from context, taking the untouched `d`
+    in (c, d)                     -- Pack them into the output tuple
+```
+
+Comonadic composition handles context propagation, perfectly matching the comonadic dual of monadic pipelines!
 
 #### 6. Stateful Stream Transducers `SF`: The FRP/Transducer Arrow  
 Stateful transducers (`SF`) operating on inputs step-by-step are the standard theoretical and operational foundation for **Functional Reactive Programming (FRP)**.
@@ -806,14 +1063,18 @@ instance ArrowChoice Chaos where
 All `ArrowChoice` branching equations are trivially verified. However, it remains a computationally degenerate candidate where dynamic choice routing discards all pipeline values.
 
 #### 3. Monadic effect pipelines `Kleisli m`: The effectful branch Arrow ✅
-If `m` is a lawful `Monad`, `Kleisli m` supports effectful branching, gluing monadic pipelines sequentially over decisions:
+If `m` is a lawful `Monad`, `Kleisli m` supports effectful branching, gluing monadic pipelines sequentially over decisions.
+
+In fact, **just like the Category and Arrow instances, any Kleisli Arrow is *necessarily and automatically* a lawful `ArrowChoice`!** Because all Monads in Haskell are Functors with `pure` and `fmap`, we can always define the dynamic routing behavior without any additional constraints:
 
 ```haskell
 instance Monad m => ArrowChoice (Kleisli m) where
+  -- left :: Kleisli m b c -> Kleisli m (Either b d) (Either c d)
   left (Kleisli f) = Kleisli $ \case
-    Left x  -> f x >>= \y -> return (Left y)
-    Right y -> return (Right y)
+    Left x  -> fmap Left (f x)     -- Run f and wrap the successful result in Left
+    Right y -> pure (Right y)      -- Pass the untouched Right component through
   
+  -- (|||) :: Kleisli m b c -> Kleisli m b' c -> Kleisli m (Either b b') c
   (Kleisli f ||| Kleisli g) = Kleisli $ \case
     Left x  -> f x
     Right y -> g y

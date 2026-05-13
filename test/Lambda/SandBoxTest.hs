@@ -2,10 +2,27 @@
 
 module Lambda.SandBoxTest (sandBoxSuite) where
 
-import Lambda.SandBox (halve, third, third', sTail, sTail', sTail'')
+import Control.Arrow (Arrow (..), ArrowChoice (..), (>>>))
+import qualified Control.Category as C
+import Lambda.SandBox (Writer (..), halve, sTail, sTail', sTail'', third, third')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
+
+f :: Int -> Int
+f = (+ 1)
+
+g :: Int -> Int
+g = (* 2)
+
+hF :: (String, Int) -> (String, Int)
+hF (w, x) = (w ++ "A", x + 1)
+
+hG :: (String, Int) -> (String, Int)
+hG (w, x) = (w ++ "B", x * 2)
+
+hH :: (String, Int) -> (String, Int)
+hH (w, x) = (w ++ "C", x - 3)
 
 sandBoxSuite :: TestTree
 sandBoxSuite =
@@ -66,5 +83,26 @@ sandBoxSuite =
           testProperty "is equivalent to sTail''" $
             \(xs :: [Int]) ->
               sTail xs == sTail'' xs
+        ],
+      testGroup
+        "Writer Arrow Laws"
+        [ testProperty "Category Identity: id . f == f" $
+            \(w :: String, x :: Int) ->
+              runWriter (C.id C.. Writer hF) (w, x) == runWriter (Writer hF) (w, x),
+          testProperty "Category Composition: (f . g) . h == f . (g . h)" $
+            \(w :: String, x :: Int) ->
+              runWriter ((Writer hF C.. Writer hG) C.. Writer hH) (w, x) == runWriter (Writer hF C.. (Writer hG C.. Writer hH)) (w, x),
+          testProperty "Arrow law 1: arr id == id" $
+            \(w :: String, x :: Int) ->
+              runWriter (arr id) (w, x) == runWriter C.id (w, x),
+          testProperty "Arrow law 2: arr (f . g) == arr f . arr g" $
+            \(w :: String, x :: Int) ->
+              runWriter (arr (f . g)) (w, x) == runWriter (arr f C.. arr g) (w, x),
+          testProperty "Arrow law 3: first (arr f) == arr (first f)" $
+            \(w :: String, x :: Int, d :: Char) ->
+              runWriter (first (arr f)) (w, (x, d)) == runWriter (arr (first f)) (w, (x, d)),
+          testProperty "ArrowChoice law: left (arr f) == arr (left f)" $
+            \(w :: String, e :: Either Int Char) ->
+              runWriter (left (arr f)) (w, e) == runWriter (arr (left f)) (w, e)
         ]
     ]

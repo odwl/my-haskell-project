@@ -1,8 +1,9 @@
 {-# LANGUAGE GADTs #-}
 module Lambda.SandBox where
 
-import Control.Arrow (Arrow (..), Kleisli (..), (>>>))
-import Data.List (isPrefixOf, tails)
+import Control.Arrow (Arrow (..), ArrowChoice (..), Kleisli (..), (>>>))
+import Control.Monad ((>=>))
+import Data.List (isPrefixOf, tails, sortOn)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
 import Lambda (safeHead)
@@ -88,23 +89,202 @@ instance C.Category DiscreteArrows where
   id = Refl
   Refl . Refl = Refl
  
+
 instance Arrow SF where
   -- arr :: (b -> c) -> SF b c
   arr f = SF (map f)
-  
   -- first :: SF b c -> SF (b, d) (c, d)
   first (SF lf) = SF $ unzip >>> first lf >>> uncurry zip
-  -- (&&&) (SF lf) (SF lg) = SF $ zip <$> lf <*> lg
-  -- (&&&) (SF lf) (SF lg) = SF $ liftA2 zip lf lg
-  
   -- second :: SF b c -> SF (d, b) (d, c)
   second sf = arr swap >>> first sf >>> arr swap
-  
   -- (&&&) :: SF b c -> SF b d -> SF b (c, d)
-  (&&&) sf1 sf2 = arr (id &&& id) >>> first sf1 >>> second sf2
-  
+  -- (&&&) sf1 sf2 = arr (id &&& id) >>> first sf1 >>> second sf2
+  -- (&&&) (SF lf) (SF lg) = SF $ zip <$> lf <*> lg
+  -- (&&&) (SF lf) (SF lg) = SF $ liftA2 zip lf lg
+  (&&&) (SF lf) (SF lg) = SF $ (lf &&& lg) >>> uncurry zip
   -- (***) :: SF b c -> SF b' c' -> SF (b, b') (c, c')
   (***) sf1 sf2 = first sf1 >>> second sf2 
   -- (***) (SF lf) (SF lg) = SF $ unzip >>> lf *** lg >>> uncurry zip -- more efficient.
 
-            
+
+composeMaybe :: (a -> Maybe b) -> (b -> Maybe c) -> (a -> Maybe c)
+composeMaybe f g = f >>> (>>= g )
+
+composeMonad :: Monad m => (a -> m b) -> (b -> m c) -> (a -> m c)
+composeMonad f g = f >=> g
+
+composeSF :: ([a] -> [b]) -> ([b] -> [c]) -> [a] -> [c]
+composeSF f g = f >>> g
+
+composeMonadSF :: (Maybe a -> [b]) -> (Maybe b -> [c]) -> (Maybe a -> [c])
+composeMonadSF f g = f >>> map pure >>> (>>= g) 
+
+composeApplicativeList :: Applicative f => (f a -> [b]) -> (f b -> [c]) -> f a -> [c]
+composeApplicativeList f g = f >>> map pure >>> (>>= g) 
+
+composeAppMonad :: (Applicative f, Monad m) => (f a -> m b) -> (f b -> m c ) -> f a -> m c
+composeAppMonad f g = f >=> g . pure
+
+lift :: Maybe a -> [a]
+lift Nothing = []
+lift (Just x) = [x]
+
+newtype MyArrow f m a b = MyArrow {runMyArrow :: f a -> m b}
+
+-- instance (Applicative f, Monad m) => C.Category (MyArrow f m) where
+-- id :: MyArrow f m a a
+-- id = MyArrow f m lift  
+
+-- instance (Applicative f, Monad m) => Arrow MyArrow where
+-- id :: MyArrow f m a a 
+-- id = MyArrow lift
+-- (.) f g = f >= g . pure
+
+-- newtype CoArrow w a b = CoArrow {runCoArrow :: w a -> w b}
+-- instance Comonad w => Category (CoArrow w) where
+--   id = CoArrow id 
+--   CoArrow f . CoArrow g = CoArrow (f . g) 
+-- instance Comonad w => Arrow (CoArrow w) where 
+-- arr = CoArrow . fmap 
+-- first (CoArrow f) = CoArrow (split >>> reconcile) 
+--   where     
+--     split = (fmap fst >>> f) &&& (extract >>> snd)
+--     reconcile (wc, d) = fmap (, d) wc
+
+newtype Writer w a b = Writer {runWriter :: (w, a) -> (w, b)}
+instance C.Category (Writer w) where 
+  id = Writer id 
+  (Writer f) . (Writer g) = Writer (f . g)
+instance Arrow (Writer w) where 
+  arr = Writer . fmap
+  first (Writer f) = Writer $ split >>> reconcile
+    where split = (fmap fst >>> f) &&& (snd >>> snd)
+          reconcile ((e, b), c) = (e, (b, c))
+instance ArrowChoice (Writer w) where 
+  left (Writer f) = Writer fn
+    where fn (e, Left x) = Left <$> f (e, x)
+          fn (e, Right y)= (e, Right y)
+
+
+
+instance ArrowChoice SF where
+  left (SF f) = SF (\xs -> combine xs (f [y | Left y <- xs]))
+    where combine (Left _:xs) (z:zs) = Left z: combine xs zs
+          combine (Right y:xs) zs    = Right y: combine xs zs
+          combine (Left _:_) []      = error "SF left: length mismatch"
+          combine [] _               = []
+
+mapA :: ArrowChoice arr => arr a b -> arr [a] [b]
+mapA fn = arr listCase >>> (fBase ||| fRec)
+  where
+    listCase []     = Left []
+    listCase (x:xs) = Right (x, xs)
+    fBase           = arr id
+    fRec            = (fn *** mapA fn) >>> arr (uncurry (:))
+
+-- (|||) :: ArrowChoice arr => arr a c -> arr b c -> arr (Either a b) c
+-- (|||) a1 a2 = arr \cond -> case cond of 
+--             Left x  -> a1 x
+--             Right y -> a2 y
+
+choiceSF :: SF a c -> SF b c -> SF (Either a b) c
+choiceSF (SF lf) (SF lg) = SF (\xs -> combine xs (lf [x | Left x <- xs]) (lg [y | Right y <- xs]))
+  where
+    combine (Left _:xs) (z:zs) ws = z : combine xs zs ws
+    combine (Right _:xs) zs (w:ws) = w : combine xs zs ws
+    combine (Left _:_) [] _ = error "SF choiceSF: length mismatch for Left branch"
+    combine (Right _:_) _ [] = error "SF choiceSF: length mismatch for Right branch"
+    combine [] _ _ = []
+
+
+choiceSF' :: SF a c -> SF b c -> SF (Either a b) c
+choiceSF' (SF lf) (SF lg) = SF (zip [0..]) >>> SF process
+  where
+    process ind_e = mergeAndSort left_res right_res
+      where
+        (left_in, right_in) = foldr split ([], []) ind_e
+        split (i, Left y)  (ls, rs) = ((i, y) : ls, rs)
+        split (j, Right z) (ls, rs) = (ls, (j, z) : rs)
+        left_res  = uncurry zip (fmap lf (unzip left_in))
+        right_res = uncurry zip (fmap lg (unzip right_in))
+        mergeAndSort :: [(Int, c)] -> [(Int, c)] -> [c]
+        mergeAndSort t1 t2 = map snd (sortOn fst (t1 ++ t2))
+
+           
+
+
+
+mapA' :: SF a b -> SF [a] [b]
+mapA' f = arr listcase >>> (arr id `choiceSF'` (f *** mapA' f >>> arr (uncurry (:))))
+    where listcase []     = Left []
+          listcase (x:xs) = Right (x,xs) 
+
+-- test1 = runSF (mapA' (SF (map (+1)))) [[1,2], [3,4,5]]
+
+
+delay x = SF (x:)
+test2 = runSF (mapA' (delay 0)) [[1,2], [3,4,5], [6]]
+
+-- main :: IO ()
+-- main = print test2
+
+nor :: SF (Bool,Bool) Bool
+nor = arr (not.uncurry (||))
+
+
+-- test3 = runSF nor (zip [True, False, False, True] [False, False, True, True])
+s1 = replicate 5 False ++ replicate 10 True ++ replicate 5 False 
+s2 = cycle [True, False]
+
+
+-- main :: IO ()
+-- main = print (runSF nor (zip s1 s2))
+
+
+s3 = cycle $ replicate 5 False ++ replicate 5 True 
+edge:: SF Bool Bool
+edge = arr id &&& (delay False >>> arr not) >>> arr (uncurry (&&)) 
+-- >>> arr detect
+-- where detect (a,b) = a && not b
+
+main :: IO ()
+main = print (take 40 (runSF edge s3))
+
+filterA :: (a -> Maybe Bool) -> [a] -> Maybe [a]
+filterA f as = fmap fn pair
+  where 
+    pair = (sequenceA . (id &&& (sequenceA . map f))) as 
+    fn = uncurry zip >>> filter snd >>> map fst
+
+-- filterA f = fmap (map fst . filter snd) . sequenceA . map (sequenceA . (id &&& f))
+filterA''' :: (a -> Maybe Bool) -> [a] -> Maybe [a]
+filterA''' p = foldr fn (pure [])
+  where 
+    fn x = liftA2 (\keep -> if keep then (x:) else id) (p x)
+
+filterA' :: (a -> Maybe Bool) -> [a] -> Maybe [a]
+filterA' _ [] = pure []
+filterA' p (x:xs) = liftA2 fn (p x) (filterA' p xs)
+  where 
+        fn True bs = x : bs
+        fn False bs = bs
+
+filterA'' :: (a -> Maybe Bool) -> [a] -> Maybe [a]
+filterA'' p = foldr fn (pure [])
+  where 
+    fn x acc = case p x of 
+      Just False -> acc
+      Just True  -> (x:) <$> acc
+      Nothing -> Nothing
+
+filterA5 :: (a -> Maybe Bool) -> [a] -> Maybe [a]
+filterA5 p = foldr fn (pure [])
+  where 
+    fn x acc = case p x of 
+      Just False -> acc
+      Just True  -> (x:) <$> acc
+      Nothing -> Nothing
+      
+
+
+  
