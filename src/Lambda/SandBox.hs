@@ -6,7 +6,7 @@ module Lambda.SandBox where
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (..), Kleisli (..), (>>>), (^>>), (>>^))
 import Control.Category (Category, (.), id)
 import Prelude hiding (id, (.))
-import Control.Applicative (Alternative (..), liftA2)
+import Control.Applicative (Alternative (..))
 import Control.Monad (MonadPlus (..), (>=>))
 import Data.Functor.Identity (Identity)
 import Data.List (isPrefixOf, sortOn, tails)
@@ -254,15 +254,24 @@ instance Monad m => Category (WriterKleisli w m) where
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 instance Monad m => Arrow (WriterKleisli w m) where
   arr = fmap >>> (pure .) >>> WriterKleisli
+  first (WriterKleisli f) = WriterKleisli $ split id f >>> reconcile
+    where reconcile (m, d) = fmap (\(w', b) -> (w', (b, d))) m
+      
+  -- Overriding second is not mandatory (it has a default definition in Control.Arrow), but avoids extra tuple swapping and monadic binds for efficiency.
+  second (WriterKleisli f) = WriterKleisli $ split swap f >>> reconcile
+    where reconcile (m, d) = fmap (\(w', b) -> (w', (d, b))) m
   
-  first (WriterKleisli f)  = WriterKleisli (focus id id f)
-  second (WriterKleisli f) = WriterKleisli (focus swap swap f)
+split :: (pair -> (a, d)) -> ((w, a) -> m (w, b)) -> (w, pair) -> (m (w, b), d)
+split g f (w, pair) = (f (w, a), d) 
+    where (a, d) = g pair 
 
--- A lightweight helper to focus effectful computations on part of a tuple
-focus :: Functor m => (outer -> (a, d)) -> ((b, d) -> newOuter) -> ((w, a) -> m (w, b)) -> (w, outer) -> m (w, newOuter)
-focus get set f (w, outer) =
-  let (a, d) = get outer
-  in fmap (\(w', b) -> (w', set (b, d))) (f (w, a))
+--   first (WriterKleisli f)  = WriterKleisli (focus id id f)
+--   second (WriterKleisli f) = WriterKleisli (focus swap swap f)
+-- -- A lightweight helper to focus effectful computations on part of a tuple
+-- focus :: Functor m => (outer -> (a, d)) -> ((b, d) -> newOuter) -> ((w, a) -> m (w, b)) -> (w, outer) -> m (w, newOuter)
+-- focus get set f (w, outer) =
+--   let (a, d) = get outer
+--   in fmap (\(w', b) -> (w', set (b, d))) (f (w, a))
 instance MonadPlus m => ArrowZero (WriterKleisli w m) where
   zeroArrow = WriterKleisli (const mzero)
 instance MonadPlus m => ArrowPlus (WriterKleisli w m) where
@@ -281,8 +290,10 @@ instance Monad m => ArrowChoice (WriterKleisli w m) where
 
 -- test1 = runSF (mapA' (SF (map (+1)))) [[1,2], [3,4,5]]
 
+delay :: b -> SF b b
 delay x = SF (x :)
 
+test2 :: [[Int]]
 test2 = runSF (mapA' (delay 0)) [[1, 2], [3, 4, 5], [6]]
 
 -- main :: IO ()
@@ -292,13 +303,16 @@ nor :: SF (Bool, Bool) Bool
 nor = arr (not . uncurry (||))
 
 -- test3 = runSF nor (zip [True, False, False, True] [False, False, True, True])
+s1 :: [Bool]
 s1 = replicate 5 False ++ replicate 10 True ++ replicate 5 False
 
+s2 :: [Bool]
 s2 = cycle [True, False]
 
 -- main :: IO ()
 -- main = print (runSF nor (zip s1 s2))
 
+s3 :: [Bool]
 s3 = cycle $ replicate 5 False ++ replicate 5 True
 
 edge :: SF Bool Bool

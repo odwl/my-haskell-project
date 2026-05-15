@@ -3,7 +3,7 @@
 module Lambda.SandBoxTest (sandBoxSuite) where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
-import Control.Category (Category, (.), id)
+import Control.Category ((.), id)
 import Prelude hiding (id, (.))
 import Lambda.SandBox (WriterKleisli (..), halve, sTail, sTail', sTail'', third, third')
 import Test.Tasty (TestTree, testGroup)
@@ -16,14 +16,7 @@ f = (+ 1)
 g :: Int -> Int
 g = (* 2)
 
-hF :: (String, Int) -> (String, Int)
-hF (w, x) = (w ++ "A", x + 1)
 
-hG :: (String, Int) -> (String, Int)
-hG (w, x) = (w ++ "B", x * 2)
-
-hH :: (String, Int) -> (String, Int)
-hH (w, x) = (w ++ "C", x - 3)
 
 mF :: (String, Int) -> Maybe (String, Int)
 mF (w, x) = Just (w ++ "A", x + 1)
