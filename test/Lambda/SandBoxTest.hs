@@ -2,9 +2,9 @@
 
 module Lambda.SandBoxTest (sandBoxSuite) where
 
-import Control.Arrow (Arrow (..), ArrowChoice (..), (>>>))
+import Control.Arrow (Arrow (..), ArrowChoice (..))
 import qualified Control.Category as C
-import Lambda.SandBox (Writer (..), halve, sTail, sTail', sTail'', third, third')
+import Lambda.SandBox (MonadPlusArrow (..), Writer (..), halve, sTail, sTail', sTail'', third, third')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
@@ -23,6 +23,15 @@ hG (w, x) = (w ++ "B", x * 2)
 
 hH :: (String, Int) -> (String, Int)
 hH (w, x) = (w ++ "C", x - 3)
+
+mF :: (String, Int) -> Maybe (String, Int)
+mF (w, x) = Just (w ++ "A", x + 1)
+
+mG :: (String, Int) -> Maybe (String, Int)
+mG (w, x) = Just (w ++ "B", x * 2)
+
+mH :: (String, Int) -> Maybe (String, Int)
+mH (w, x) = Just (w ++ "C", x - 3)
 
 sandBoxSuite :: TestTree
 sandBoxSuite =
@@ -104,5 +113,23 @@ sandBoxSuite =
           testProperty "ArrowChoice law: left (arr f) == arr (left f)" $
             \(w :: String, e :: Either Int Char) ->
               runWriter (left (arr f)) (w, e) == runWriter (arr (left f)) (w, e)
+        ],
+      testGroup
+        "MonadPlusArrow Arrow Laws"
+        [ testProperty "Category Identity: id . f == f" $
+            \(w :: String, x :: Int) ->
+              runMPA (C.id C.. MonadPlusArrow mF) (w, x) == runMPA (MonadPlusArrow mF) (w, x),
+          testProperty "Category Composition: (f . g) . h == f . (g . h)" $
+            \(w :: String, x :: Int) ->
+              runMPA ((MonadPlusArrow mF C.. MonadPlusArrow mG) C.. MonadPlusArrow mH) (w, x) == runMPA (MonadPlusArrow mF C.. (MonadPlusArrow mG C.. MonadPlusArrow mH)) (w, x),
+          testProperty "Arrow law 1: arr id == id" $
+            \(w :: String, x :: Int) ->
+              runMPA (arr id :: MonadPlusArrow String Maybe Int Int) (w, x) == runMPA C.id (w, x),
+          testProperty "Arrow law 2: arr (f . g) == arr f . arr g" $
+            \(w :: String, x :: Int) ->
+              runMPA (arr (f . g) :: MonadPlusArrow String Maybe Int Int) (w, x) == runMPA (arr f C.. arr g) (w, x),
+          testProperty "Arrow law 3: first (arr f) == arr (first f)" $
+            \(w :: String, x :: Int, d :: Char) ->
+              runMPA (first (arr f :: MonadPlusArrow String Maybe Int Int)) (w, (x, d)) == runMPA (arr (first f)) (w, (x, d))
         ]
     ]

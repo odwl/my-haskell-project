@@ -41,6 +41,7 @@ library
     Exercism.ReverseString
     Exercism.Zipper
     Exercism.Luhn
+    Exercism.Parallel
     Lambda
     Lambda.Functor
     Lambda.HoverDam
@@ -71,7 +72,8 @@ library
     safe,
     text,
     time,
-    transformers
+    transformers,
+    parallel
 
 test-suite lambda-test
   import: share-tests-deps
@@ -113,6 +115,7 @@ test-suite exercism-test
     Exercism.ReverseStringTest
     Exercism.ZipperTest
     Exercism.LuhnTest
+    Exercism.ParallelTest
     ExercismTest
 
   hs-source-dirs:
@@ -138,6 +141,7 @@ test-suite all-tests
     Exercism.ReverseStringTest
     Exercism.ZipperTest
     Exercism.LuhnTest
+    Exercism.ParallelTest
     ExercismTest
     Lambda.FunctorTest
     Lambda.FunctorTestUtils
@@ -190,3 +194,13 @@ executable flight-client
     text,
     bytestring,
     time
+
+benchmark parallel-bench
+  import: share-tests-deps
+  type: exitcode-stdio-1.0
+  main-is: ParallelBench.hs
+  hs-source-dirs: bench
+  build-depends:
+    criterion,
+    my-haskell-project
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
