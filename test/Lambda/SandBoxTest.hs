@@ -2,9 +2,9 @@
 
 module Lambda.SandBoxTest (sandBoxSuite) where
 
-import Control.Arrow (Arrow (..), ArrowChoice (..))
+import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
 import qualified Control.Category as C
-import Lambda.SandBox (MonadPlusArrow (..), Writer (..), halve, sTail, sTail', sTail'', third, third')
+import Lambda.SandBox (StateKleisli (..), Writer (..), halve, sTail, sTail', sTail'', third, third')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
@@ -115,21 +115,24 @@ sandBoxSuite =
               runWriter (left (arr f)) (w, e) == runWriter (arr (left f)) (w, e)
         ],
       testGroup
-        "MonadPlusArrow Arrow Laws"
+        "StateKleisli Arrow Laws"
         [ testProperty "Category Identity: id . f == f" $
             \(w :: String, x :: Int) ->
-              runMPA (C.id C.. MonadPlusArrow mF) (w, x) == runMPA (MonadPlusArrow mF) (w, x),
+              runStateKleisli (C.id C.. StateKleisli mF) (w, x) == runStateKleisli (StateKleisli mF) (w, x),
           testProperty "Category Composition: (f . g) . h == f . (g . h)" $
             \(w :: String, x :: Int) ->
-              runMPA ((MonadPlusArrow mF C.. MonadPlusArrow mG) C.. MonadPlusArrow mH) (w, x) == runMPA (MonadPlusArrow mF C.. (MonadPlusArrow mG C.. MonadPlusArrow mH)) (w, x),
+              runStateKleisli ((StateKleisli mF C.. StateKleisli mG) C.. StateKleisli mH) (w, x) == runStateKleisli (StateKleisli mF C.. (StateKleisli mG C.. StateKleisli mH)) (w, x),
           testProperty "Arrow law 1: arr id == id" $
             \(w :: String, x :: Int) ->
-              runMPA (arr id :: MonadPlusArrow String Maybe Int Int) (w, x) == runMPA C.id (w, x),
+              runStateKleisli (arr id :: StateKleisli String Maybe Int Int) (w, x) == runStateKleisli C.id (w, x),
           testProperty "Arrow law 2: arr (f . g) == arr f . arr g" $
             \(w :: String, x :: Int) ->
-              runMPA (arr (f . g) :: MonadPlusArrow String Maybe Int Int) (w, x) == runMPA (arr f C.. arr g) (w, x),
+              runStateKleisli (arr (f . g) :: StateKleisli String Maybe Int Int) (w, x) == runStateKleisli (arr f C.. arr g) (w, x),
           testProperty "Arrow law 3: first (arr f) == arr (first f)" $
             \(w :: String, x :: Int, d :: Char) ->
-              runMPA (first (arr f :: MonadPlusArrow String Maybe Int Int)) (w, (x, d)) == runMPA (arr (first f)) (w, (x, d))
+              runStateKleisli (first (arr f :: StateKleisli String Maybe Int Int)) (w, (x, d)) == runStateKleisli (arr (first f)) (w, (x, d)),
+          testProperty "ArrowZero law: zeroArrow >>> f == zeroArrow" $
+            \(w :: String, x :: Int) ->
+              runStateKleisli (zeroArrow >>> StateKleisli mF :: StateKleisli String Maybe Int Int) (w, x) == runStateKleisli zeroArrow (w, x)
         ]
     ]

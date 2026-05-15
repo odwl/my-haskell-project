@@ -5,7 +5,7 @@ module Lambda.SandBox where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (..), Kleisli (..), (>>>), (^>>), (>>^))
 import qualified Control.Category as C
-import Control.Applicative (Alternative (..))
+import Control.Applicative (Alternative (..), liftA2)
 import Control.Monad (MonadPlus (..), (>=>))
 import Data.List (isPrefixOf, sortOn, tails)
 import Data.Maybe (fromMaybe)
@@ -163,7 +163,7 @@ newtype MyArrow f m a b = MyArrow {runMyArrow :: f a -> m b}
 
 
 -- ========================================================================= --
---                                WRITER ARROW                               --
+--                                WRITER ARROW - StateKleisli Arrow                      --
 -- ========================================================================= --
 
 newtype Writer w a b = Writer {runWriter :: (w, a) -> (w, b)}
@@ -209,6 +209,8 @@ mapA fn = arr listCase >>> (fBase ||| fRec)
 --             Left x  -> a1 x
 --             Right y -> a2 y
 
+-- Note, Writer cannot be 
+
 newtype FailingWriter w a b = FailingWriter {runFW :: (w, a) -> Maybe (w, b)}
 
 instance C.Category (FailingWriter w) where
@@ -220,8 +222,7 @@ instance Arrow (FailingWriter w) where
   first (FailingWriter f) = FailingWriter $ split >>> reconcile
     where 
       split (w, (a, d)) = (f (w, a), d)
-      reconcile (Nothing, _) = Nothing
-      reconcile (Just (e, b), d) = Just (e, (b, d))
+      reconcile (m, d) = fmap (\(e,b) -> (e, (b,d))) m
 instance ArrowZero (FailingWriter w) where
   zeroArrow = FailingWriter (const empty)
 instance ArrowPlus (FailingWriter w) where
@@ -230,20 +231,23 @@ instance ArrowPlus (FailingWriter w) where
       fn pair = f pair <|> g pair
 
 
-newtype MonadPlusArrow w m a b = MonadPlusArrow {runMPA :: (w, a) -> m (w, b)}
+newtype StateKleisli s m a b = StateKleisli {runStateKleisli :: (s, a) -> m (s, b)}
 
-instance Monad m => C.Category (MonadPlusArrow w m) where
-  id = MonadPlusArrow pure
-  (MonadPlusArrow f) . (MonadPlusArrow g) = MonadPlusArrow (g >=> f)
-instance Monad m => Arrow (MonadPlusArrow w m) where
-  arr = fmap >>> (pure .) >>> MonadPlusArrow
-  first (MonadPlusArrow f) = MonadPlusArrow $ split >>> reconcile
+instance Monad m => C.Category (StateKleisli s m) where
+  id = StateKleisli pure
+  (StateKleisli f) . (StateKleisli g) = StateKleisli (g >=> f)
+instance Monad m => Arrow (StateKleisli s m) where
+  arr = fmap >>> (pure .) >>> StateKleisli
+  first (StateKleisli f) = StateKleisli $ split >>> reconcile
     where 
-      split (w, (a, d)) = (f (w, a), d)
-      -- reconcile (empty, _) = empty
-      -- reconcile (pure (e, b), d) = pure (e, (b, d))
-      reconcile (m, d) = fmap (\(e,b) -> (e, (b,d))) m
-  
+      split (s, (a, d)) = (f (s, a), d)
+      reconcile (m, d) = fmap (\(s', b) -> (s', (b, d))) m
+instance MonadPlus m => ArrowZero (StateKleisli s m) where
+  zeroArrow = StateKleisli (const mzero)
+instance MonadPlus m => ArrowPlus (StateKleisli s m) where
+  StateKleisli f <+> StateKleisli g = StateKleisli fn 
+    where 
+      fn pair = f pair <|> g pair
 
   
 
