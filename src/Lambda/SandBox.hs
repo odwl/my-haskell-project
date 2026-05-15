@@ -254,15 +254,15 @@ instance Monad m => Category (WriterKleisli w m) where
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 instance Monad m => Arrow (WriterKleisli w m) where
   arr = fmap >>> (pure .) >>> WriterKleisli
-  first (WriterKleisli f) = WriterKleisli $ split >>> reconcile
-    where 
-      split (w, (a, d)) = (f (w, a), d)
-      reconcile (m, d) = fmap (\(w', b) -> (w', (b, d))) m
-  -- Overriding second is not mandatory (it has a default definition in Control.Arrow), but avoids extra tuple swapping and monadic binds for efficiency.
-  second (WriterKleisli f) = WriterKleisli $ split >>> reconcile
-    where 
-      split (w, (d, a)) = (f (w, a), d)
-      reconcile (m, d) = fmap (\(w', b) -> (w', (d, b))) m
+  
+  first (WriterKleisli f)  = WriterKleisli (focus id id f)
+  second (WriterKleisli f) = WriterKleisli (focus swap swap f)
+
+-- A lightweight helper to focus effectful computations on part of a tuple
+focus :: Functor m => (outer -> (a, d)) -> ((b, d) -> newOuter) -> ((w, a) -> m (w, b)) -> (w, outer) -> m (w, newOuter)
+focus get set f (w, outer) =
+  let (a, d) = get outer
+  in fmap (\(w', b) -> (w', set (b, d))) (f (w, a))
 instance MonadPlus m => ArrowZero (WriterKleisli w m) where
   zeroArrow = WriterKleisli (const mzero)
 instance MonadPlus m => ArrowPlus (WriterKleisli w m) where
