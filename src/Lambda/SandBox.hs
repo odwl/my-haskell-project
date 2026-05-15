@@ -4,7 +4,8 @@
 module Lambda.SandBox where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (..), Kleisli (..), (>>>), (^>>), (>>^))
-import qualified Control.Category as C
+import Control.Category (Category, (.), id)
+import Prelude hiding (id, (.))
 import Control.Applicative (Alternative (..), liftA2)
 import Control.Monad (MonadPlus (..), (>=>))
 import Data.List (isPrefixOf, sortOn, tails)
@@ -82,7 +83,7 @@ countArrow w = Kleisli readFile >>> arr words >>> arr (filter (== w)) >>> arr le
 
 newtype SF a b = SF {runSF :: [a] -> [b]}
 
-instance C.Category SF where
+instance Category SF where
   id = SF id
   (.) (SF lf) (SF lg) = SF (lf . lg) -- coerce
   --
@@ -92,7 +93,7 @@ instance C.Category SF where
 data DiscreteArrows a b where
   Refl :: DiscreteArrows a a
 
-instance C.Category DiscreteArrows where
+instance Category DiscreteArrows where
   id = Refl
   Refl . Refl = Refl
 
@@ -161,14 +162,42 @@ newtype MyArrow f m a b = MyArrow {runMyArrow :: f a -> m b}
 --     split = (fmap fst >>> f) &&& (extract >>> snd)
 --     reconcile (wc, d) = fmap (, d) wc
 
+choiceSF :: SF a c -> SF b c -> SF (Either a b) c
+choiceSF (SF lf) (SF lg) = SF (\xs -> combine xs (lf [x | Left x <- xs]) (lg [y | Right y <- xs]))
+  where
+    combine (Left _ : xs) (z : zs) ws = z : combine xs zs ws
+    combine (Right _ : xs) zs (w : ws) = w : combine xs zs ws
+    combine (Left _ : _) [] _ = error "SF choiceSF: length mismatch for Left branch"
+    combine (Right _ : _) _ [] = error "SF choiceSF: length mismatch for Right branch"
+    combine [] _ _ = []
+
+choiceSF' :: SF a c -> SF b c -> SF (Either a b) c
+choiceSF' (SF lf) (SF lg) = SF (zip [0 ..]) >>> SF process
+  where
+    process ind_e = mergeAndSort left_res right_res
+      where
+        (left_in, right_in) = foldr split ([], []) ind_e
+        split (i, Left y) (ls, rs) = ((i, y) : ls, rs)
+        split (j, Right z) (ls, rs) = (ls, (j, z) : rs)
+        left_res = uncurry zip (fmap lf (unzip left_in))
+        right_res = uncurry zip (fmap lg (unzip right_in))
+        mergeAndSort :: [(Int, c)] -> [(Int, c)] -> [c]
+        mergeAndSort t1 t2 = map snd (sortOn fst (t1 ++ t2))
+
+mapA' :: SF a b -> SF [a] [b]
+mapA' f = arr listcase >>> (arr id `choiceSF'` (f *** mapA' f >>> arr (uncurry (:))))
+  where
+    listcase [] = Left []
+    listcase (x : xs) = Right (x, xs)
+
 
 -- ========================================================================= --
---                                WRITER ARROW - StateKleisli Arrow                      --
+--                                Writer Arrow                             --
 -- ========================================================================= --
 
 newtype Writer w a b = Writer {runWriter :: (w, a) -> (w, b)}
 
-instance C.Category (Writer w) where
+instance Category (Writer w) where
   id = Writer id
   (Writer f) . (Writer g) = Writer (f . g)
 
@@ -179,8 +208,8 @@ instance Arrow (Writer w) where
       split = (fmap fst >>> f) &&& (snd >>> snd)
       reconcile ((e, b), c) = (e, (b, c))
 
--- instance ArrowZero (Writer w) where
---     zeroArrow = 
+-- Note, Writer cannot be a Monoid: ArrowZero and ArrowPlus
+-- For this we need to specialize such as with WriterKleisli
 
 instance ArrowChoice (Writer w) where
   left (Writer f) = Writer fn
@@ -209,12 +238,13 @@ mapA fn = arr listCase >>> (fBase ||| fRec)
 --             Left x  -> a1 x
 --             Right y -> a2 y
 
--- Note, Writer cannot be a Monoid: ArrowZero and ArrowPlus
--- For this we need to specialize such as with WriterKleisli
+-- ========================================================================= --
+--                                StateKleisli Arrow                      --
+-- ========================================================================= --
 
 newtype WriterKleisli w m a b = WriterKleisli {runWriterKleisli :: (w, a) -> m (w, b)}
 
-instance Monad m => C.Category (WriterKleisli w m) where
+instance Monad m => Category (WriterKleisli w m) where
   id = WriterKleisli pure
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 instance Monad m => Arrow (WriterKleisli w m) where
@@ -232,68 +262,8 @@ instance MonadPlus m => ArrowPlus (WriterKleisli w m) where
 
 type FailingWriter w = WriterKleisli w Maybe
 
--- instance C.Category (FailingWriter w) where
---   id = FailingWriter Just
---   (FailingWriter f) . (FailingWriter g) = FailingWriter (g >=> f)
--- instance Arrow (FailingWriter w) where
---   -- arr f = FailingWriter (fmap f >>> Just)
---   arr = fmap >>> (Just .) >>> FailingWriter
---   first (FailingWriter f) = FailingWriter $ split >>> reconcile
---     where 
---       split (w, (a, d)) = (f (w, a), d)
---       reconcile (Nothing, _) = Nothing
---       reconcile (Just (e, b), d) = Just (e, (b, d))
--- instance ArrowZero (FailingWriter w) where
---   zeroArrow = FailingWriter (const empty)
--- instance ArrowPlus (FailingWriter w) where
---   (FailingWriter f) <+> (FailingWriter g) = FailingWriter fn 
---   where 
---     fn pair = f pair <|> g pair
 
 
-
-
-
-
-
-
-
-
-
--- instance Arrow (FailingWriter w) where
---   arr = FailingWriter . fmap
---   first (FailingWriter f) = FailingWriter $ split >>> reconcile
---     where
---       split = (fmap fst >>> f) &&& (snd >>> snd)
---       reconcile ((e, b), c) = (e, (b, c))
-
-choiceSF :: SF a c -> SF b c -> SF (Either a b) c
-choiceSF (SF lf) (SF lg) = SF (\xs -> combine xs (lf [x | Left x <- xs]) (lg [y | Right y <- xs]))
-  where
-    combine (Left _ : xs) (z : zs) ws = z : combine xs zs ws
-    combine (Right _ : xs) zs (w : ws) = w : combine xs zs ws
-    combine (Left _ : _) [] _ = error "SF choiceSF: length mismatch for Left branch"
-    combine (Right _ : _) _ [] = error "SF choiceSF: length mismatch for Right branch"
-    combine [] _ _ = []
-
-choiceSF' :: SF a c -> SF b c -> SF (Either a b) c
-choiceSF' (SF lf) (SF lg) = SF (zip [0 ..]) >>> SF process
-  where
-    process ind_e = mergeAndSort left_res right_res
-      where
-        (left_in, right_in) = foldr split ([], []) ind_e
-        split (i, Left y) (ls, rs) = ((i, y) : ls, rs)
-        split (j, Right z) (ls, rs) = (ls, (j, z) : rs)
-        left_res = uncurry zip (fmap lf (unzip left_in))
-        right_res = uncurry zip (fmap lg (unzip right_in))
-        mergeAndSort :: [(Int, c)] -> [(Int, c)] -> [c]
-        mergeAndSort t1 t2 = map snd (sortOn fst (t1 ++ t2))
-
-mapA' :: SF a b -> SF [a] [b]
-mapA' f = arr listcase >>> (arr id `choiceSF'` (f *** mapA' f >>> arr (uncurry (:))))
-  where
-    listcase [] = Left []
-    listcase (x : xs) = Right (x, xs)
 
 -- test1 = runSF (mapA' (SF (map (+1)))) [[1,2], [3,4,5]]
 

@@ -3,7 +3,8 @@
 module Lambda.SandBoxTest (sandBoxSuite) where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
-import qualified Control.Category as C
+import Control.Category (Category, (.), id)
+import Prelude hiding (id, (.))
 import Lambda.SandBox (Writer (..), WriterKleisli (..), halve, sTail, sTail', sTail'', third, third')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
@@ -97,16 +98,16 @@ sandBoxSuite =
         "Writer Arrow Laws"
         [ testProperty "Category Identity: id . f == f" $
             \(w :: String, x :: Int) ->
-              runWriter (C.id C.. Writer hF) (w, x) == runWriter (Writer hF) (w, x),
+              runWriter (id . Writer hF) (w, x) == runWriter (Writer hF) (w, x),
           testProperty "Category Composition: (f . g) . h == f . (g . h)" $
             \(w :: String, x :: Int) ->
-              runWriter ((Writer hF C.. Writer hG) C.. Writer hH) (w, x) == runWriter (Writer hF C.. (Writer hG C.. Writer hH)) (w, x),
+              runWriter ((Writer hF . Writer hG) . Writer hH) (w, x) == runWriter (Writer hF . (Writer hG . Writer hH)) (w, x),
           testProperty "Arrow law 1: arr id == id" $
             \(w :: String, x :: Int) ->
-              runWriter (arr id) (w, x) == runWriter C.id (w, x),
+              runWriter (arr id) (w, x) == runWriter id (w, x),
           testProperty "Arrow law 2: arr (f . g) == arr f . arr g" $
             \(w :: String, x :: Int) ->
-              runWriter (arr (f . g)) (w, x) == runWriter (arr f C.. arr g) (w, x),
+              runWriter (arr (f . g)) (w, x) == runWriter (arr f . arr g) (w, x),
           testProperty "Arrow law 3: first (arr f) == arr (first f)" $
             \(w :: String, x :: Int, d :: Char) ->
               runWriter (first (arr f)) (w, (x, d)) == runWriter (arr (first f)) (w, (x, d)),
@@ -118,16 +119,16 @@ sandBoxSuite =
         "WriterKleisli Arrow Laws"
         [ testProperty "Category Identity: id . f == f" $
             \(w :: String, x :: Int) ->
-              runWriterKleisli (C.id C.. WriterKleisli mF) (w, x) == runWriterKleisli (WriterKleisli mF) (w, x),
+              runWriterKleisli (id . WriterKleisli mF) (w, x) == runWriterKleisli (WriterKleisli mF) (w, x),
           testProperty "Category Composition: (f . g) . h == f . (g . h)" $
             \(w :: String, x :: Int) ->
-              runWriterKleisli ((WriterKleisli mF C.. WriterKleisli mG) C.. WriterKleisli mH) (w, x) == runWriterKleisli (WriterKleisli mF C.. (WriterKleisli mG C.. WriterKleisli mH)) (w, x),
+              runWriterKleisli ((WriterKleisli mF . WriterKleisli mG) . WriterKleisli mH) (w, x) == runWriterKleisli (WriterKleisli mF . (WriterKleisli mG . WriterKleisli mH)) (w, x),
           testProperty "Arrow law 1: arr id == id" $
             \(w :: String, x :: Int) ->
-              runWriterKleisli (arr id :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli C.id (w, x),
+              runWriterKleisli (arr id :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli id (w, x),
           testProperty "Arrow law 2: arr (f . g) == arr f . arr g" $
             \(w :: String, x :: Int) ->
-              runWriterKleisli (arr (f . g) :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli (arr f C.. arr g) (w, x),
+              runWriterKleisli (arr (f . g) :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli (arr f . arr g) (w, x),
           testProperty "Arrow law 3: first (arr f) == arr (first f)" $
             \(w :: String, x :: Int, d :: Char) ->
               runWriterKleisli (first (arr f :: WriterKleisli String Maybe Int Int)) (w, (x, d)) == runWriterKleisli (arr (first f)) (w, (x, d)),
