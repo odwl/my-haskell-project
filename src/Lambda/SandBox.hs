@@ -254,16 +254,15 @@ instance Monad m => Category (WriterKleisli w m) where
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 instance Monad m => Arrow (WriterKleisli w m) where
   arr = fmap >>> (pure .) >>> WriterKleisli
-  first (WriterKleisli f) = WriterKleisli $ split id f >>> reconcile
-    where reconcile (m, d) = fmap (\(w', b) -> (w', (b, d))) m
-      
-  -- Overriding second is not mandatory (it has a default definition in Control.Arrow), but avoids extra tuple swapping and monadic binds for efficiency.
-  second (WriterKleisli f) = WriterKleisli $ split swap f >>> reconcile
-    where reconcile (m, d) = fmap (\(w', b) -> (w', (d, b))) m
-  
-split :: (pair -> (a, d)) -> ((w, a) -> m (w, b)) -> (w, pair) -> (m (w, b), d)
-split g f (w, pair) = (f (w, a), d) 
-    where (a, d) = g pair 
+  first =  split id >>> (reconcile id .) >>> WriterKleisli
+  second = split swap >>> (reconcile swap .) >>> WriterKleisli
+
+split :: (pair -> (a, d)) -> WriterKleisli w m a b -> (w, pair) -> (m (w, b), d)
+split g (WriterKleisli f) (w, pair) = (f (w, a), d) where (a,  d) = g pair 
+
+reconcile :: Functor m => ((b, d) -> newOuter) -> (m (w, b), d) -> m (w, newOuter)
+reconcile g (m, d) = fmap (\(w', b) -> (w', g (b, d))) m
+
 
 --   first (WriterKleisli f)  = WriterKleisli (focus id id f)
 --   second (WriterKleisli f) = WriterKleisli (focus swap swap f)
@@ -366,8 +365,8 @@ fanout' :: Arrow a => a b c -> a b d -> a b (c, d)
 fanout' f g = dupe ^>> first f >>> second' g
   where dupe x = (x, x)
 
-split' :: Arrow a => a b c -> a d e -> a (b, d) (c, e)
-split' f g = first f >>> second' g
+-- split' :: Arrow a => a b c -> a d e -> a (b, d) (c, e)
+-- split' f g = first f >>> second' g
 
 -- instance MonadPlus m => ArrowZero (Kleisli m) where
 --     zeroArrow = Kleisli (const mzero)
