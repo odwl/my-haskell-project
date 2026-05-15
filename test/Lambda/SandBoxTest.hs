@@ -113,6 +113,9 @@ sandBoxSuite =
               runWriterKleisli (first (arr f :: WriterKleisli String Maybe Int Int)) (w, (x, d)) == runWriterKleisli (arr (first f)) (w, (x, d)),
           testProperty "ArrowZero law: zeroArrow >>> f == zeroArrow" $
             \(w :: String, x :: Int) ->
-              runWriterKleisli (zeroArrow >>> WriterKleisli mF :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli zeroArrow (w, x)
+              runWriterKleisli (zeroArrow >>> WriterKleisli mF :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli zeroArrow (w, x),
+          testProperty "ArrowChoice law: left (arr f) == arr (left f)" $
+            \(w :: String, e :: Either Int Char) ->
+              runWriterKleisli (left (arr f :: WriterKleisli String Maybe Int Int)) (w, e) == runWriterKleisli (arr (left f)) (w, e)
         ]
     ]

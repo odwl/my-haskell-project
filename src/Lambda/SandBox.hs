@@ -214,6 +214,12 @@ mapA' f = arr listcase >>> (arr id `choiceSF'` (f *** mapA' f >>> arr (uncurry (
 
 type Writer w = WriterKleisli w Identity
 
+-- instance ArrowChoice (Writer w) where
+--   left (Writer f) = Writer fn
+--     where
+--       fn (e, Left x) = Left <$> f (e, x)
+--       fn (e, Right y) = (e, Right y)
+
 instance ArrowChoice SF where
   left (SF f) = SF (\xs -> combine xs (f [y | Left y <- xs]))
     where
