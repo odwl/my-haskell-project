@@ -258,6 +258,11 @@ instance Monad m => Arrow (WriterKleisli w m) where
     where 
       split (w, (a, d)) = (f (w, a), d)
       reconcile (m, d) = fmap (\(w', b) -> (w', (b, d))) m
+  -- Overriding second is not mandatory (it has a default definition in Control.Arrow), but avoids extra tuple swapping and monadic binds for efficiency.
+  second (WriterKleisli f) = WriterKleisli $ split >>> reconcile
+    where 
+      split (w, (d, a)) = (f (w, a), d)
+      reconcile (m, d) = fmap (\(w', b) -> (w', (d, b))) m
 instance MonadPlus m => ArrowZero (WriterKleisli w m) where
   zeroArrow = WriterKleisli (const mzero)
 instance MonadPlus m => ArrowPlus (WriterKleisli w m) where
@@ -267,7 +272,7 @@ instance MonadPlus m => ArrowPlus (WriterKleisli w m) where
 instance Monad m => ArrowChoice (WriterKleisli w m) where
   left (WriterKleisli f) = WriterKleisli fn 
     where 
-      fn (w, Left a)  = fmap (fmap Left) $ f (w, a) 
+      fn (w, Left a)  = fmap Left <$> f (w, a) 
       fn (w, Right b) = pure (w, Right b)
 
 
