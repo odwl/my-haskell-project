@@ -209,48 +209,28 @@ mapA fn = arr listCase >>> (fBase ||| fRec)
 --             Left x  -> a1 x
 --             Right y -> a2 y
 
--- Note, Writer cannot be 
+-- Note, Writer cannot be a Monoid: ArrowZero and ArrowPlus
+-- For this we need to specialize such as with WriterKleisli
 
-newtype FailingWriter w a b = FailingWriter {runFW :: (w, a) -> Maybe (w, b)}
+newtype WriterKleisli w m a b = WriterKleisli {runWriterKleisli :: (w, a) -> m (w, b)}
 
-instance C.Category (FailingWriter w) where
-  id = FailingWriter Just
-  (FailingWriter f) . (FailingWriter g) = FailingWriter (g >=> f)
-instance Arrow (FailingWriter w) where
-  -- arr f = FailingWriter (fmap f >>> Just)
-  arr = fmap >>> (Just .) >>> FailingWriter
-  first (FailingWriter f) = FailingWriter $ split >>> reconcile
+instance Monad m => C.Category (WriterKleisli w m) where
+  id = WriterKleisli pure
+  (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
+instance Monad m => Arrow (WriterKleisli w m) where
+  arr = fmap >>> (pure .) >>> WriterKleisli
+  first (WriterKleisli f) = WriterKleisli $ split >>> reconcile
     where 
       split (w, (a, d)) = (f (w, a), d)
-      reconcile (m, d) = fmap (\(e,b) -> (e, (b,d))) m
-instance ArrowZero (FailingWriter w) where
-  zeroArrow = FailingWriter (const empty)
-instance ArrowPlus (FailingWriter w) where
-  (FailingWriter f) <+> (FailingWriter g) = FailingWriter fn 
+      reconcile (m, d) = fmap (\(w', b) -> (w', (b, d))) m
+instance MonadPlus m => ArrowZero (WriterKleisli w m) where
+  zeroArrow = WriterKleisli (const mzero)
+instance MonadPlus m => ArrowPlus (WriterKleisli w m) where
+  WriterKleisli f <+> WriterKleisli g = WriterKleisli fn 
     where 
       fn pair = f pair <|> g pair
 
-
-newtype StateKleisli s m a b = StateKleisli {runStateKleisli :: (s, a) -> m (s, b)}
-
-instance Monad m => C.Category (StateKleisli s m) where
-  id = StateKleisli pure
-  (StateKleisli f) . (StateKleisli g) = StateKleisli (g >=> f)
-instance Monad m => Arrow (StateKleisli s m) where
-  arr = fmap >>> (pure .) >>> StateKleisli
-  first (StateKleisli f) = StateKleisli $ split >>> reconcile
-    where 
-      split (s, (a, d)) = (f (s, a), d)
-      reconcile (m, d) = fmap (\(s', b) -> (s', (b, d))) m
-instance MonadPlus m => ArrowZero (StateKleisli s m) where
-  zeroArrow = StateKleisli (const mzero)
-instance MonadPlus m => ArrowPlus (StateKleisli s m) where
-  StateKleisli f <+> StateKleisli g = StateKleisli fn 
-    where 
-      fn pair = f pair <|> g pair
-
-  
-
+type FailingWriter w = WriterKleisli w Maybe
 
 -- instance C.Category (FailingWriter w) where
 --   id = FailingWriter Just

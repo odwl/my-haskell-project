@@ -4,7 +4,7 @@ module Lambda.SandBoxTest (sandBoxSuite) where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
 import qualified Control.Category as C
-import Lambda.SandBox (StateKleisli (..), Writer (..), halve, sTail, sTail', sTail'', third, third')
+import Lambda.SandBox (Writer (..), WriterKleisli (..), halve, sTail, sTail', sTail'', third, third')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
@@ -115,24 +115,24 @@ sandBoxSuite =
               runWriter (left (arr f)) (w, e) == runWriter (arr (left f)) (w, e)
         ],
       testGroup
-        "StateKleisli Arrow Laws"
+        "WriterKleisli Arrow Laws"
         [ testProperty "Category Identity: id . f == f" $
             \(w :: String, x :: Int) ->
-              runStateKleisli (C.id C.. StateKleisli mF) (w, x) == runStateKleisli (StateKleisli mF) (w, x),
+              runWriterKleisli (C.id C.. WriterKleisli mF) (w, x) == runWriterKleisli (WriterKleisli mF) (w, x),
           testProperty "Category Composition: (f . g) . h == f . (g . h)" $
             \(w :: String, x :: Int) ->
-              runStateKleisli ((StateKleisli mF C.. StateKleisli mG) C.. StateKleisli mH) (w, x) == runStateKleisli (StateKleisli mF C.. (StateKleisli mG C.. StateKleisli mH)) (w, x),
+              runWriterKleisli ((WriterKleisli mF C.. WriterKleisli mG) C.. WriterKleisli mH) (w, x) == runWriterKleisli (WriterKleisli mF C.. (WriterKleisli mG C.. WriterKleisli mH)) (w, x),
           testProperty "Arrow law 1: arr id == id" $
             \(w :: String, x :: Int) ->
-              runStateKleisli (arr id :: StateKleisli String Maybe Int Int) (w, x) == runStateKleisli C.id (w, x),
+              runWriterKleisli (arr id :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli C.id (w, x),
           testProperty "Arrow law 2: arr (f . g) == arr f . arr g" $
             \(w :: String, x :: Int) ->
-              runStateKleisli (arr (f . g) :: StateKleisli String Maybe Int Int) (w, x) == runStateKleisli (arr f C.. arr g) (w, x),
+              runWriterKleisli (arr (f . g) :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli (arr f C.. arr g) (w, x),
           testProperty "Arrow law 3: first (arr f) == arr (first f)" $
             \(w :: String, x :: Int, d :: Char) ->
-              runStateKleisli (first (arr f :: StateKleisli String Maybe Int Int)) (w, (x, d)) == runStateKleisli (arr (first f)) (w, (x, d)),
+              runWriterKleisli (first (arr f :: WriterKleisli String Maybe Int Int)) (w, (x, d)) == runWriterKleisli (arr (first f)) (w, (x, d)),
           testProperty "ArrowZero law: zeroArrow >>> f == zeroArrow" $
             \(w :: String, x :: Int) ->
-              runStateKleisli (zeroArrow >>> StateKleisli mF :: StateKleisli String Maybe Int Int) (w, x) == runStateKleisli zeroArrow (w, x)
+              runWriterKleisli (zeroArrow >>> WriterKleisli mF :: WriterKleisli String Maybe Int Int) (w, x) == runWriterKleisli zeroArrow (w, x)
         ]
     ]
