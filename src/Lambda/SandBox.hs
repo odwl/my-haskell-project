@@ -8,6 +8,7 @@ import Control.Category (Category, (.), id)
 import Prelude hiding (id, (.))
 import Control.Applicative (Alternative (..), liftA2)
 import Control.Monad (MonadPlus (..), (>=>))
+import Data.Functor.Identity (Identity)
 import Data.List (isPrefixOf, sortOn, tails)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
@@ -195,27 +196,23 @@ mapA' f = arr listcase >>> (arr id `choiceSF'` (f *** mapA' f >>> arr (uncurry (
 --                                Writer Arrow                             --
 -- ========================================================================= --
 
-newtype Writer w a b = Writer {runWriter :: (w, a) -> (w, b)}
+-- newtype Writer w a b = Writer {runWriter :: (w, a) -> (w, b)}
 
-instance Category (Writer w) where
-  id = Writer id
-  (Writer f) . (Writer g) = Writer (f . g)
+-- instance Category (Writer w) where
+--   id = Writer id
+--   (Writer f) . (Writer g) = Writer (f . g)
 
-instance Arrow (Writer w) where
-  arr = Writer . fmap
-  first (Writer f) = Writer $ split >>> reconcile
-    where
-      split = (fmap fst >>> f) &&& (snd >>> snd)
-      reconcile ((e, b), c) = (e, (b, c))
+-- instance Arrow (Writer w) where
+--   arr = fmap >>> Writer
+--   first (Writer f) = Writer $ split >>> reconcile
+--     where
+--       split = (fmap fst >>> f) &&& (snd >>> snd)
+--       reconcile ((e, b), c) = (e, (b, c))
 
 -- Note, Writer cannot be a Monoid: ArrowZero and ArrowPlus
 -- For this we need to specialize such as with WriterKleisli
 
-instance ArrowChoice (Writer w) where
-  left (Writer f) = Writer fn
-    where
-      fn (e, Left x) = Left <$> f (e, x)
-      fn (e, Right y) = (e, Right y)
+type Writer w = WriterKleisli w Identity
 
 instance ArrowChoice SF where
   left (SF f) = SF (\xs -> combine xs (f [y | Left y <- xs]))
@@ -242,6 +239,8 @@ mapA fn = arr listCase >>> (fBase ||| fRec)
 --                                StateKleisli Arrow                      --
 -- ========================================================================= --
 
+type FailingWriter w = WriterKleisli w Maybe
+
 newtype WriterKleisli w m a b = WriterKleisli {runWriterKleisli :: (w, a) -> m (w, b)}
 
 instance Monad m => Category (WriterKleisli w m) where
@@ -259,8 +258,12 @@ instance MonadPlus m => ArrowPlus (WriterKleisli w m) where
   WriterKleisli f <+> WriterKleisli g = WriterKleisli fn 
     where 
       fn pair = f pair <|> g pair
+instance Monad m => ArrowChoice (WriterKleisli w m) where
+  left (WriterKleisli f) = WriterKleisli fn 
+    where 
+      fn (w, Left a)  = fmap (fmap Left) $ f (w, a) 
+      fn (w, Right b) = pure (w, Right b)
 
-type FailingWriter w = WriterKleisli w Maybe
 
 
 
