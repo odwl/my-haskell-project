@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TupleSections #-}
 
 module Lambda.SandBox where
 
@@ -254,23 +255,9 @@ instance Monad m => Category (WriterKleisli w m) where
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 instance Monad m => Arrow (WriterKleisli w m) where
   arr = fmap >>> (pure .) >>> WriterKleisli
-  first =  split id >>> (reconcile id .) >>> WriterKleisli
-  second = split swap >>> (reconcile swap .) >>> WriterKleisli
+  first wk = (,) <$> morphFirst wk <*> arr snd
+  second wk = swap <$> ((,) <$> morphSecond wk <*> arr fst)
 
-split :: (pair -> (a, d)) -> WriterKleisli w m a b -> (w, pair) -> (m (w, b), d)
-split g (WriterKleisli f) (w, pair) = (f (w, a), d) where (a,  d) = g pair 
-
-reconcile :: Functor m => ((b, d) -> newOuter) -> (m (w, b), d) -> m (w, newOuter)
-reconcile g (m, d) = fmap (\(w', b) -> (w', g (b, d))) m
-
-
---   first (WriterKleisli f)  = WriterKleisli (focus id id f)
---   second (WriterKleisli f) = WriterKleisli (focus swap swap f)
--- -- A lightweight helper to focus effectful computations on part of a tuple
--- focus :: Functor m => (outer -> (a, d)) -> ((b, d) -> newOuter) -> ((w, a) -> m (w, b)) -> (w, outer) -> m (w, newOuter)
--- focus get set f (w, outer) =
---   let (a, d) = get outer
---   in fmap (\(w', b) -> (w', set (b, d))) (f (w, a))
 instance MonadPlus m => ArrowZero (WriterKleisli w m) where
   zeroArrow = WriterKleisli (const mzero)
 instance MonadPlus m => ArrowPlus (WriterKleisli w m) where
@@ -282,6 +269,41 @@ instance Monad m => ArrowChoice (WriterKleisli w m) where
     where 
       fn (w, Left a)  = fmap Left <$> f (w, a) 
       fn (w, Right b) = pure (w, Right b)
+
+type MyMonad w m a = WriterKleisli w m a
+
+instance Functor m => Functor (WriterKleisli w m a) where
+  fmap h (WriterKleisli f) = WriterKleisli (\pair -> fmap (\(w', b) -> (w', h b)) (f pair))
+
+instance Monad m => Applicative (WriterKleisli w m a) where
+  pure b = WriterKleisli (\(w, _) -> pure (w, b))
+  WriterKleisli ff <*> WriterKleisli fx = WriterKleisli (\(w, a) -> do
+    (w', f) <- ff (w, a)
+    (w'', x) <- fx (w', a)
+    pure (w'', f x))
+
+instance Monad m => Monad (WriterKleisli w m a) where
+  WriterKleisli fx >>= h = WriterKleisli (\(w, a) -> do
+    (w', x) <- fx (w, a)
+    runWriterKleisli (h x) (w', a))
+
+
+fn :: Functor m => c -> WriterKleisli w m a b -> WriterKleisli w m a (b, c)
+fn y  = fmap (, y)
+
+morph :: WriterKleisli w m a (b, c) -> WriterKleisli w m (a,c) (b, c)
+morph (WriterKleisli f) = WriterKleisli (\(w, (a, _)) -> f (w, a))
+
+morphFirst :: WriterKleisli w m a b -> WriterKleisli w m (a,c) b
+morphFirst (WriterKleisli f) = WriterKleisli (\(w, (a, _)) -> f (w, a))
+
+morphSecond :: WriterKleisli w m b c -> WriterKleisli w m (d, b) c
+morphSecond (WriterKleisli f) = WriterKleisli (\(w, (_, b)) -> f (w, b))
+
+
+
+
+
 
 
 
