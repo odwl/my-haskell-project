@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
@@ -252,6 +253,7 @@ mapA fn = arr listCase >>> (fBase ||| fRec)
 type FailingWriter w = WriterKleisli w Maybe
 
 newtype WriterKleisli w m a b = WriterKleisli {runWriterKleisli :: (w, a) -> m (w, b)}
+  deriving (Functor)
 
 instance Monad m => Category (WriterKleisli w m) where
   id = WriterKleisli pure
@@ -289,8 +291,6 @@ instance Monad m => ArrowChoice (WriterKleisli w m) where
 
 type MyMonad w m a = WriterKleisli w m a 
 
-instance Functor m => Functor (WriterKleisli w m a) where
-  fmap h (WriterKleisli f) = WriterKleisli (\pair -> fmap (\(w', b) -> (w', h b)) (f pair))
 
 instance Monad m => Applicative (WriterKleisli w m a) where
   pure b = WriterKleisli (\(w, _) -> pure (w, b))
