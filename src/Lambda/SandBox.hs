@@ -259,10 +259,13 @@ newtype WriterKleisli w m a b = WriterKleisli {runWriterKleisli :: (w, a) -> m (
 instance Functor m => Profunctor (WriterKleisli w m) where
   lmap f (WriterKleisli g) = WriterKleisli $ fmap f >>> g
   rmap f (WriterKleisli g) = WriterKleisli $ g >>> fmap (fmap f)
-  
+  -- dimap f g (WriterKleisli h) = WriterKleisli $ fmap f >>> h >>> fmap (fmap g)
+
 instance Monad m => Category (WriterKleisli w m) where
   id = WriterKleisli pure
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
+
+
 instance Monad m => Arrow (WriterKleisli w m) where
   arr = fmap >>> (pure .) >>> WriterKleisli
   first = first'
@@ -274,11 +277,11 @@ instance Monad m => Strong (WriterKleisli w m) where
   first' = genericFirst
   second' = genericSecond
 
-genericFirst :: (Arrow arr, Applicative (arr (a, c))) => arr a b -> arr (a, c) (b, c)
-genericFirst wk = liftA2 (,) (arr fst >>> wk) (arr snd)
+genericFirst :: (Profunctor arr, Arrow arr, Applicative (arr (a, c))) => arr a b -> arr (a, c) (b, c)
+genericFirst wk = liftA2 (,) (lmap fst wk) (arr snd)
 
-genericSecond :: (Arrow arr, Applicative (arr (d, a))) => arr a b -> arr (d, a) (d, b)
-genericSecond wk = liftA2 (,) (arr fst) (arr snd >>> wk)
+genericSecond :: (Profunctor arr, Arrow arr, Applicative (arr (d, a))) => arr a b -> arr (d, a) (d, b)
+genericSecond wk = liftA2 (,) (arr fst) (lmap snd wk)
 
 -- morphFirst is a perfectly lawful natural transformation from WriterKleisli w m a to WriterKleisli w m (a, c)
 morphFirst :: WriterKleisli w m a ~> WriterKleisli w m (a, c)
