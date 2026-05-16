@@ -255,8 +255,12 @@ instance Monad m => Category (WriterKleisli w m) where
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 instance Monad m => Arrow (WriterKleisli w m) where
   arr = fmap >>> (pure .) >>> WriterKleisli
-  first wk = (,) <$> morphFirst wk <*> arr snd
-  second wk = swap <$> ((,) <$> morphSecond wk <*> arr fst)
+  -- first (WriterKleisli f) = WriterKleisli $ morphSecond >>> functorSecond
+  first wk = liftA2 (,) (morphFirst wk) (arr snd)
+  -- second wk = swap <$> ((,) <$> morphSecond wk <*> arr fst)
+
+morphFirst :: WriterKleisli w m a b -> WriterKleisli w m (a,c) b
+morphFirst (WriterKleisli f) = WriterKleisli (f . fmap fst)
 
 instance MonadPlus m => ArrowZero (WriterKleisli w m) where
   zeroArrow = WriterKleisli (const mzero)
@@ -270,7 +274,7 @@ instance Monad m => ArrowChoice (WriterKleisli w m) where
       fn (w, Left a)  = fmap Left <$> f (w, a) 
       fn (w, Right b) = pure (w, Right b)
 
-type MyMonad w m a = WriterKleisli w m a
+type MyMonad w m a = WriterKleisli w m a 
 
 instance Functor m => Functor (WriterKleisli w m a) where
   fmap h (WriterKleisli f) = WriterKleisli (\pair -> fmap (\(w', b) -> (w', h b)) (f pair))
@@ -288,17 +292,20 @@ instance Monad m => Monad (WriterKleisli w m a) where
     runWriterKleisli (h x) (w', a))
 
 
-fn :: Functor m => c -> WriterKleisli w m a b -> WriterKleisli w m a (b, c)
-fn y  = fmap (, y)
+-- fn :: Functor m => c -> WriterKleisli w m a b -> WriterKleisli w m a (b, c)
+-- fn y  = fmap (, y)
 
-morph :: WriterKleisli w m a (b, c) -> WriterKleisli w m (a,c) (b, c)
-morph (WriterKleisli f) = WriterKleisli (\(w, (a, _)) -> f (w, a))
+-- morph :: WriterKleisli w m a (b, c) -> WriterKleisli w m (a,c) (b, c)
+-- morph (WriterKleisli f) = WriterKleisli (\(w, (a, _)) -> f (w, a))
 
-morphFirst :: WriterKleisli w m a b -> WriterKleisli w m (a,c) b
-morphFirst (WriterKleisli f) = WriterKleisli (\(w, (a, _)) -> f (w, a))
 
-morphSecond :: WriterKleisli w m b c -> WriterKleisli w m (d, b) c
-morphSecond (WriterKleisli f) = WriterKleisli (\(w, (_, b)) -> f (w, b))
+
+-- morphSecond :: c -> WriterKleisli w m a b -> WriterKleisli w m (a, c) b
+-- morphSecond c (WriterKleisli f) = WriterKleisli $ fmap fst >>> f 
+
+-- functorSecond :: WriterKleisli w m (a, c) b -> WriterKleisli w m (a, c) (a,b)
+-- functorSecond = fmap
+
 
 
 
