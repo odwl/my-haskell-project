@@ -4,6 +4,7 @@ module Lambda.SandBoxTest (sandBoxSuite) where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
 import Control.Category ((.), id)
+import Data.Profunctor (Profunctor (..))
 import Prelude hiding (id, (.))
 import Lambda.SandBox (WriterKleisli (..), halve, sTail, sTail', sTail'', third, third')
 import Test.Tasty (TestTree, testGroup)
@@ -110,5 +111,18 @@ sandBoxSuite =
           testProperty "ArrowChoice law: left (arr f) == arr (left f)" $
             \(w :: String, e :: Either Int Char) ->
               runWriterKleisli (left (arr f :: WriterKleisli String Maybe Int Int)) (w, e) == runWriterKleisli (arr (left f)) (w, e)
+        ],
+      testGroup
+        "WriterKleisli Profunctor Laws"
+        [ testProperty "Profunctor Identity: dimap id id == id" $
+            \(w :: String, x :: Int) ->
+              runWriterKleisli (dimap id id (WriterKleisli mF)) (w, x) == runWriterKleisli (WriterKleisli mF) (w, x),
+          testProperty "Profunctor Composition: dimap (f . g) (h . i) == dimap g h . dimap f i" $
+            \(w :: String, x :: Int) ->
+              let l1 = (+ 1)
+                  l2 = (* 2)
+                  r1 = (+ 5)
+                  r2 = (* 3)
+               in runWriterKleisli (dimap (l2 . l1) (r1 . r2) (WriterKleisli mF)) (w, x) == runWriterKleisli (dimap l1 r1 (dimap l2 r2 (WriterKleisli mF))) (w, x)
         ]
     ]

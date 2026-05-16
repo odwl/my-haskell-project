@@ -28,7 +28,8 @@ common share-tests-deps
     text,
     transformers,
     time,
-    lens
+    lens,
+    profunctors
 
 -- The main library for the project
 library
