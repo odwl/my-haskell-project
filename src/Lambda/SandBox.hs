@@ -1,6 +1,8 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Lambda.SandBox where
 
@@ -259,8 +261,16 @@ instance Monad m => Arrow (WriterKleisli w m) where
   first wk = liftA2 (,) (morphFirst wk) (arr snd)
   -- second wk = swap <$> ((,) <$> morphSecond wk <*> arr fst)
 
-morphFirst :: WriterKleisli w m a b -> WriterKleisli w m (a,c) b
+-- A natural transformation between functors in Haskell
+type f ~> g = forall x. f x -> g x
+
+-- morphFirst is a perfectly lawful natural transformation from WriterKleisli w m a to WriterKleisli w m (a, c)
+morphFirst :: WriterKleisli w m a ~> WriterKleisli w m (a, c)
 morphFirst (WriterKleisli f) = WriterKleisli (f . fmap fst)
+
+-- morphSecond is a perfectly lawful natural transformation from WriterKleisli w m b to WriterKleisli w m (d, b)
+morphSecond :: WriterKleisli w m b ~> WriterKleisli w m (d, b)
+morphSecond (WriterKleisli f) = WriterKleisli (f . fmap snd)
 
 instance MonadPlus m => ArrowZero (WriterKleisli w m) where
   zeroArrow = WriterKleisli (const mzero)
