@@ -258,10 +258,14 @@ instance Monad m => Category (WriterKleisli w m) where
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 instance Monad m => Arrow (WriterKleisli w m) where
   arr = fmap >>> (pure .) >>> WriterKleisli
-  -- first (WriterKleisli f) = WriterKleisli $ morphSecond >>> functorSecond
-  first wk = liftA2 (,) (morphFirst wk) (arr snd)
-  -- second wk = swap <$> ((,) <$> morphSecond wk <*> arr fst)
+  first = genericFirst
+  second = genericSecond
 
+genericFirst :: (Arrow arr, Applicative (arr (a, c))) => arr a b -> arr (a, c) (b, c)
+genericFirst wk = liftA2 (,) (arr fst >>> wk) (arr snd)
+
+genericSecond :: (Arrow arr, Applicative (arr (d, a))) => arr a b -> arr (d, a) (d, b)
+genericSecond wk = liftA2 (,) (arr fst) (arr snd >>> wk)
 
 -- morphFirst is a perfectly lawful natural transformation from WriterKleisli w m a to WriterKleisli w m (a, c)
 morphFirst :: WriterKleisli w m a ~> WriterKleisli w m (a, c)
