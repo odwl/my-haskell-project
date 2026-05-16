@@ -256,6 +256,12 @@ type FailingWriter w = WriterKleisli w Maybe
 newtype WriterKleisli w m a b = WriterKleisli {runWriterKleisli :: (w, a) -> m (w, b)}
   deriving (Functor)
 
+instance Functor m => Profunctor (WriterKleisli w m) where
+  dimap lmap rmap (WriterKleisli f) = WriterKleisli $ \(w, a') -> 
+    fmap (\(w', b) -> (w', rmap b)) (f (w, lmap a'))
+
+  rmap f (WriterKleisli g) = WriterKleisli $ g >>> fmap (fmap f)
+
 instance Monad m => Category (WriterKleisli w m) where
   id = WriterKleisli pure
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
@@ -264,9 +270,7 @@ instance Monad m => Arrow (WriterKleisli w m) where
   first = first'
   second = second'
 
-instance Functor m => Profunctor (WriterKleisli w m) where
-  dimap lmap rmap (WriterKleisli f) = WriterKleisli $ \(w, a') -> 
-    fmap (\(w', b) -> (w', rmap b)) (f (w, lmap a'))
+
 
 instance Monad m => Strong (WriterKleisli w m) where
   first' = genericFirst
