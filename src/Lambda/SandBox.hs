@@ -261,7 +261,7 @@ instance Functor m => Profunctor (WriterKleisli w m) where
     fmap (\(w', b) -> (w', rmap b)) (f (w, lmap a'))
 
   rmap f (WriterKleisli g) = WriterKleisli $ g >>> fmap (fmap f)
-
+  
 instance Monad m => Category (WriterKleisli w m) where
   id = WriterKleisli pure
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
