@@ -257,9 +257,7 @@ newtype WriterKleisli w m a b = WriterKleisli {runWriterKleisli :: (w, a) -> m (
   deriving (Functor)
 
 instance Functor m => Profunctor (WriterKleisli w m) where
-  dimap lmap rmap (WriterKleisli f) = WriterKleisli $ \(w, a') -> 
-    fmap (\(w', b) -> (w', rmap b)) (f (w, lmap a'))
-
+  lmap f (WriterKleisli g) = WriterKleisli $ fmap f >>> g
   rmap f (WriterKleisli g) = WriterKleisli $ g >>> fmap (fmap f)
   
 instance Monad m => Category (WriterKleisli w m) where
