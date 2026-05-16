@@ -73,7 +73,8 @@ library
     text,
     time,
     transformers,
-    parallel
+    parallel,
+    natural-transformation
 
 test-suite lambda-test
   import: share-tests-deps

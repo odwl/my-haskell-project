@@ -10,6 +10,7 @@ import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (.
 import Control.Category (Category, (.), id)
 import Prelude hiding (id, (.))
 import Control.Applicative (Alternative (..))
+import Control.Natural (type (~>))
 import Control.Monad (MonadPlus (..), (>=>))
 import Data.Functor.Identity (Identity)
 import Data.List (isPrefixOf, sortOn, tails)
@@ -261,8 +262,6 @@ instance Monad m => Arrow (WriterKleisli w m) where
   first wk = liftA2 (,) (morphFirst wk) (arr snd)
   -- second wk = swap <$> ((,) <$> morphSecond wk <*> arr fst)
 
--- A natural transformation between functors in Haskell
-type f ~> g = forall x. f x -> g x
 
 -- morphFirst is a perfectly lawful natural transformation from WriterKleisli w m a to WriterKleisli w m (a, c)
 morphFirst :: WriterKleisli w m a ~> WriterKleisli w m (a, c)
