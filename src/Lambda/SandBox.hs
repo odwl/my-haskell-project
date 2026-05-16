@@ -265,18 +265,20 @@ instance Monad m => Category (WriterKleisli w m) where
   id = WriterKleisli pure
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 
+-- 1. The Standalone Primitive Constructor
+arrWK :: Monad m => (a -> b) -> WriterKleisli w m a b
+arrWK f = WriterKleisli $ fmap f >>> pure
 
+-- 2. Strong depends ONLY on arrWK (No Arrow required!)
+instance Monad m => Strong (WriterKleisli w m) where
+  first'  wk = liftA2 (,) (lmap fst wk) (arrWK snd)
+  second' wk = liftA2 (,) (arrWK fst) (lmap snd wk)
 
+-- 3. Arrow inherits everything cleanly from Strong and arrWK
 instance Monad m => Arrow (WriterKleisli w m) where
-  arr = fmap >>> (pure .) >>> WriterKleisli
+  arr = arrWK
   first = first'
   second = second'
-
-
-
-instance Monad m => Strong (WriterKleisli w m) where
-  first' wk = liftA2 (,) (lmap fst wk) (arr snd)
-  second' wk = liftA2 (,) (arr fst) (lmap snd wk)
 
 -- morphFirst is a perfectly lawful natural transformation from WriterKleisli w m a to WriterKleisli w m (a, c)
 morphFirst :: WriterKleisli w m a ~> WriterKleisli w m (a, c)
