@@ -13,6 +13,7 @@ import Prelude hiding (id, (.))
 import Control.Applicative (Alternative (..))
 import Control.Natural (type (~>))
 import Control.Monad (MonadPlus (..), (>=>))
+import Data.Profunctor (Profunctor (..), Strong (..))
 import Data.Functor.Identity (Identity)
 import Data.List (isPrefixOf, sortOn, tails)
 import Data.Maybe (fromMaybe)
@@ -260,8 +261,16 @@ instance Monad m => Category (WriterKleisli w m) where
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 instance Monad m => Arrow (WriterKleisli w m) where
   arr = fmap >>> (pure .) >>> WriterKleisli
-  first = genericFirst
-  second = genericSecond
+  first = first'
+  second = second'
+
+instance Functor m => Profunctor (WriterKleisli w m) where
+  dimap lmap rmap (WriterKleisli f) = WriterKleisli $ \(w, a') -> 
+    fmap (\(w', b) -> (w', rmap b)) (f (w, lmap a'))
+
+instance Monad m => Strong (WriterKleisli w m) where
+  first' = genericFirst
+  second' = genericSecond
 
 genericFirst :: (Arrow arr, Applicative (arr (a, c))) => arr a b -> arr (a, c) (b, c)
 genericFirst wk = liftA2 (,) (arr fst >>> wk) (arr snd)
@@ -291,7 +300,6 @@ instance Monad m => ArrowChoice (WriterKleisli w m) where
 
 type MyMonad w m a = WriterKleisli w m a 
 
-
 instance Monad m => Applicative (WriterKleisli w m a) where
   pure b = WriterKleisli (\(w, _) -> pure (w, b))
   WriterKleisli ff <*> WriterKleisli fx = WriterKleisli (\(w, a) -> do
@@ -299,10 +307,10 @@ instance Monad m => Applicative (WriterKleisli w m a) where
     (w'', x) <- fx (w', a)
     pure (w'', f x))
 
-instance Monad m => Monad (WriterKleisli w m a) where
-  WriterKleisli fx >>= h = WriterKleisli (\(w, a) -> do
-    (w', x) <- fx (w, a)
-    runWriterKleisli (h x) (w', a))
+-- instance Monad m => Monad (WriterKleisli w m a) where
+--   WriterKleisli fx >>= h = WriterKleisli (\(w, a) -> do
+--     (w', x) <- fx (w, a)
+--     runWriterKleisli (h x) (w', a))
 
 
 -- fn :: Functor m => c -> WriterKleisli w m a b -> WriterKleisli w m a (b, c)
@@ -400,11 +408,11 @@ filterA5 p = foldr fn (pure [])
       Just True -> (x :) <$> acc
       Nothing -> Nothing
 
-second' :: (Arrow a) => a b c -> a (d, b) (d, c)
-second' f = swap ^>> first f >>^ swap
+mySecond' :: (Arrow a) => a b c -> a (d, b) (d, c)
+mySecond' f = swap ^>> first f >>^ swap
 
 fanout' :: Arrow a => a b c -> a b d -> a b (c, d)
-fanout' f g = dupe ^>> first f >>> second' g
+fanout' f g = dupe ^>> first f >>> mySecond' g
   where dupe x = (x, x)
 
 -- split' :: Arrow a => a b c -> a d e -> a (b, d) (c, e)

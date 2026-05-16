@@ -74,7 +74,8 @@ library
     time,
     transformers,
     parallel,
-    natural-transformation
+    natural-transformation,
+    profunctors
 
 test-suite lambda-test
   import: share-tests-deps
