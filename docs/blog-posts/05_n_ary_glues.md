@@ -1,5 +1,22 @@
 # Part 5: The Functor Monoids
 
+## Table of Contents
+- [Chapter 1: The Functor Monoid (The True Engine)](#chapter-1-the-functor-monoid-the-true-engine)
+  - [Section 1.1: The Minimal Generators](#section-11-the-minimal-generators)
+    - [A. The Dummy Bounds (The Constant Monoids)](#a-the-dummy-bounds-the-constant-monoids)
+    - [B. Semigroups vs. Monoids (The Destructive Fakes `First` and `Second`)](#b-semigroups-vs-monoids-the-destructive-fakes-first-and-second)
+    - [C. The Minimum Generators for Choice (The Sum Record)](#c-the-minimum-generators-for-choice-the-sum-record)
+    - [D. The Minimum Generators for Conjunction (The Product Record)](#d-the-minimum-generators-for-conjunction-the-product-record)
+    - [E. The Missing Infinites: `Fix`](#e-the-missing-infinites-fix)
+    - [F. The Alien Minimal: `(->)`](#f-the-alien-minimal--)
+    - [G. The Hidden Third Monoid: `Compose`](#g-the-hidden-third-monoid-compose)
+- [Chapter 2: From Monoids to N-ary Glues](#chapter-2-from-monoids-to-n-ary-glues)
+  - [Section 2.1: The Ultimate Generator: System F](#section-21-the-ultimate-generator-system-f)
+- [Chapter 3: The Value-Level Symmetry](#chapter-3-the-value-level-symmetry)
+  - [Section 3.1: The Value-Level Product: `Applicative`](#section-31-the-value-level-product-applicative)
+  - [Section 3.2: The Value-Level Sum: `Alternative`](#section-32-the-value-level-sum-alternative)
+- [Chapter 4: The Formal Lexicon](#chapter-4-the-formal-lexicon)
+
 This document captures a profound mathematical exploration into the foundations of Algebraic Data Types (ADTs). Instead of looking at simple types, we will investigate the **Category of Endofunctors** (`Type -> Type`). 
 
 The goal is to discover the irreducible minimal generating set of the Functor universe.
@@ -29,7 +46,7 @@ If we look at the universe of Functors, what are the fundamental building blocks
 
 There are bounds to the universe we can manipulate.
 
-### A. The Dummy Bounds (The Constant Monoids)
+#### A. The Dummy Bounds (The Constant Monoids)
 The absolute simplest monoids are those that completely ignore the `Bin` operation, throwing away all data combinations and always returning the 0-ary `Atom`.
 
 *   **Constant Zero**: `Atom = Zero`, `Bin f g = Zero`. Folding this defines the **`NaryZeroF`** glue (The mathematical Black Hole, which holds 0 constructors).
@@ -37,7 +54,7 @@ The absolute simplest monoids are those that completely ignore the `Bin` operati
 
 Both of these represent flat closures.
 
-### B. Semigroups vs. Monoids (The Destructive Fakes `First` and `Second`)
+#### B. Semigroups vs. Monoids (The Destructive Fakes `First` and `Second`)
 What if we drop the `Atom` requirement entirely and only keep the `Bin` operator? If we just enforce an associativity law on `Bin`, we have defined a **Semigroup over Functors**.
 
 With just a Semigroup, you can define combinators like `First` (where `type Bin f g = f`) or `Second`. They satisfy the `(* -> *) -> (* -> *) -> (* -> *)` kind requirement perfectly. 
@@ -47,12 +64,11 @@ However, they are mathematically "incomplete" to build N-ary structures. If you 
 If you hand a Semigroup an empty list `[]` to fold, it mathematically catastrophically crashes. Because you dropped the `Atom` (the identity element), the space is undefined at $N=0$. 
 
 A Monoid explicitly requires an `Atom` such that `Bin e f = f` (Left Identity) and `Bin f e = f` (Right Identity). It is impossible to define an `Atom` base case for `First` because the `e` would have to magically morph its type to equal whatever arbitrary `f` was passed in! 
-
 Therefore, `First` and `Second` are mathematically valid *Semigroups*, but they cannot ever be *Monoids*. And because they have no $N=0$ case, they cannot generate complete ADT universes!
 
 There are exactly two fundamental active properties we can manipulate: **Choice** and **Conjunction**.
 
-### C. The Minimum Generators for Choice (The Sum Record)
+#### C. The Minimum Generators for Choice (The Sum Record)
 If our `Bin` combinator represents a branching path (an `OR` relationship), it is the **Sum** Functor (evaluating to `Either`). 
 
 What is the `Atom` (identity element) for Sum? It must be the Functor that adds zero choices. If $X + e = X$, then $e$ mathematically must be the **`Zero` Functor** (an impossible state with zero constructors, effectively `Void`).
@@ -60,7 +76,7 @@ What is the `Atom` (identity element) for Sum? It must be the Functor that adds 
 *   **Combinator (`Bin`)**: Sum (`Either`)
 *   **Atom (`Atom`)**: Zero (`Void`)
 
-### D. The Minimum Generators for Conjunction (The Product Record)
+#### D. The Minimum Generators for Conjunction (The Product Record)
 If our `Bin` combinator represents holding data simultaneously (an `AND` relationship), it is the **Product** Functor (evaluating to a tuple `(,)`).
 
 What is the `Atom` (identity element) for Product? It must be the Functor that adds zero information. If $X \times e = X$, then $e$ mathematically must be the **`Proxy` Functor** (a single stateless constructor `()`).
@@ -68,16 +84,16 @@ What is the `Atom` (identity element) for Product? It must be the Functor that a
 *   **Combinator (`Bin`)**: Product `(,)`
 *   **Atom (`Atom`)**: Proxy `()`
 
-### E. The Missing Infinites: `Fix`
+#### E. The Missing Infinites: `Fix`
 Sum and Product can generate any finite data shape. However, to generate infinite or recursive structures (like `List` or `Tree`), we strictly need a new minimal operator that bends a Functor back onto itself.
 
 *   **The Recursive Minimal**: `Fix f = In (f (Fix f))`
 By feeding a combination of Sum and Product into `Fix`, we escape the finite universe.
 
-### F. The Alien Minimal: `(->)`
+#### F. The Alien Minimal: `(->)`
 Computations (functions) cannot be generated by Sums, Products, or Fix. Exponentiation requires a fundamentally distinct 2-ary minimal operator: the Arrow `(->)`.
 
-### G. The Hidden Third Monoid: `Compose`
+#### G. The Hidden Third Monoid: `Compose`
 It turns out there is a profound third mathematical Functor Monoid that exists perfectly symmetrical to Sum and Product: **Functor Composition**.
 Instead of branching (Sum) or pairing (Product), what if we nest one Functor strictly inside another?
 
@@ -126,7 +142,7 @@ data HListF (fs :: [Type -> Type]) a where
 
 We do not need to explicitly declare N-ary glues. They are merely the syntactic, inductive evaluation of a Functor Monoid folded over a type-level list!
 
-### Section 2.2: The Ultimate Generator: System F
+### Section 2.1: The Ultimate Generator: System F
 As a final profound twist: if you introduce the minimal function arrow `(->)` and pair it with Polymorphism (`forall`), it completely cannibalizes the rest of the universe.
 
 In Type Theory (System F), using **Church Encodings**, you can generate the ENTIRE universe of functors purely out of the Exponential `(->)` glue—rendering the primitive Sum and Product monoids entirely unnecessary!

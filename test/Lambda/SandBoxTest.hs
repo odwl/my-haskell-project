@@ -6,7 +6,7 @@ import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
 import Control.Category ((.), id)
 import Data.Profunctor (Profunctor (..))
 import Prelude hiding (id, (.))
-import Lambda.SandBox (WriterKleisli (..), halve, sTail, sTail', sTail'', third, third')
+import Lambda.SandBox (WriterKleisli (..), halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
@@ -124,5 +124,17 @@ sandBoxSuite =
                   r1 = (+ 5)
                   r2 = (* 3)
                in runWriterKleisli (dimap (l2 . l1) (r1 . r2) (WriterKleisli mF)) (w, x) == runWriterKleisli (dimap l1 r1 (dimap l2 r2 (WriterKleisli mF))) (w, x)
+        ],
+      testGroup
+        "Natural Transformation Laws"
+        [ testProperty "Naturality of nt (1 element): fmap f . nt == nt . fmap f" $
+            \(m :: Maybe Int) ->
+              (fmap f . nt) m == (nt . fmap f) m,
+          testProperty "Naturality of nt2 (0 elements): fmap f . nt2 == nt2 . fmap f" $
+            \(m :: Maybe Int) ->
+              (fmap f . nt2) m == (nt2 . fmap f) m,
+          testProperty "Naturality of nt3 (2 elements): fmap f . nt3 == nt3 . fmap f" $
+            \(m :: Maybe Int) ->
+              (fmap f . nt3) m == (nt3 . fmap f) m
         ]
     ]

@@ -1,5 +1,36 @@
 # Part 3: HKT Shape Structures & Algebras
 
+## Table of Contents
+- [1. Introduction](#1-introduction)
+  - [The Updated $\to$ Ranking (Simplicity to Power)](#the-updated--ranking-simplicity-to-power)
+  - [A Unifying Kind: `Type -> Type`](#a-unifying-kind-type---type)
+  - [Beyond Shape: Category & Arrow (Kind `Type -> Type -> Type`)](#beyond-shape-category--arrow-kind-type---type---type)
+- [Chapter 1: HKT Shape Structures (No Laws)](#chapter-1-hkt-shape-structures-no-laws)
+  - [Section 1.1: `EmptyHkt` (0 Inhabitants)](#section-11-emptyhkt-0-inhabitants)
+  - [Section 1.2: `Proxy` (1 Inhabitant)](#section-12-proxy-1-inhabitant)
+  - [Section 1.3: `Const Bool a` (2 Inhabitants)](#section-13-const-bool-a-2-inhabitants)
+- [Chapter 2: Functor (Shape Preservation)](#chapter-2-functor-shape-preservation)
+  - [Section 2.1: What is a Functor?](#section-21-what-is-a-functor)
+  - [Section 2.2: Minimal Functors](#section-22-minimal-functors)
+  - [Section 2.3: Discovering Molecules (Compounds)](#section-23-discovering-molecules-compounds)
+- [Chapter 3: Foldable (Lossy Aggregation)](#chapter-3-foldable-lossy-aggregation)
+  - [Section 3.1: What is a Foldable?](#section-31-what-is-a-foldable)
+  - [Section 3.2: The Absolute Minimum Foldable](#section-32-the-absolute-minimum-foldable)
+  - [Section 3.3: The Algebra of Foldables](#section-33-the-algebra-of-foldables)
+- [Chapter 4: Traversable (Effectful Folding)](#chapter-4-traversable-effectful-folding)
+  - [Section 4.1: What is Traversable?](#section-41-what-is-traversable)
+  - [Section 4.2: The Absolute Minimum Traversable Atoms](#section-42-the-absolute-minimum-traversable-atoms)
+  - [Section 4.3: The Algebra of Traversables](#section-43-the-algebra-of-traversables)
+  - [The Grand Architectural Synthesis](#the-grand-architectural-synthesis)
+- [Chapter 5: Applicative (Context Aggregation)](#chapter-5-applicative-context-aggregation)
+  - [Section 5.1: The Applicative Atoms](#section-51-the-applicative-atoms)
+  - [Section 5.2: The Applicative Analog to foldMap (`traverse`)](#section-52-the-applicative-analog-to-foldmap-traverse)
+  - [Section 5.3: Automated Law Testing](#section-53-automated-law-testing)
+- [Chapter 6: Monad (Effectful Sequencing)](#chapter-6-monad-effectful-sequencing)
+  - [Section 6.1: The Final Upgrades](#section-61-the-final-upgrades)
+  - [Section 6.2: Automated Law Testing](#section-62-automated-law-testing)
+- [Conclusion: The Tale of Three Minimals](#conclusion-the-tale-of-three-minimals)
+
 ## 1. Introduction
 
 Walking through the exercise of constructing "minimal" instances is one of the best ways to deeply understand Functors, Applicatives, and Monads in Haskell. By stripping away domain-specific noise (like state management, I/O, or failure), we demystify a lot of features that initially look like magic. It reveals the underlying mechanics at play.
@@ -166,11 +197,9 @@ import Data.Functor.Const (Const(..))
 
 ***
 
-## Chapter 2: HKT Algebras (Laws)
+## Chapter 2: Functor (Shape Preservation)
 
-### Functor (Shape Preservation)
-
-### Section 1.1: What is a Functor?
+### Section 2.1: What is a Functor?
 
 If you ask a mathematician, they will point you to Saunders Mac Lane, one of the founders of Category Theory. In Category Theory, a functor is a structure-preserving mapping between two categories. It is a ubiquitous concept in mathematics; for instance, you have *Forgetful functors* (which strip algebraic structure) and *Free functors* (which automatically build algebraic structure).
 
@@ -274,7 +303,7 @@ If `testBatch` never randomly generates the integer `12345`, this structure will
 
 ***
 
-### Section 1.2: Minimal Functors
+### Section 2.2: Minimal Functors
 
 Now that we have explored several examples of types that are *not* valid functors, let's reverse the approach. We will define the absolute simplest, most minimal structural types we can physically imagine building in Haskell. We will conduct this exercise for both standard **Functors** (types with a single parameter, `Type -> Type`) and **Bifunctors** (types with two parameters, `Type -> Type -> Type`). 
 
@@ -423,17 +452,7 @@ To truly illustrate the power of parametricity, consider what happens when we co
     ```
     *The "Why"*: This is a brain-bender, but parametricity saves us. We must return an `r`. We possess `callback_b :: (b -> r)` and `g :: ((a -> r) -> r)`. We are forced to pass *something* to `g` that looks like `(a -> r)`. Since we possess a `b -> r`, and an `a -> b`, the only legal move is to compose them: `callback_b . f` is of type `a -> r`. We feed that exact composition to `g`. The types dictate the entire callback logic!
 
-### Section 1.3: Discovering Molecules (Compounds)
-
-
-
-
-
-
-
-
-
-### Section 1.3: Discovering Molecules (Compounds)
+### Section 2.3: Discovering Molecules (Compounds)
 
 Using these "atoms," let's see how we can discover the rest of the Haskell universe.
 
@@ -510,7 +529,7 @@ Categorically, `Foldable` represents an explicitly *lossy* operation. Unlike `Fu
 
 In Category Theory, there is a profound insight lying at the bottom of the `Foldable` hierarchy: `foldMap` is literally just `traverse` using the `Const` Applicative Functor! If you use `traverse` with `Const m`, you are running an applicative computation that strictly ignores the purely computational `a` part and only accumulates the contextual `Monoid m` part. Because you are accumulating the monoid and throwing away the structure, `traverse` geometrically degrades into a purely destructive fold.
 
-### Section 7.2: The Absolute Minimum Foldable
+### Section 3.2: The Absolute Minimum Foldable
 
 Before we can conceptually fold a structure using `foldMap`, we must supply it with its first argument: a monoidal mapping function `(a -> m)`. 
 
@@ -680,7 +699,7 @@ Once your elements are mathematically aligned into a list, folding them reduces 
 > 
 > A `Foldable t` is simply any data structure that possesses a natural transformation down into the Free Monoid. The mathematical Universal Property of the Free Monoid states that for any mapping `a -> m`, there is a unique monoid homomorphism from `[a] -> m`. When you call `foldMap f` on a generic `Foldable t`, you are mathematically flattening your structure into the Free Monoid (`toList`), and then immediately using its universal property to compute the final `m` (`foldMap_List f . toList`).
 
-### Section 7.3: The Algebra of Foldables
+### Section 3.3: The Algebra of Foldables
 
 Just like Functors and Bifunctors, the `Foldable` typeclass strictly shares the same structural shape (`Type -> Type`). Because of this, it inherently possesses the exact same magnificent algebraic composition rules! 
 
@@ -841,13 +860,13 @@ Do we need to explicitly prove new laws for them, like we did for associativity 
 No! We receive a massive mathematical freebie. 
 Because our combinators are defined *strictly* using the underlying Base `foldMap` operations and the Monoid `<>` operator, **the abstract algebra automatically guarantees the compound structures obey the laws**. Assuming the base atoms (like `Proxy` and `Identity`) are valid, the rigid associativity of the Monoid (`<>`) flawlessly ensures that whether you fold completely sequentially (`foldr`), or smash nested structures together hierarchically (`Compose` / `Product` / `Fix`), the final aggregated value will unequivocally evaluate to the exact same monoidal mathematical truth!
 
-## Chapter 3: Traversable (Effectful Folding)
+## Chapter 4: Traversable (Effectful Folding)
 
 If `Functor` is about **Shape Preservation** (mapping functions over data without altering the container) and `Foldable` is about **Aggregation** (destroying the shape to fold its elements into a single Monoid), then `Traversable` represents the final pillar of this mathematical trinity: **Effectful Sequencing**.
 
 `Traversable` allows you to navigate the shape from left to right while performing an `Applicative` effect on every element, and finally sequence all those effects into a single overarching context that rebuilds the exact original shape inside!
 
-### Section 8.1: What is Traversable?
+### Section 4.1: What is Traversable?
 
 The foundational method of `Traversable` is `traverse`:
 ```haskell
@@ -874,7 +893,7 @@ While `Foldable` aggressively tears down the structure using `<>` into a single 
 
 The most beautiful revelation is that `Traversable` shares **the exact same polynomial algebra, atoms, and operations** that we rigorously defined for Functors and Foldables. Let's prove it by reconstructing `Traversable` from the mathematical substrate up.
 
-### Section 8.2: The Absolute Minimum Traversable Atoms
+### Section 4.2: The Absolute Minimum Traversable Atoms
 
 Because Traversable relies on the same polynomial closure, we begin with our trusted atoms:
 
@@ -899,7 +918,7 @@ instance Traversable Identity where
 ```
 Here, `f x` generates our `Applicative` effect (e.g., an `IO` action or a `Maybe` computation). We mathematically map (`fmap`) the `Identity` constructor *inside* that effect to strictly reconstruct our $x^1$ bound!
 
-### Section 8.3: The Algebra of Traversables
+### Section 4.3: The Algebra of Traversables
 
 Now, let's look at how the categorical binary operations effortlessly scale into `Traversable`.
 
@@ -955,11 +974,11 @@ This algebraic theorem is exactly what powers the `DeriveFunctor`, `DeriveFoldab
 ***
 
 
-## Chapter 4: Applicative (Context Aggregation)
+## Chapter 5: Applicative (Context Aggregation)
 
 Now we step up in power. An `Applicative` is a Functor equipped with two new powers: `pure` (to lift values) and `<*>` (to lift application).
 
-### Section 2.1: The Applicative Atoms
+### Section 5.1: The Applicative Atoms
 
 Let's see how our atomic structures "upgrade" to this new level.
 
@@ -991,7 +1010,7 @@ instance Applicative Identity where
 ```
 **The "Why"**: Trivial application. We unwrap, apply, and rewrap.
 
-### Section 2.2: The Applicative Analog to foldMap (`traverse`)
+### Section 5.2: The Applicative Analog to foldMap (`traverse`)
 
 When working with `Foldable`, we saw how `foldMap` allows us to elegantly collapse a structure by mapping each element to a `Monoid` and combining them. 
 With `Applicative`, we gain a structurally analogous, but strictly more powerful operation from the `Traversable` class: `traverse`.
@@ -1018,7 +1037,7 @@ foldMapTraverse f xs = getConst $ traverse (Const . f) xs
 
 This mathematical elegance proves that folding is essentially a special case of traversal, where the "effect" being sequenced is simply the accumulation of a Monoid. It perfectly bridges the worlds of `Monoid` and `Applicative` using our minimal atom, `Const`.
 
-### Section 2.3: Automated Law Testing
+### Section 5.3: Automated Law Testing
 
 Just as with Functors, we can verify our Applicative instances using `tasty-checkers`. This is where the library truly shines, as the number of Applicative laws (Identity, Homomorphism, Interchange, and Composition) is significantly higher:
 
@@ -1029,11 +1048,11 @@ Just as with Functors, we can verify our Applicative instances using `tasty-chec
 
 ***
 
-## Chapter 5: Monad (Effectful Sequencing)
+## Chapter 6: Monad (Effectful Sequencing)
 
 The `Monad` adds the power of **Context-Dependent Sequencing** via `bind` (`>>=`) or `join`.
 
-### Section 3.1: The Final Upgrades
+### Section 6.1: The Final Upgrades
 
 #### 1. `Proxy`
 ```haskell
@@ -1056,7 +1075,7 @@ Pure function application.
 ```
 Because `Const` contains no `a`, we can never execute the function `(a -> Const r b)`. We completely lose whatever `r` value the function *would* have produced, violating the **Left Identity law** (`pure a >>= f == f a`). The evolution stops here.
 
-### Section 3.2: Automated Law Testing
+### Section 6.2: Automated Law Testing
 
 Finally, we can verify our Monad instances (Left Identity, Right Identity, and Associativity) with a single check:
 

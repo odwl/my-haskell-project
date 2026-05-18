@@ -76,7 +76,8 @@ library
     transformers,
     parallel,
     natural-transformation,
-    profunctors
+    profunctors,
+    data-default
 
 test-suite lambda-test
   import: share-tests-deps

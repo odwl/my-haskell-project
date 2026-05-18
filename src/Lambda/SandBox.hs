@@ -4,14 +4,17 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 
 module Lambda.SandBox where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (..), Kleisli (..), (>>>), (^>>), (>>^))
 import Control.Category (Category, (.), id)
 import Prelude hiding (id, (.))
-import Control.Applicative (Alternative (..))
-import Control.Natural (type (~>))
+import Control.Applicative (Alternative (..), Const (..))
+import Control.Natural (type (:~>) (..), type (~>))
 import Control.Monad (MonadPlus (..), (>=>))
 import Data.Profunctor (Profunctor (..), Strong (..))
 import Data.Functor.Identity (Identity)
@@ -19,7 +22,10 @@ import Data.List (isPrefixOf, sortOn, tails)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
 import Lambda (safeHead)
-import qualified Safe
+import Safe (tailMay)
+import Data.Default (Default (..))
+import Control.Monad.Reader (Reader, runReader)
+import Data.Functor.Contravariant (Op (..))
 
 -- | splits an even length list such as [1,2,3,4,5,6] -> ([1,2,3], [4,5,6])
 halve :: [a] -> Maybe ([a], [a])
@@ -254,7 +260,18 @@ mapA fn = arr listCase >>> (fBase ||| fRec)
 type FailingWriter w = WriterKleisli w Maybe
 
 newtype WriterKleisli w m a b = WriterKleisli {runWriterKleisli :: (w, a) -> m (w, b)}
-  deriving (Functor)
+  deriving Functor
+
+-- 1. The Standalone Primitive Constructor
+arrWK :: Applicative m => (a -> b) -> WriterKleisli w m a b
+arrWK f = WriterKleisli $ fmap f >>> pure
+
+instance (Monad m) => Applicative (WriterKleisli w m a) where
+  pure = const >>> arrWK
+  WriterKleisli ff <*> WriterKleisli fx = WriterKleisli $ \(w, a) -> do 
+    (e, f) <- ff (w, a)
+    (e', x) <- fx (e, a)
+    pure (e', f x)
 
 instance Functor m => Profunctor (WriterKleisli w m) where
   lmap f (WriterKleisli g) = WriterKleisli $ fmap f >>> g
@@ -265,9 +282,7 @@ instance Monad m => Category (WriterKleisli w m) where
   id = WriterKleisli pure
   (WriterKleisli f) . (WriterKleisli g) = WriterKleisli (g >=> f)
 
--- 1. The Standalone Primitive Constructor
-arrWK :: Monad m => (a -> b) -> WriterKleisli w m a b
-arrWK f = WriterKleisli $ fmap f >>> pure
+
 
 -- 2. Strong depends ONLY on arrWK (No Arrow required!)
 instance Monad m => Strong (WriterKleisli w m) where
@@ -302,12 +317,7 @@ instance Monad m => ArrowChoice (WriterKleisli w m) where
 
 type MyMonad w m a = WriterKleisli w m a 
 
-instance Monad m => Applicative (WriterKleisli w m a) where
-  pure b = WriterKleisli (\(w, _) -> pure (w, b))
-  WriterKleisli ff <*> WriterKleisli fx = WriterKleisli (\(w, a) -> do
-    (w', f) <- ff (w, a)
-    (w'', x) <- fx (w', a)
-    pure (w'', f x))
+
 
 -- instance Monad m => Monad (WriterKleisli w m a) where
 --   WriterKleisli fx >>= h = WriterKleisli (\(w, a) -> do
@@ -432,3 +442,78 @@ instance ArrowZero SF where
 instance ArrowPlus SF where 
       SF f <+> SF g = SF fn
         where fn xs = f xs ++ g xs
+
+
+-- ========================================================================= --
+--                          Natural Transformation                         --
+-- ========================================================================= --
+
+nt :: Maybe ~> []
+nt Nothing = []
+nt (Just x) = [x]
+
+nt2 :: Maybe ~> []
+nt2 Nothing = []
+nt2 (Just _) = []
+
+nt3 :: Maybe ~> []
+nt3 Nothing = []
+nt3 (Just x) = [x, x]
+
+lengthC :: [] ~> Const Int
+lengthC [] = Const 0
+lengthC (_:xs) = lengthC xs + Const 1
+
+length' :: [a] -> Int 
+length' = lengthC >>> getConst
+
+scam :: Const b ~> Maybe
+scam = const Nothing
+
+scam2 :: Monoid a => Const b a -> Maybe a
+scam2 = const $ Just mempty
+
+scam3 :: Default a => Const b a -> Maybe a
+scam3 = const $ Just def
+
+-- There are two possible natural transformations from Reader () to Maybe
+-- There are two possible value of Maybe ()
+-- This is Yoneda lemma.
+-- nat :: Reader () ~> Maybe 
+-- -- nat (Reader f) = Just (f ()) -- will not compile ReaderT stuff
+-- nat = runReader >>> ($ ()) >>> Just
+
+readerToMaybe :: Reader () :~> Maybe
+readerToMaybe = NT (runReader >>> ($ ()) >>> Just)
+
+maybeToList :: Maybe :~> []
+maybeToList = NT (maybe [] pure)
+
+readerToList :: Reader () :~> []
+readerToList = readerToMaybe >>> maybeToList
+
+natBool1 :: Reader Bool :~> Maybe
+natBool1 = NT (const Nothing)
+
+natBool2 :: Reader Bool :~> Maybe
+natBool2 = NT $ runReader >>> ($ True) >>> Just
+
+natBool3 :: Reader Bool :~> Maybe
+natBool3 = NT $ runReader >>> ($ False) >>> Just
+
+-- There are the 3 Yoneda prediction. 3 possible value of Either ()
+-- Normal becausue Either () is iso to Maybe
+natBoolEither1 :: Reader Bool ~> Either ()
+natBoolEither1 = const $ Left () 
+
+natBoolEither2 :: Reader Bool ~> Either ()
+natBoolEither2 = runReader >>> ($ True) >>> Right 
+
+natBoolEither3 :: Reader Bool ~> Either ()
+natBoolEither3 = runReader >>> ($ False) >>> Right 
+
+natOp :: Op Bool :~> Op String 
+-- natOp = getOp >>> (>>> show) >>> Op 
+natOp = NT (Op show >>>)
+
+

@@ -1,5 +1,23 @@
 # Part 4: HKT2 Morphic Structures & Workflows
 
+## Table of Contents
+- [Chapter 1: HKT2 Morphic Structures (No Laws)](#chapter-1-hkt2-morphic-structures-no-laws)
+  - [Section 1.1: `Empty2` (0 Inhabitants)](#section-11-empty2-0-inhabitants)
+  - [Section 1.2: `Const2` (1 Inhabitant)](#section-12-const2-1-inhabitant)
+  - [Section 1.3: `Bool2` (2 Inhabitants)](#section-13-bool2-2-inhabitants)
+- [Chapter 2: HKT2 Algebras (Laws)](#chapter-2-hkt2-algebras-laws)
+  - [Section 2.1: Minimal Bifunctors](#section-21-minimal-bifunctors)
+  - [Section 2.2: Bifunctors as Binary Operations on Functors](#section-22-bifunctors-as-binary-operations-on-functors)
+  - [Section 2.3: Deriving the Atoms from Bifunctors](#section-23-deriving-the-atoms-from-bifunctors)
+  - [Section 2.4: Generating Functor Subcategories (The Algebra as a Special Case)](#section-24-generating-functor-subcategories-the-algebra-as-a-special-case)
+  - [Section 2.5: Polynomial Functors](#section-25-polynomial-functors)
+  - [Section 2.6: The Parallel Functor Ecosystem (Solutions for Restricted Functors)](#section-26-the-parallel-functor-ecosystem-solutions-for-restricted-functors)
+  - [Section 2.7: Discovering Molecules (Compounds)](#section-27-discovering-molecules-compounds)
+- [Chapter 3: Category & Arrow (Pipeline Workflows)](#chapter-3-category--arrow-pipeline-workflows)
+  - [Section 3.1: Category (Generalizing Composition)](#section-31-category-generalizing-composition)
+  - [Section 3.2: Arrow (Splitting & Combining Pipelines)](#section-32-arrow-splitting--combining-pipelines)
+  - [Section 3.3: ArrowChoice (Dynamic Branch Routing)](#section-33-arrowchoice-dynamic-branch-routing)
+
 This document captures a profound mathematical exploration into Universe 3: types constrained by the kind **`Type -> Type -> Type`** (often written as `* -> * -> *`).
 
 While shapes represent contexts and containers (kind `Type -> Type`), types of kind `Type -> Type -> Type` represent **morphisms, binary relations, inputs-to-outputs, and pipeline workflows**.
@@ -53,7 +71,7 @@ data Choice2 a b = Choice1 | Choice2
 
 A `Bifunctor` requires a type constructor with the kind `Type -> Type -> Type`. It represents a container or context that can hold two independent types, and allows you to map over both covariant branches simultaneously.
 
-### Section 1.1: Minimal Bifunctors
+### Section 2.1: Minimal Bifunctors
 
 Just as we can look at the simplest possible Functors (`Proxy`, `Const`, `Identity`), we can apply the exact same "shrinking" exercise to Bifunctors (`Type -> Type -> Type`). While `Either` (Sum) and `(,)` (Product) are the fundamental operations of our algebra, they both contain term-level data. We can go simpler in three distinct ways:
 
@@ -207,7 +225,7 @@ instance Bifunctor (BiReader r) where
     == bimap f g (bimap j k (BiReader h))
     ```
 
-### Section 1.2: Bifunctors as Binary Operations on Functors
+### Section 2.2: Bifunctors as Binary Operations on Functors
 
 Because a Bifunctor maps two types into a new type, we can think of it mathematically as a **binary operator** on the category of Functors! By taking two existing Functors, $F$ and $G$, and combining them using a Bifunctor operator $B$, we generate an entirely new Functor: $H(x) = B(F(x), G(x))$. 
 
@@ -254,7 +272,7 @@ This conceptually proves why `Const Void` acts as the true algebraic identity fo
 
 By treating Bifunctors as binary operators running on simple atomic Functors, we observe the foundation of Algebraic Data Types emerging exactly like fundamental school arithmetic.
 
-### Section 1.3: Deriving the Atoms from Bifunctors
+### Section 2.3: Deriving the Atoms from Bifunctors
 
 In mathematical systems, we often don't just invent the "atomic" elements out of thin air. We derive them from the operations themselves. Here, we are deeply interested in extracting "natural" atomic Functors directly out of our foundational Bifunctors.
 
@@ -341,7 +359,7 @@ This completely "closed" loop of operations is extraordinarily profound. Accordi
 
 The closure built by these three simple Bifunctors creates the entire logical framework that strongly typed programming languages like Haskell rely on!
 
-### Section 1.4: Generating Functor Subcategories (The Algebra as a Special Case)
+### Section 2.4: Generating Functor Subcategories (The Algebra as a Special Case)
 
 *(Note on Terminology: When mathematicians or Haskell programmers say a structure is "algebraic" — as in Algebraic Data Types or ADTs — they mean it is constructed strictly using only polynomial combinations: Sums `+` and Products `*`. Function arrows `->` represent Exponentials, which are conceptually a tier "above" simple algebra!
 To make this concrete:
@@ -402,7 +420,7 @@ instance (Bifunctor p, Functor f, Functor g) => Bifunctor (Biff p f g) where
 
 For example, `Biff Either [] Maybe a b` geometrically creates `Either [a] (Maybe b)`. Because `Either`, `List`, and `Maybe` are completely lawful atoms, `Biff` automatically writes `bimap` for you by natively mapping the left function over the list and the right function over the `Maybe` branch. This flawlessly bridges 1D Functors and 2D Bifunctors in our mathematical closed algebraic system!
 
-### Section 1.5: Polynomial Functors
+### Section 2.5: Polynomial Functors
 
 The relationship between Category Theory and Haskell's **Algebraic Data Types (ADTs)** is formalized through **Polynomial Functors**.
 
@@ -433,7 +451,7 @@ If we translate this to algebra using our building blocks:
 So, the polynomial functor shape for `Shape a` is mathematically written as: 
 **$F(X) = 1 + Int + X^2$**
 
-### Section 1.6: The Parallel Functor Ecosystem (Solutions for Restricted Functors)
+### Section 2.6: The Parallel Functor Ecosystem (Solutions for Restricted Functors)
 
 As we briefly highlighted in Section 2.1, the mathematical definition of a functor is far broader than Haskell's native `Functor` typeclass (which strictly maps `Type -> Type` unconstrained). When structures inevitably violate these two rules, we do not throw our hands up in defeat! 
 
@@ -473,7 +491,7 @@ class MonoFunctor mono where
 ```
 This allows us to maintain the interface and laws of a Functor over mathematically restricted or entirely monomorphic structures.
 
-### Section 1.7: Discovering Molecules (Compounds)
+### Section 2.7: Discovering Molecules (Compounds)
 
 Using these "atoms," let's see how we can discover the rest of the Haskell universe.
 
@@ -494,13 +512,13 @@ By using both Sums and Products with **Recursion**, we can build a list. A list 
 
 ---
 
-### Category & Arrow (Pipeline Workflows)
+## Chapter 3: Category & Arrow (Pipeline Workflows)
 
 While shapes (kind `Type -> Type`) manage values wrapped inside a context, types of kind `Type -> Type -> Type` are structurally designed to act as **pipelines, transitions, or processes**. They describe workflows that take an input of one type and yield an output of another!
 
 This pipeline behavior is governed by two major, powerful typeclasses in the Haskell standard library: **Category** and **Arrow**.
 
-### Section 2.1: Category (Generalizing Composition)
+### Section 3.1: Category (Generalizing Composition)
 
 A `Category` instance works over kind `Type -> Type -> Type` (or `* -> * -> *`). To understand this category deeply, we must first clarify a foundational distinction: what are the objects, and what are the arrows?
 
@@ -826,7 +844,7 @@ Lifting a pure function `b -> c` to a function mapping over the structure `f b -
 
 ---
 
-### Section 2.2: Arrow (Splitting & Combining Pipelines)
+### Section 3.2: Arrow (Splitting & Combining Pipelines)
 
 In `Control.Arrow`, we extend a lawful `Category` into a much more robust and expressive workflow engine. While a `Category` generalizes composition, an `Arrow` allows us to:
 1. **Lift Functions (`arr`)**: Import any standard pure function `(b -> c)` directly into our morphic pipeline wrapper `a b c`.
@@ -1011,7 +1029,7 @@ Equipped with `arr` and `first` (the minimal generating set), `Control.Arrow` au
 
 ---
 
-### Section 2.3: ArrowChoice (Dynamic Branch Routing)
+### Section 3.3: ArrowChoice (Dynamic Branch Routing)
 
 By inheriting from `Arrow`, an **`ArrowChoice`** instance completes our pipeline engine by adding support for **conditional branching, decision trees, and dynamic routing**! While standard `Arrow` handles Product shapes (`(,)`), `ArrowChoice` is designed strictly to manage Sum shapes (`Either`).
 

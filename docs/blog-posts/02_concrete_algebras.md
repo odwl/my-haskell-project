@@ -1,5 +1,25 @@
 # Part 2: The Algebras (Laws) for Concrete Types
 
+## Table of Contents
+- [Chapter 1: Equivalence and Ordering](#chapter-1-equivalence-and-ordering)
+  - [Section 1.1: `Eq` (The Laws of Mathematical Equivalence)](#section-11-eq-the-laws-of-mathematical-equivalence)
+  - [Section 1.2: `Ord` (The Laws of Total Ordering)](#section-12-ord-the-laws-of-total-ordering)
+- [Chapter 2: Associative Binary Operations ($+$ and $\times$)](#chapter-2-associative-binary-operations--and-)
+  - [Section 2.1: `Semigroup` and `Monoid`](#section-21-semigroup-and-monoid)
+    - [1. A Well-Kinded Type (`Type`)](#1-a-well-kinded-type-type)
+    - [2. Two Core Operations](#2-two-core-operations)
+    - [1. The Absolute Minimum (1 Inhabitant)](#1-the-absolute-minimum-1-inhabitant)
+    - [2. Types with 2 Inhabitants (`Bool`)](#2-types-with-2-inhabitants-bool)
+    - [3. Types with 3 Inhabitants (e.g., `Ordering`)](#3-types-with-3-inhabitants-eg-ordering)
+    - [4. Types with Countably Infinite Inhabitants (e.g., `Integer`)](#4-types-with-countably-infinite-inhabitants-eg-integer)
+    - [5. The Free Monoid (`[a]`)](#5-the-free-monoid-a)
+    - [6. Why do `Sum`, `Product`, `Max`, and `Min` stand out?](#6-why-do-sum-product-max-and-min-stand-out)
+    - [Category Theory Origin: The Single-Object Category](#category-theory-origin-the-single-object-category)
+- [Annex: The Category Hask](#annex-the-category-hask-)
+  - [Hask: The Category of Haskell Types](#hask-the-category-of-haskell-types)
+  - [The Secret Inhabitant: Bottom (`_|_`)](#the-secret-inhabitant-bottom-__)
+    - [Interacting with Bottom safely using `IO`](#interacting-with-bottom-safely-using-io)
+
 Welcome to the second part of Universe 1. In Part 1, we defined our core **Structures**—the bare mathematical geometry of how many values a type can hold. We looked at the Initial Object (`Void`), the Terminal Object (`()`), the Coproduct of Terminal Objects (`Bool`), and both Countable (e.g., `[()]`, `Integer`) and Uncountable (e.g., `Stream Bool`, `Integer -> Bool`) infinite inhabitants.
 
 But structures alone are sterile. To actually perform computation, we need **Algebras**. An algebra assigns specific *behaviors* to our structures. In Haskell, we implement these algebras using Typeclasses. But unlike simple interfaces in other programming languages, a true algebra must come with **Mathematical Laws** to ensure the behavior is predictably sound.
