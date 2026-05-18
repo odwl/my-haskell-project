@@ -16,6 +16,7 @@ import Prelude hiding (id, (.))
 import Control.Applicative (Alternative (..), Const (..))
 import Control.Natural (type (:~>) (..), type (~>))
 import Control.Monad (MonadPlus (..), (>=>))
+import Data.Functor.Yoneda (Yoneda, liftYoneda, lowerYoneda, runYoneda)
 import Data.Profunctor (Profunctor (..), Strong (..))
 import Data.Functor.Identity (Identity)
 import Data.List (isPrefixOf, sortOn, tails)
@@ -492,14 +493,25 @@ maybeToList = NT (maybe [] pure)
 readerToList :: Reader () :~> []
 readerToList = readerToMaybe >>> maybeToList
 
-natBool1 :: Reader Bool :~> Maybe
-natBool1 = NT (const Nothing)
 
-natBool2 :: Reader Bool :~> Maybe
-natBool2 = NT $ runReader >>> ($ True) >>> Just
+-- Yoneda. This is equivalent ot liftYoneda (Just True)
+-- added some quickchek to verify.
 
-natBool3 :: Reader Bool :~> Maybe
-natBool3 = NT $ runReader >>> ($ False) >>> Just
+maybeBoolToNat :: Maybe Bool -> (((->) Bool) :~> Maybe)
+maybeBoolToNat m = NT (
+  case m of 
+    Nothing -> const Nothing
+    Just True -> ($ True) >>> Just
+    Just False -> ($ False) >>> Just
+  )
+
+maybeBoolToNat' :: Maybe Bool -> (((->) Bool) :~> Maybe)
+maybeBoolToNat' m = NT $ runYoneda (liftYoneda m)
+
+-- testResult1 = runYoneda yo (\b -> if b then 10 else 20)
+-- testResult2 = maybeBoolToNat (Just True) # (\b -> if b then 10 else 20)
+
+
 
 -- There are the 3 Yoneda prediction. 3 possible value of Either ()
 -- Normal becausue Either () is iso to Maybe
@@ -517,3 +529,13 @@ natOp :: Op Bool :~> Op String
 natOp = NT (Op show >>>)
 
 
+-- newtype Yoneda f a = Yoneda { runYoneda :: Reader a :~> f}
+
+-- -- helperFn ::(a -> b) -> (Reader a :~> f) -> Reader b c -> f c
+-- -- helperFn ab ff = runReader >>> lmap ab >>> reader >>> (ff #)
+
+-- -- helper2Fn ::(a -> b) -> Yoneda f a -> Reader b :~> f
+-- -- helper2Fn ab (Yoneda ff) = NT $ runReader >>> lmap ab >>> reader >>> (ff #)
+
+-- instance Functor (Yoneda f) where
+--     fmap g y = Yoneda $ NT $ runReader >>> lmap g >>> reader >>> (runYoneda y #)

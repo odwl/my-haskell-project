@@ -6,10 +6,12 @@ import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
 import Control.Category ((.), id)
 import Data.Profunctor (Profunctor (..))
 import Prelude hiding (id, (.))
-import Lambda.SandBox (WriterKleisli (..), halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third')
+import Lambda.SandBox (WriterKleisli (..), halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat')
+import Control.Natural ((#))
+import Data.Functor.Yoneda (liftYoneda, runYoneda)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
-import Test.Tasty.QuickCheck (testProperty, (==>))
+import Test.Tasty.QuickCheck (Fun, applyFun, testProperty, (==>))
 
 f :: Int -> Int
 f = (+ 1)
@@ -135,6 +137,15 @@ sandBoxSuite =
               (fmap f . nt2) m == (nt2 . fmap f) m,
           testProperty "Naturality of nt3 (2 elements): fmap f . nt3 == nt3 . fmap f" $
             \(m :: Maybe Int) ->
-              (fmap f . nt3) m == (nt3 . fmap f) m
+              (fmap f . nt3) m == (nt3 . fmap f) m,
+          testProperty "Yoneda Lemma Isomorphism: runYoneda (liftYoneda m) f == maybeBoolToNat m # f" $
+            \(m :: Maybe Bool) (fun :: Fun Bool Int) ->
+              let f' = applyFun fun
+               in runYoneda (liftYoneda m) f' == (maybeBoolToNat m # f'),
+          testProperty "maybeBoolToNat == maybeBoolToNat' Equivalence: maybeBoolToNat m # f == maybeBoolToNat' m # f" $
+            \(m :: Maybe Bool) (fun :: Fun Bool Int) ->
+              let f' = applyFun fun
+               in (maybeBoolToNat m # f') == (maybeBoolToNat' m # f')
         ]
     ]
+

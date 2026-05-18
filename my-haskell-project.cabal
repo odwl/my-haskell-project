@@ -29,7 +29,10 @@ common share-tests-deps
     transformers,
     time,
     lens,
-    profunctors
+    profunctors,
+    natural-transformation,
+    kan-extensions
+
 
 -- The main library for the project
 library
@@ -77,6 +80,7 @@ library
     parallel,
     natural-transformation,
     profunctors,
+    kan-extensions,
     data-default
 
 test-suite lambda-test
