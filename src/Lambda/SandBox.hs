@@ -6,6 +6,9 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
 
 
 module Lambda.SandBox where
@@ -16,7 +19,7 @@ import Prelude hiding (id, (.))
 import Control.Applicative (Alternative (..), Const (..))
 import Control.Natural (type (:~>) (..), type (~>))
 import Control.Monad (MonadPlus (..), (>=>))
-import Data.Functor.Yoneda (Yoneda, liftYoneda, lowerYoneda, runYoneda)
+import Data.Functor.Yoneda (liftYoneda, runYoneda)
 import Data.Profunctor (Profunctor (..), Strong (..))
 import Data.Functor.Identity (Identity)
 import Data.List (isPrefixOf, sortOn, tails)
@@ -26,6 +29,9 @@ import Lambda (safeHead)
 import Safe (tailMay)
 import Data.Default (Default (..))
 import Control.Monad.Reader (Reader, runReader)
+import Control.Monad.Writer (tell, MonadWriter, runWriter)
+import Data.Monoid (Endo (..), Sum (..))
+import Data.Kind (Type)
 import Data.Functor.Contravariant (Op (..))
 
 -- | splits an even length list such as [1,2,3,4,5,6] -> ([1,2,3], [4,5,6])
@@ -225,7 +231,7 @@ mapA' f = arr listcase >>> (arr id `choiceSF'` (f *** mapA' f >>> arr (uncurry (
 -- Note, Writer cannot be a Monoid: ArrowZero and ArrowPlus
 -- For this we need to specialize such as with WriterKleisli
 
-type Writer w = WriterKleisli w Identity
+type ArrowWriter w = WriterKleisli w Identity
 
 -- instance ArrowChoice (Writer w) where
 --   left (Writer f) = Writer fn
@@ -511,18 +517,28 @@ maybeBoolToNat' m = NT $ runYoneda (liftYoneda m)
 -- testResult1 = runYoneda yo (\b -> if b then 10 else 20)
 -- testResult2 = maybeBoolToNat (Just True) # (\b -> if b then 10 else 20)
 
-
-
 -- There are the 3 Yoneda prediction. 3 possible value of Either ()
 -- Normal becausue Either () is iso to Maybe
-natBoolEither1 :: Reader Bool ~> Either ()
-natBoolEither1 = const $ Left () 
+eitherBoolToNat :: Either () Bool -> (((->) Bool) :~> Either ())
+eitherBoolToNat m = NT (
+  case m of 
+    Left () -> const (Left ())
+    Right True -> ($ True) >>> Right
+    Right False -> ($ False) >>> Right
+  )
 
-natBoolEither2 :: Reader Bool ~> Either ()
-natBoolEither2 = runReader >>> ($ True) >>> Right 
+eitherBoolToNat' :: Either () Bool -> (((->) Bool) :~> Either ())
+eitherBoolToNat' m = NT $ runYoneda (liftYoneda m)
 
-natBoolEither3 :: Reader Bool ~> Either ()
-natBoolEither3 = runReader >>> ($ False) >>> Right 
+-- natBoolEither1 :: Reader Bool ~> Either ()
+-- natBoolEither1 = const $ Left () 
+
+-- natBoolEither2 :: Reader Bool ~> Either ()
+-- natBoolEither2 = runReader >>> ($ True) >>> Right 
+
+-- natBoolEither3 :: Reader Bool ~> Either ()
+-- natBoolEither3 = runReader >>> ($ False) >>> Right 
+
 
 natOp :: Op Bool :~> Op String 
 -- natOp = getOp >>> (>>> show) >>> Op 
@@ -539,3 +555,52 @@ natOp = NT (Op show >>>)
 
 -- instance Functor (Yoneda f) where
 --     fmap g y = Yoneda $ NT $ runReader >>> lmap g >>> reader >>> (runYoneda y #)
+
+
+-- ========================================================================= --
+--                             Writer for logging                          --
+-- ========================================================================= --
+
+class Monoid w => LogSink w where
+  emitLog :: String -> w
+
+instance LogSink (Endo [String]) where
+  emitLog s = Endo (s :)
+
+instance LogSink () where
+  emitLog _ = () -- Zero allocation log discarding
+
+instance LogSink (Sum Int) where
+  emitLog _ = Sum 1 -- Ignores string, counts exactly 1 call per event
+
+instance (LogSink a, LogSink b) => LogSink (a, b) where
+  emitLog s = (emitLog s, emitLog s) -- Broadcasts to both sinks simultaneously
+
+factorial :: (MonadWriter w m, LogSink w) => Int -> m Int
+factorial 0 = 1 <$ tell (emitLog "0! is 1. ")
+factorial n = do 
+  res <- fmap (* n) (factorial (n - 1))
+  tell $ emitLog (show n ++ "! is " ++ show res ++ ". ")
+  return res
+
+runFactorialEndo :: Int -> ([String], Int)
+runFactorialEndo n = let (result, builder) = runWriter (factorial n)
+                      in (appEndo builder [], result)
+
+runFactorialNull :: Int -> Int
+runFactorialNull n = let (result, ()) = runWriter (factorial n)
+                      in result
+
+runFactorialCount :: Int -> (Int, Int)
+runFactorialCount n = let (result, Sum count) = runWriter (factorial n)
+                       in (count, result)
+
+runFactorialHybrid :: Int -> (Int, [String], Int)
+runFactorialHybrid n = let (result, (Sum count, builder)) = runWriter (factorial n)
+                        in (count, appEndo builder [], result)
+
+
+-- Diagonal Functor
+
+data Diag :: (Type -> Type -> Type) -> (Type -> Type -> Type) -> Type where
+
