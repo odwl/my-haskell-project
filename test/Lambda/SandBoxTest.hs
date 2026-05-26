@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Lambda.SandBoxTest (sandBoxSuite) where
@@ -6,12 +7,42 @@ import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
 import Control.Category ((.), id)
 import Data.Profunctor (Profunctor (..))
 import Prelude hiding (id, (.))
-import Lambda.SandBox (WriterKleisli (..), halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat')
+import Lambda.SandBox (DeltaF (..), UnitF (..), Zero (..), WriterKleisli (..), MyProxy(..), MyIdentity(..), MyReader(..), halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat', eitherBoolToNat, eitherBoolToNat')
 import Control.Natural ((#))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
+import Data.Key (mapWithKey)
+import Data.Distributive (distribute)
+import Data.Functor.Identity (Identity(..))
+import Data.Functor.Alt (Alt(..))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
-import Test.Tasty.QuickCheck (Fun, applyFun, testProperty, (==>))
+import Test.Tasty.QuickCheck (Arbitrary (..), CoArbitrary, Fun, applyFun, testProperty, discard, (==>), withMaxSuccess)
+
+instance Arbitrary (UnitF a) where
+  arbitrary = pure (UnitF ())
+
+instance Arbitrary a => Arbitrary (DeltaF a) where
+  arbitrary = DeltaF <$> arbitrary
+
+instance Arbitrary (Zero a) where
+  arbitrary = discard -- Discards tests because Void is uninhabited
+
+instance Arbitrary (MyProxy a) where
+  arbitrary = pure MyProxy
+
+instance Arbitrary a => Arbitrary (MyIdentity a) where
+  arbitrary = MyIdentity <$> arbitrary
+
+instance (CoArbitrary r, Arbitrary a) => Arbitrary (MyReader r a) where
+  arbitrary = MyReader <$> arbitrary
+
+instance Show (MyReader r a) where
+  show _ = "MyReader <function>"
+
+eqReader :: Eq a => r -> MyReader r a -> MyReader r a -> Bool
+eqReader r (MyReader f1) (MyReader f2) = f1 r == f2 r
+
+
 
 f :: Int -> Int
 f = (+ 1)
@@ -145,7 +176,102 @@ sandBoxSuite =
           testProperty "maybeBoolToNat == maybeBoolToNat' Equivalence: maybeBoolToNat m # f == maybeBoolToNat' m # f" $
             \(m :: Maybe Bool) (fun :: Fun Bool Int) ->
               let f' = applyFun fun
-               in (maybeBoolToNat m # f') == (maybeBoolToNat' m # f')
+               in (maybeBoolToNat m # f') == (maybeBoolToNat' m # f'),
+          testProperty "Either Yoneda Lemma Isomorphism: runYoneda (liftYoneda m) f == eitherBoolToNat m # f" $
+            \(m :: Either () Bool) (fun :: Fun Bool Int) ->
+              let f' = applyFun fun
+               in runYoneda (liftYoneda m) f' == (eitherBoolToNat m # f'),
+          testProperty "eitherBoolToNat == eitherBoolToNat' Equivalence: eitherBoolToNat m # f == eitherBoolToNat' m # f" $
+            \(m :: Either () Bool) (fun :: Fun Bool Int) ->
+              let f' = applyFun fun
+               in (eitherBoolToNat m # f') == (eitherBoolToNat' m # f')
+        ],
+      testGroup
+        "UnitF Functor Laws"
+        [ testProperty "Identity Law: fmap id == id" $
+            \(u :: UnitF Int) ->
+              fmap id u == u,
+          testProperty "Composition Law: fmap (f . g) == fmap f . fmap g" $
+            \(u :: UnitF Int) ->
+              fmap (f . g) u == (fmap f . fmap g) u
+        ],
+      testGroup
+        "DeltaF Functor Laws"
+        [ testProperty "Identity Law: fmap id == id" $
+            \(d :: DeltaF Int) ->
+              fmap id d == d,
+          testProperty "Composition Law: fmap (f . g) == fmap f . fmap g" $
+            \(d :: DeltaF Int) ->
+              fmap (f . g) d == (fmap f . fmap g) d
+        ],
+      testGroup
+        "Zero Functor Laws"
+        [ testProperty "Identity Law: fmap id == id" $
+            withMaxSuccess 0 $ \(z :: Zero Int) ->
+              fmap id z == z,
+          testProperty "Composition Law: fmap (f . g) == fmap f . fmap g" $
+            withMaxSuccess 0 $ \(z :: Zero Int) ->
+              fmap (f . g) z == (fmap f . fmap g) z,
+          testProperty "Alt Associativity: (a <!> b) <!> c == a <!> (b <!> c)" $
+            withMaxSuccess 0 $ \(a :: Zero Int, b :: Zero Int, c :: Zero Int) ->
+              ((a <!> b) <!> c) == (a <!> (b <!> c))
+        ],
+      testGroup
+        "MyProxy Laws"
+        [ testProperty "Functor Identity" $
+            \(p :: MyProxy Int) -> fmap id p == p,
+          testProperty "Functor Composition" $
+            \(p :: MyProxy Int) -> fmap (f . g) p == (fmap f . fmap g) p,
+          testProperty "Applicative Identity" $
+            \(p :: MyProxy Int) -> (pure id <*> p) == p,
+          testProperty "Applicative Homomorphism" $
+            \(x :: Int) -> (pure f <*> pure x :: MyProxy Int) == pure (f x),
+          testProperty "Applicative Interchange" $
+            \(u :: MyProxy (Int -> Int), y :: Int) -> (u <*> pure y) == (pure ($ y) <*> u),
+          testProperty "Keyed Identity" $
+            \(p :: MyProxy Int) -> mapWithKey (\_ x -> x) p == p,
+          testProperty "Distributive Law" $
+            \(p :: MyProxy Int) -> distribute (Identity p) == fmap Identity p
+        ],
+      testGroup
+        "MyIdentity Laws"
+        [ testProperty "Functor Identity" $
+            \(mi :: MyIdentity Int) -> fmap id mi == mi,
+          testProperty "Functor Composition" $
+            \(mi :: MyIdentity Int) -> fmap (f . g) mi == (fmap f . fmap g) mi,
+          testProperty "Applicative Identity" $
+            \(mi :: MyIdentity Int) -> (pure id <*> mi) == mi,
+          testProperty "Applicative Homomorphism" $
+            \(x :: Int) -> (pure f <*> pure x :: MyIdentity Int) == pure (f x),
+          testProperty "Applicative Interchange" $
+            \(u :: MyIdentity (Fun Int Int), y :: Int) -> 
+              let u' = fmap applyFun u 
+               in (u' <*> pure y) == (pure ($ y) <*> u'),
+          testProperty "Keyed Identity" $
+            \(mi :: MyIdentity Int) -> mapWithKey (\_ x -> x) mi == mi,
+          testProperty "Keyed map matches fmap" $
+            \(mi :: MyIdentity Int) -> mapWithKey (\_ x -> f x) mi == fmap f mi,
+          testProperty "Distributive Law" $
+            \(mi :: MyIdentity Int) -> distribute (Identity mi) == fmap Identity mi
+        ],
+      testGroup
+        "MyReader Laws"
+        [ testProperty "Functor Identity" $
+            \(r :: Int, mr :: MyReader Int Int) -> eqReader r (fmap id mr) mr,
+          testProperty "Functor Composition" $
+            \(r :: Int, mr :: MyReader Int Int) -> eqReader r (fmap (f . g) mr) ((fmap f . fmap g) mr),
+          testProperty "Applicative Identity" $
+            \(r :: Int, mr :: MyReader Int Int) -> eqReader r (pure id <*> mr) mr,
+          testProperty "Applicative Homomorphism" $
+            \(r :: Int, x :: Int) -> eqReader r (pure f <*> pure x :: MyReader Int Int) (pure (f x)),
+          testProperty "Applicative Interchange" $
+            \(r :: Int, u :: MyReader Int (Fun Int Int), y :: Int) -> 
+              let u' = fmap applyFun u 
+               in eqReader r (u' <*> pure y) (pure ($ y) <*> u'),
+          testProperty "Keyed Identity" $
+            \(r :: Int, mr :: MyReader Int Int) -> eqReader r (mapWithKey (\_ x -> x) mr) mr,
+          testProperty "Keyed map matches fmap" $
+            \(r :: Int, mr :: MyReader Int Int) -> eqReader r (mapWithKey (\_ x -> f x) mr) (fmap f mr)
         ]
     ]
 

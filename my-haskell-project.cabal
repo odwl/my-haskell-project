@@ -31,7 +31,12 @@ common share-tests-deps
     lens,
     profunctors,
     natural-transformation,
-    kan-extensions
+    kan-extensions,
+    distributive,
+    adjunctions,
+    keys,
+    semigroupoids,
+    comonad
 
 
 -- The main library for the project
@@ -81,7 +86,12 @@ library
     natural-transformation,
     profunctors,
     kan-extensions,
-    data-default
+    data-default,
+    distributive,
+    adjunctions,
+    keys,
+    semigroupoids,
+    comonad
 
 test-suite lambda-test
   import: share-tests-deps

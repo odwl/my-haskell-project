@@ -9,6 +9,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE InstanceSigs #-}
 
 
 module Lambda.SandBox where
@@ -21,7 +24,7 @@ import Control.Natural (type (:~>) (..), type (~>))
 import Control.Monad (MonadPlus (..), (>=>))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
 import Data.Profunctor (Profunctor (..), Strong (..))
-import Data.Functor.Identity (Identity)
+import Data.Functor.Identity (Identity(..))
 import Data.List (isPrefixOf, sortOn, tails)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
@@ -31,8 +34,15 @@ import Data.Default (Default (..))
 import Control.Monad.Reader (Reader, runReader)
 import Control.Monad.Writer (tell, MonadWriter, runWriter)
 import Data.Monoid (Endo (..), Sum (..))
-import Data.Kind (Type)
+import Data.Void (Void, absurd)
+import Data.Functor.Adjunction (Adjunction (..))
+import Data.Distributive (Distributive (..))
+import Data.Functor.Rep (Representable (..))
 import Data.Functor.Contravariant (Op (..))
+import Data.Key (type Key, Keyed(..), Lookup(..))
+import Data.Functor.Alt (Alt(..))
+import Data.Functor.Plus (Plus(..))
+import Control.Comonad (Comonad(..))
 
 -- | splits an even length list such as [1,2,3,4,5,6] -> ([1,2,3], [4,5,6])
 halve :: [a] -> Maybe ([a], [a])
@@ -592,15 +602,191 @@ runFactorialNull n = let (result, ()) = runWriter (factorial n)
                       in result
 
 runFactorialCount :: Int -> (Int, Int)
-runFactorialCount n = let (result, Sum count) = runWriter (factorial n)
-                       in (count, result)
+runFactorialCount n = let (result, Sum cnt) = runWriter (factorial n)
+                       in (cnt, result)
 
 runFactorialHybrid :: Int -> (Int, [String], Int)
-runFactorialHybrid n = let (result, (Sum count, builder)) = runWriter (factorial n)
-                        in (count, appEndo builder [], result)
+runFactorialHybrid n = let (result, (Sum cnt, builder)) = runWriter (factorial n)
+                        in (cnt, appEndo builder [], result)
 
 
--- Diagonal Functor
+-- ========================================================================= --
+-- 1. Modern Architecture of Data.Functor.Adjunction (adjunctions package)
+-- ========================================================================= --
 
-data Diag :: (Type -> Type -> Type) -> (Type -> Type -> Type) -> Type where
+-- In Edward Kmett's `adjunctions` library, Functor Adjunctions (f -| u) are defined
+-- via leftAdjunct and rightAdjunct.
+-- 
+-- class (Functor f, Functor u) => Adjunction f u | f -> u, u -> f where
+--   unit         :: a -> u (f a)
+--   counit       :: f (u a) -> a
+--   leftAdjunct  :: (f a -> b) -> a -> u b
+--   rightAdjunct :: (a -> u b) -> f a -> b
 
+-- The classic Tuple / Function Adjunction (Currying as Adjunction)
+curryAdjunction :: (f, a) -> (f -> a) -> a
+curryAdjunction (env, _) g = g env
+
+
+-- ========================================================================= --
+-- 1. ! Functor
+-- ========================================================================= --
+
+data Zero a = Zero Void deriving (Show, Eq)
+instance Functor Zero where -- Cannot be Applicative.
+  fmap _ (Zero v) = absurd v
+type instance Key Zero = Void
+instance Keyed Zero where
+  mapWithKey :: (Key Zero -> a -> b) -> Zero a -> Zero b
+  mapWithKey _ (Zero v) = absurd v
+instance Lookup Zero where 
+  lookup :: Key Zero -> Zero a -> Maybe a
+  lookup _ _ = Nothing
+instance Alt Zero where -- Cannot be Plus 
+  Zero x <!> _ = absurd x
+instance Comonad Zero where
+  extract :: Zero a -> a
+  extract (Zero v) = absurd v
+  duplicate :: Zero a -> Zero (Zero a)
+  duplicate (Zero v) = absurd v 
+
+-- The Terminal Bang Functor (!) - equivalalent to Const ().
+data MyProxy a = MyProxy deriving (Show, Eq)
+instance Functor MyProxy where
+  fmap _ _ = MyProxy
+instance Alt MyProxy where
+  _ <!> _ = MyProxy
+instance Plus MyProxy where 
+  zero = MyProxy 
+instance Applicative MyProxy where
+  pure _ = MyProxy
+  _ <*> _ = MyProxy
+type instance Key MyProxy = Void
+instance Keyed MyProxy where
+  mapWithKey :: (Key MyProxy -> a -> b) -> MyProxy a -> MyProxy b
+  mapWithKey _ _ = MyProxy
+instance Lookup MyProxy where 
+  lookup :: Key MyProxy -> MyProxy a -> Maybe a
+  lookup _ _ = Nothing
+instance Distributive MyProxy where
+    distribute :: Functor f => f (MyProxy a) -> MyProxy (f a)
+    distribute _ = MyProxy
+    -- collect :: Functor f => (a -> MyProxy b) -> f a -> MyProxy (f b)
+    -- collect _ _ = MyProxy
+instance Representable MyProxy where
+  type Rep MyProxy = Void
+  tabulate _ = MyProxy
+  index (MyProxy) v = absurd v
+
+newtype MyIdentity a = MyIdentity a deriving (Show, Eq)
+instance Functor MyIdentity where
+  fmap f (MyIdentity a) = MyIdentity (f a)
+instance Alt MyIdentity where
+  idX <!> _ = idX
+-- instance Plus MyIdentity where 
+--   zero = MyIdentity 
+instance Applicative MyIdentity where
+  pure = MyIdentity
+  MyIdentity ff <*> MyIdentity a = MyIdentity (ff a)
+type instance Key MyIdentity = ()  
+instance Keyed MyIdentity where
+  mapWithKey :: (Key MyIdentity -> a -> b) -> MyIdentity a -> MyIdentity b
+  mapWithKey f idA = MyIdentity (f ()) <*> idA
+instance Distributive MyIdentity where
+  distribute :: Functor f => f (MyIdentity a) -> MyIdentity (f a)
+  distribute ff = MyIdentity $ (\(MyIdentity x) -> x) <$> ff 
+  -- collect :: Functor f => (a -> MyIdentity b) -> f a -> MyIdentity (f b)
+  -- collect ff fa = distribute  $ ff <$> fa
+
+data MyReader r a = MyReader (r -> a) 
+instance Functor (MyReader r) where
+  fmap f (MyReader g) = MyReader $ g >>> f
+instance Alt (MyReader r) where
+  ra <!> _ = ra
+-- instance Plus (MyReader r) where 
+--   zero =  
+instance Applicative (MyReader r) where
+  pure :: a -> MyReader r a
+  pure = const >>> MyReader
+  (<*>) :: MyReader r (a -> b) -> MyReader r a -> MyReader r b
+  MyReader ff <*> MyReader g = MyReader (ff <*> g) 
+type instance Key (MyReader r) = r
+instance Keyed (MyReader r) where
+  mapWithKey :: (Key (MyReader r) -> a -> b) -> MyReader r a -> MyReader r b
+  mapWithKey ff rg = MyReader ff <*> rg 
+
+
+-- instance Distributive ((->) r) where 
+--   distribute :: Functor f => f (r -> a) -> r -> f a
+--   distribute ff r =  ($ r) <$> ff
+
+--   -- collect :: Functor f => (a -> r -> b) -> f a -> r -> f b
+--   -- collect ff fa = distribute $ ff <$> fa
+
+-- instance Representable ((->) r) where 
+--   type Rep ((->) r) = r
+
+--   tabulate :: (r -> a) -> ((->) r) a
+--   tabulate f = f
+
+--   index :: ((->) r) a -> r -> a
+--   index f r = f r
+
+-- instance Functor ((->) r) where 
+--   fmap f g = f . g
+
+readerToId :: ((->) ()) ~> Identity 
+readerToId ff = Identity (ff ())
+
+idToReader :: Identity ~> ((->) ())
+idToReader (Identity a) = \_ -> a 
+
+-- instance Representable Identity where 
+--   type Rep Identity = ()
+
+--   tabulate :: (() -> a) -> Identity a
+--   tabulate f = Identity (f ())
+
+--   index :: Identity a -> () -> a
+--   index (Identity a) () = a
+
+
+
+-- The Universal Initial/Terminal Adjunction
+instance Adjunction Zero MyProxy where
+  unit _ = MyProxy
+  counit (Zero v) = absurd v
+  leftAdjunct _ _ = MyProxy
+  rightAdjunct _ (Zero v) = absurd v
+
+sampleMyProxy :: MyProxy Int 
+sampleMyProxy = MyProxy
+-- 
+newtype DeltaF a = DeltaF (a, a) deriving (Show, Eq)
+instance Functor DeltaF where 
+  fmap f (DeltaF (x, y)) = DeltaF (f x, f y)
+
+sampleDeltaF :: DeltaF Int 
+sampleDeltaF = DeltaF (1, 2)
+
+
+
+
+
+-- The True Adjunction for DeltaF!
+-- curryDelta :: (DeltaF a -> b) -> (a -> (Bool -> b))
+
+-- data V1 a -- 0 Constructors!
+-- instance Functor V1 where
+--   fmap _ z = case z of {}
+-- 2. UnitF a in GHC (U1 a)
+-- In GHC.Generics, UnitF a is literally called U1 a (The Unit type constructor):
+
+-- haskell
+-- data U1 a = U1
+-- instance Functor U1 where
+--   fmap _ U1 = U1
+
+data UnitF a = UnitF () deriving (Show, Eq)
+instance Functor UnitF where
+  fmap _ (UnitF ()) = UnitF ()
