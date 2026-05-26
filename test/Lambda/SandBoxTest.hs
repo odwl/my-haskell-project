@@ -10,10 +10,13 @@ import Prelude hiding (id, (.))
 import Lambda.SandBox (DeltaF (..), UnitF (..), Zero (..), WriterKleisli (..), MyProxy(..), MyIdentity(..), MyReader(..), halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat', eitherBoolToNat, eitherBoolToNat')
 import Control.Natural ((#))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
-import Data.Key (mapWithKey)
+import Data.Key (Lookup(..), mapWithKey)
 import Data.Distributive (distribute)
 import Data.Functor.Identity (Identity(..))
 import Data.Functor.Alt (Alt(..))
+import Data.Functor.Extend (Extend(..))
+import Control.Comonad (Comonad(..))
+import Data.Functor.Rep (Representable(..))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (Arbitrary (..), CoArbitrary, Fun, applyFun, testProperty, discard, (==>), withMaxSuccess)
@@ -214,7 +217,10 @@ sandBoxSuite =
               fmap (f . g) z == (fmap f . fmap g) z,
           testProperty "Alt Associativity: (a <!> b) <!> c == a <!> (b <!> c)" $
             withMaxSuccess 0 $ \(a :: Zero Int, b :: Zero Int, c :: Zero Int) ->
-              ((a <!> b) <!> c) == (a <!> (b <!> c))
+              ((a <!> b) <!> c) == (a <!> (b <!> c)),
+          testProperty "Comonad Extract Law" $
+            withMaxSuccess 0 $ \(z :: Zero Int) ->
+              extract z == extract z
         ],
       testGroup
         "MyProxy Laws"
@@ -231,7 +237,14 @@ sandBoxSuite =
           testProperty "Keyed Identity" $
             \(p :: MyProxy Int) -> mapWithKey (\_ x -> x) p == p,
           testProperty "Distributive Law" $
-            \(p :: MyProxy Int) -> distribute (Identity p) == fmap Identity p
+            \(p :: MyProxy Int) -> distribute (Identity p) == fmap Identity p,
+          testProperty "Alt Associativity" $
+            \(a :: MyProxy Int, b :: MyProxy Int, c :: MyProxy Int) ->
+              ((a <!> b) <!> c) == (a <!> (b <!> c)),
+          testProperty "Extend Co-associativity" $
+            \(p :: MyProxy Int) -> duplicated (duplicated p) == fmap duplicated (duplicated p),
+          testProperty "Representable Tabulate-Index" $
+            \(p :: MyProxy Int) -> tabulate (index p) == p
         ],
       testGroup
         "MyIdentity Laws"
@@ -252,7 +265,18 @@ sandBoxSuite =
           testProperty "Keyed map matches fmap" $
             \(mi :: MyIdentity Int) -> mapWithKey (\_ x -> f x) mi == fmap f mi,
           testProperty "Distributive Law" $
-            \(mi :: MyIdentity Int) -> distribute (Identity mi) == fmap Identity mi
+            \(mi :: MyIdentity Int) -> distribute (Identity mi) == fmap Identity mi,
+          testProperty "Alt Associativity" $
+            \(a :: MyIdentity Int, b :: MyIdentity Int, c :: MyIdentity Int) ->
+              ((a <!> b) <!> c) == (a <!> (b <!> c)),
+          testProperty "Extend Co-associativity" $
+            \(mi :: MyIdentity Int) -> duplicated (duplicated mi) == fmap duplicated (duplicated mi),
+          testProperty "Comonad Left/Right Identity" $
+            \(mi :: MyIdentity Int) -> extract (duplicated mi) == mi && fmap extract (duplicated mi) == mi,
+          testProperty "Representable Tabulate-Index" $
+            \(mi :: MyIdentity Int) -> tabulate (index mi) == mi,
+          testProperty "Lookup Identity" $
+            \(mi :: MyIdentity Int) -> lookup () mi == Just (extract mi)
         ],
       testGroup
         "MyReader Laws"
@@ -271,7 +295,19 @@ sandBoxSuite =
           testProperty "Keyed Identity" $
             \(r :: Int, mr :: MyReader Int Int) -> eqReader r (mapWithKey (\_ x -> x) mr) mr,
           testProperty "Keyed map matches fmap" $
-            \(r :: Int, mr :: MyReader Int Int) -> eqReader r (mapWithKey (\_ x -> f x) mr) (fmap f mr)
+            \(r :: Int, mr :: MyReader Int Int) -> eqReader r (mapWithKey (\_ x -> f x) mr) (fmap f mr),
+          testProperty "Alt Associativity" $
+            \(r :: Int, a :: MyReader Int Int, b :: MyReader Int Int, c :: MyReader Int Int) ->
+              eqReader r ((a <!> b) <!> c) (a <!> (b <!> c)),
+          testProperty "Extend Co-associativity" $
+            \(r :: Int, mr :: MyReader Int Int) ->
+              runMyReader (runMyReader (duplicated (duplicated mr)) r) r == runMyReader (runMyReader (fmap duplicated (duplicated mr)) r) r,
+          testProperty "Distributive Law" $
+            \(r :: Int, mr :: MyReader Int Int) ->
+              eqReader r (distribute (Identity mr)) (fmap Identity mr),
+          testProperty "Representable Tabulate-Index" $
+            \(r :: Int, mr :: MyReader Int Int) ->
+              eqReader r (tabulate (index mr)) mr
         ]
     ]
 

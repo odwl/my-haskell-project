@@ -43,6 +43,7 @@ import Data.Key (type Key, Keyed(..), Lookup(..))
 import Data.Functor.Alt (Alt(..))
 import Data.Functor.Plus (Plus(..))
 import Control.Comonad (Comonad(..))
+import Data.Functor.Extend (Extend(..))
 
 -- | splits an even length list such as [1,2,3,4,5,6] -> ([1,2,3], [4,5,6])
 halve :: [a] -> Maybe ([a], [a])
@@ -649,15 +650,21 @@ instance Comonad Zero where
   extract (Zero v) = absurd v
   duplicate :: Zero a -> Zero (Zero a)
   duplicate (Zero v) = absurd v 
+instance Extend Zero where 
+  duplicated :: Zero a -> Zero (Zero a)
+  duplicated (Zero v) = absurd v
 
 -- The Terminal Bang Functor (!) - equivalalent to Const ().
 data MyProxy a = MyProxy deriving (Show, Eq)
-instance Functor MyProxy where
+instance Functor MyProxy where -- cannot be a comonad
   fmap _ _ = MyProxy
 instance Alt MyProxy where
   _ <!> _ = MyProxy
 instance Plus MyProxy where 
   zero = MyProxy 
+instance Extend MyProxy where 
+  duplicated :: MyProxy a -> MyProxy (MyProxy a)
+  duplicated _ = MyProxy
 instance Applicative MyProxy where
   pure _ = MyProxy
   _ <*> _ = MyProxy
@@ -671,20 +678,24 @@ instance Lookup MyProxy where
 instance Distributive MyProxy where
     distribute :: Functor f => f (MyProxy a) -> MyProxy (f a)
     distribute _ = MyProxy
-    -- collect :: Functor f => (a -> MyProxy b) -> f a -> MyProxy (f b)
-    -- collect _ _ = MyProxy
 instance Representable MyProxy where
   type Rep MyProxy = Void
   tabulate _ = MyProxy
-  index (MyProxy) v = absurd v
+  index MyProxy = absurd
 
 newtype MyIdentity a = MyIdentity a deriving (Show, Eq)
 instance Functor MyIdentity where
   fmap f (MyIdentity a) = MyIdentity (f a)
-instance Alt MyIdentity where
+instance Alt MyIdentity where -- cannot be Plus 
   idX <!> _ = idX
--- instance Plus MyIdentity where 
---   zero = MyIdentity 
+instance Extend MyIdentity where 
+  duplicated :: MyIdentity a -> MyIdentity (MyIdentity a)
+  duplicated = MyIdentity
+instance Comonad MyIdentity where
+  extract :: MyIdentity a -> a
+  extract (MyIdentity a) = a
+  duplicate :: MyIdentity a -> MyIdentity (MyIdentity a)
+  duplicate = MyIdentity
 instance Applicative MyIdentity where
   pure = MyIdentity
   MyIdentity ff <*> MyIdentity a = MyIdentity (ff a)
@@ -692,13 +703,22 @@ type instance Key MyIdentity = ()
 instance Keyed MyIdentity where
   mapWithKey :: (Key MyIdentity -> a -> b) -> MyIdentity a -> MyIdentity b
   mapWithKey f idA = MyIdentity (f ()) <*> idA
+instance Lookup MyIdentity where 
+  lookup :: Key MyIdentity -> MyIdentity a -> Maybe a
+  lookup () (MyIdentity a) = Just a 
 instance Distributive MyIdentity where
   distribute :: Functor f => f (MyIdentity a) -> MyIdentity (f a)
-  distribute ff = MyIdentity $ (\(MyIdentity x) -> x) <$> ff 
+  distribute ff = MyIdentity $ extract <$> ff 
   -- collect :: Functor f => (a -> MyIdentity b) -> f a -> MyIdentity (f b)
   -- collect ff fa = distribute  $ ff <$> fa
+instance Representable MyIdentity where
+  type Rep MyIdentity = ()  
+  tabulate :: (() -> a) -> MyIdentity a
+  tabulate f = MyIdentity (f ()) 
+  index :: MyIdentity a -> () -> a
+  index (MyIdentity a) () = a
 
-data MyReader r a = MyReader (r -> a) 
+data MyReader r a = MyReader { runMyReader :: r -> a }
 instance Functor (MyReader r) where
   fmap f (MyReader g) = MyReader $ g >>> f
 instance Alt (MyReader r) where
@@ -714,26 +734,18 @@ type instance Key (MyReader r) = r
 instance Keyed (MyReader r) where
   mapWithKey :: (Key (MyReader r) -> a -> b) -> MyReader r a -> MyReader r b
   mapWithKey ff rg = MyReader ff <*> rg 
-
-
--- instance Distributive ((->) r) where 
---   distribute :: Functor f => f (r -> a) -> r -> f a
---   distribute ff r =  ($ r) <$> ff
-
---   -- collect :: Functor f => (a -> r -> b) -> f a -> r -> f b
---   -- collect ff fa = distribute $ ff <$> fa
-
--- instance Representable ((->) r) where 
---   type Rep ((->) r) = r
-
---   tabulate :: (r -> a) -> ((->) r) a
---   tabulate f = f
-
---   index :: ((->) r) a -> r -> a
---   index f r = f r
-
--- instance Functor ((->) r) where 
---   fmap f g = f . g
+instance Extend (MyReader r) where 
+  duplicated :: MyReader r a -> MyReader r (MyReader r a)
+  duplicated = const >>> MyReader 
+instance Distributive (MyReader r) where 
+  distribute :: Functor f => f (MyReader r a) -> MyReader r (f a)
+  distribute = fmap runMyReader >>> distribute >>> MyReader
+instance Representable (MyReader r) where
+  type Rep (MyReader r) = r
+  tabulate :: (r -> a) -> MyReader r a
+  tabulate = MyReader
+  index :: MyReader r a -> r -> a
+  index = runMyReader
 
 readerToId :: ((->) ()) ~> Identity 
 readerToId ff = Identity (ff ())
