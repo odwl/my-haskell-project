@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
@@ -12,38 +15,41 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE EmptyCase #-}
 
 
 module Lambda.SandBox where
 
-import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (..), Kleisli (..), (>>>), (^>>), (>>^))
-import Control.Category (Category, (.), id)
-import Prelude hiding (id, (.))
 import Control.Applicative (Alternative (..), Const (..))
-import Control.Natural (type (:~>) (..), type (~>))
+import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (..), Kleisli (..), (>>>), (>>^), (^>>))
+import Control.Category (Category, (.), id)
+import Control.Comonad (Comonad (..))
 import Control.Monad (MonadPlus (..), (>=>))
+import Control.Monad.Reader (Reader, runReader)
+import Control.Monad.Writer (MonadWriter, runWriter, tell)
+import Control.Natural (type (:~>) (..), type (~>))
+import Data.Coerce (coerce)
+import Data.Default (Default (..))
+import Data.Distributive (Distributive (..))
+import Data.Functor.Adjunction (Adjunction (..))
+import Data.Functor.Alt (Alt (..))
+import Data.Functor.Compose (Compose (..))
+import Data.Functor.Contravariant (Op (..))
+import Data.Functor.Extend (Extend (..))
+import Data.Functor.Identity (Identity (..))
+import Data.Functor.Plus (Plus (..))
+import Data.Functor.Rep (Representable (..))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
-import Data.Profunctor (Profunctor (..), Strong (..))
-import Data.Functor.Identity (Identity(..))
+import Data.Key (Key, Keyed (..), Lookup (..))
 import Data.List (isPrefixOf, sortOn, tails)
 import Data.Maybe (fromMaybe)
-import Data.Tuple (swap)
-import Lambda (safeHead)
-import Safe (tailMay)
-import Data.Default (Default (..))
-import Control.Monad.Reader (Reader, runReader)
-import Control.Monad.Writer (tell, MonadWriter, runWriter)
 import Data.Monoid (Endo (..), Sum (..))
+import Data.Profunctor (Profunctor (..), Strong (..))
+import Data.Tuple (swap)
 import Data.Void (Void, absurd)
-import Data.Functor.Adjunction (Adjunction (..))
-import Data.Distributive (Distributive (..))
-import Data.Functor.Rep (Representable (..))
-import Data.Functor.Contravariant (Op (..))
-import Data.Key (type Key, Keyed(..), Lookup(..))
-import Data.Functor.Alt (Alt(..))
-import Data.Functor.Plus (Plus(..))
-import Control.Comonad (Comonad(..))
-import Data.Functor.Extend (Extend(..))
+import Lambda (safeHead)
+import Prelude hiding (id, (.))
+import Safe (tailMay)
 
 -- | splits an even length list such as [1,2,3,4,5,6] -> ([1,2,3], [4,5,6])
 halve :: [a] -> Maybe ([a], [a])
@@ -666,8 +672,10 @@ instance Extend MyProxy where
   duplicated :: MyProxy a -> MyProxy (MyProxy a)
   duplicated _ = MyProxy
 instance Applicative MyProxy where
-  pure _ = MyProxy
+  pure = const MyProxy
   _ <*> _ = MyProxy
+instance Monad MyProxy where 
+  _ >>= _ = MyProxy 
 type instance Key MyProxy = Void
 instance Keyed MyProxy where
   mapWithKey :: (Key MyProxy -> a -> b) -> MyProxy a -> MyProxy b
@@ -718,6 +726,8 @@ instance Representable MyIdentity where
   index :: MyIdentity a -> () -> a
   index (MyIdentity a) () = a
 
+
+
 data MyReader r a = MyReader { runMyReader :: r -> a }
 instance Functor (MyReader r) where
   fmap f (MyReader g) = MyReader $ g >>> f
@@ -747,42 +757,124 @@ instance Representable (MyReader r) where
   index :: MyReader r a -> r -> a
   index = runMyReader
 
-readerToId :: ((->) ()) ~> Identity 
-readerToId ff = Identity (ff ())
-
-idToReader :: Identity ~> ((->) ())
-idToReader (Identity a) = \_ -> a 
-
--- instance Representable Identity where 
---   type Rep Identity = ()
-
---   tabulate :: (() -> a) -> Identity a
---   tabulate f = Identity (f ())
-
---   index :: Identity a -> () -> a
---   index (Identity a) () = a
 
 
+readerToProxy :: MyReader Void ~> MyProxy
+readerToProxy _ = MyProxy
+
+proxyToReader :: MyProxy ~> MyReader Void
+proxyToReader _ = MyReader absurd
+
+-- Easiest Adjunction in Haskell Zero -| MyProxy
+-- it's really V1 -| U1
+instance Adjunction Zero MyProxy where 
+  unit :: a -> MyProxy (Zero a)
+  unit _ = MyProxy 
+  counit :: Zero (MyProxy a) -> a 
+  counit (Zero v) = absurd v
+  leftAdjunct :: (Zero a -> b) -> a -> MyProxy b
+  leftAdjunct _ _ = MyProxy 
+  rightAdjunct :: (a -> MyProxy b) -> Zero a -> b
+  rightAdjunct _ (Zero v) = absurd v
+
+-- Instance already defined in Data.Functor.Adjunction
+-- instance Adjunction V1 U1 where 
+--   unit :: a -> U1 (V1 a)
+--   unit _ = U1
+--   counit :: V1 (U1 a) -> a 
+--   counit v = case v of {}
+--   leftAdjunct :: (V1 a -> b) -> a -> U1 b
+--   leftAdjunct _ _ = U1
+--   rightAdjunct :: (a -> U1 b) -> V1 a -> b
+--   rightAdjunct _ v = case v of {}
+
+-- Using tuple section ((,) ()) directly
+
+-- Adjunction between ((,) ()) and MyIdentity
+-- It's really MyIdentity -| MyIdentity 
+-- instance Adjunction ((,) ()) MyIdentity where 
+--   unit :: a -> MyIdentity ((), a)
+--   unit x = MyIdentity ((), x)
+--   counit :: ((), MyIdentity a) -> a
+--   counit ((), MyIdentity x) = x
+--   leftAdjunct :: (((), a) -> b) -> a -> MyIdentity b
+--   leftAdjunct f x = MyIdentity $ f ((), x)
+--   rightAdjunct :: (a -> MyIdentity b) -> ((), a) -> b
+--   rightAdjunct f = fmap f >>> snd >>> extract
+
+instance Adjunction MyIdentity MyIdentity where 
+  unit :: a -> MyIdentity (MyIdentity a)
+  unit = MyIdentity >>> MyIdentity 
+  counit :: MyIdentity (MyIdentity a) -> a
+  counit = extract >>> extract 
+  leftAdjunct :: (MyIdentity a -> b) -> a -> MyIdentity b
+  leftAdjunct f = MyIdentity >>> f >>> MyIdentity 
+  rightAdjunct :: (a -> MyIdentity b) -> MyIdentity a -> b
+  rightAdjunct f = extract >>> f >>> extract 
+
+newtype MyWriter r a = MyWriter (r, a) deriving (Show, Eq)
+instance Functor (MyWriter r) where
+  fmap f (MyWriter pair) = MyWriter $ f <$> pair
+
+instance Adjunction (MyWriter r) (MyReader r) where 
+  unit :: a -> MyReader r (MyWriter r a)
+  unit a = MyReader (MyWriter . (, a))
+  counit :: MyWriter r (MyReader r a) -> a
+  counit (MyWriter (r, MyReader f)) = f r 
+  leftAdjunct :: (MyWriter r a -> b) -> a -> MyReader r b
+  leftAdjunct f a = MyReader (\r -> f (MyWriter (r, a)))
+  rightAdjunct :: (a -> MyReader r b) -> MyWriter r a -> b
+  rightAdjunct f (MyWriter (r, a)) = runMyReader (f a) r
+
+readerToId :: ((->) ()) ~> MyIdentity 
+readerToId ff = MyIdentity (ff ())
+
+idToReader :: MyIdentity ~> ((->) ())
+idToReader (MyIdentity a) = const a  
 
 -- The Universal Initial/Terminal Adjunction
-instance Adjunction Zero MyProxy where
-  unit _ = MyProxy
-  counit (Zero v) = absurd v
-  leftAdjunct _ _ = MyProxy
-  rightAdjunct _ (Zero v) = absurd v
+-- instance Adjunction Zero MyProxy where
+--   unit _ = MyProxy
+--   counit (Zero v) = absurd v
+--   leftAdjunct _ _ = MyProxy
+--   rightAdjunct _ (Zero v) = absurd v
 
 sampleMyProxy :: MyProxy Int 
 sampleMyProxy = MyProxy
 -- 
 newtype DeltaF a = DeltaF (a, a) deriving (Show, Eq)
 instance Functor DeltaF where 
-  fmap f (DeltaF (x, y)) = DeltaF (f x, f y)
+  fmap f (DeltaF pair) = DeltaF $ (f *** f) pair
+instance Extend DeltaF where
+  duplicated :: DeltaF a -> DeltaF (DeltaF a)
+  duplicated (DeltaF (x, y)) = DeltaF (DeltaF (x, y), DeltaF (y, y))
+instance Comonad DeltaF where
+  extract :: DeltaF a -> a
+  extract (DeltaF (x, _)) = x
+  duplicate :: DeltaF a -> DeltaF (DeltaF a)
+  duplicate = duplicated
+type instance Key DeltaF = Bool
+instance Keyed DeltaF where
+  mapWithKey f (DeltaF (x, y)) = DeltaF (f True x, f False y)
+instance Lookup DeltaF where
+  lookup True (DeltaF (x, _)) = Just x
+  lookup False (DeltaF (_, y)) = Just y
+instance Distributive DeltaF where
+  distribute :: Functor f => f (DeltaF a) -> DeltaF (f a)
+  distribute = (fmap (\(DeltaF (x, _)) -> x) &&& fmap (\(DeltaF (_, y)) -> y)) >>> DeltaF
+
+instance Representable DeltaF where
+  type Rep DeltaF = Bool
+  tabulate f = DeltaF (f True, f False)
+  index (DeltaF (x, _)) True = x
+  index (DeltaF (_, y)) False = y
+
+instance Applicative DeltaF where
+  pure = (id &&& id) >>> DeltaF
+  DeltaF (f, g) <*> DeltaF (x, y) = DeltaF (f x, g y)
 
 sampleDeltaF :: DeltaF Int 
 sampleDeltaF = DeltaF (1, 2)
-
-
-
 
 
 -- The True Adjunction for DeltaF!
@@ -802,3 +894,12 @@ sampleDeltaF = DeltaF (1, 2)
 data UnitF a = UnitF () deriving (Show, Eq)
 instance Functor UnitF where
   fmap _ (UnitF ()) = UnitF ()
+
+newtype DoubleIdentity a = DoubleIdentity (Compose MyIdentity MyIdentity a)
+  deriving stock (Show, Eq)
+  deriving newtype Functor
+
+-- Prove that DoubleIdentity and MyIdentity are equivalent Functors. 
+doubleToSingle :: DoubleIdentity ~> MyIdentity
+doubleToSingle = coerce 
+

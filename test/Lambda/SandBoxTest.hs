@@ -5,18 +5,21 @@ module Lambda.SandBoxTest (sandBoxSuite) where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
 import Control.Category ((.), id)
+import Data.Coerce (coerce)
 import Data.Profunctor (Profunctor (..))
 import Prelude hiding (id, (.))
-import Lambda.SandBox (DeltaF (..), UnitF (..), Zero (..), WriterKleisli (..), MyProxy(..), MyIdentity(..), MyReader(..), halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat', eitherBoolToNat, eitherBoolToNat')
+import Lambda.SandBox (DeltaF (..), DoubleIdentity (..), UnitF (..), Zero (..), WriterKleisli (..), MyProxy(..), MyIdentity(..), MyReader(..), doubleToSingle, halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat', eitherBoolToNat, eitherBoolToNat')
 import Control.Natural ((#))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
 import Data.Key (Lookup(..), mapWithKey)
 import Data.Distributive (distribute)
 import Data.Functor.Identity (Identity(..))
 import Data.Functor.Alt (Alt(..))
+import Data.Functor.Compose (Compose(..))
 import Data.Functor.Extend (Extend(..))
 import Control.Comonad (Comonad(..))
 import Data.Functor.Rep (Representable(..))
+import Data.Functor.Adjunction (Adjunction(..))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (Arbitrary (..), CoArbitrary, Fun, applyFun, testProperty, discard, (==>), withMaxSuccess)
@@ -30,11 +33,18 @@ instance Arbitrary a => Arbitrary (DeltaF a) where
 instance Arbitrary (Zero a) where
   arbitrary = discard -- Discards tests because Void is uninhabited
 
+
+
 instance Arbitrary (MyProxy a) where
   arbitrary = pure MyProxy
 
 instance Arbitrary a => Arbitrary (MyIdentity a) where
   arbitrary = MyIdentity <$> arbitrary
+
+instance Arbitrary a => Arbitrary (DoubleIdentity a) where
+  arbitrary = do
+    (x :: a) <- arbitrary
+    pure (coerce (MyIdentity x) :: DoubleIdentity a)
 
 instance (CoArbitrary r, Arbitrary a) => Arbitrary (MyReader r a) where
   arbitrary = MyReader <$> arbitrary
@@ -187,7 +197,11 @@ sandBoxSuite =
           testProperty "eitherBoolToNat == eitherBoolToNat' Equivalence: eitherBoolToNat m # f == eitherBoolToNat' m # f" $
             \(m :: Either () Bool) (fun :: Fun Bool Int) ->
               let f' = applyFun fun
-               in (eitherBoolToNat m # f') == (eitherBoolToNat' m # f')
+               in (eitherBoolToNat m # f') == (eitherBoolToNat' m # f'),
+          testProperty "DoubleIdentity <-> MyIdentity Isomorphism (L -> R)" $
+            \(mi :: MyIdentity Int) -> doubleToSingle (coerce mi) == mi,
+          testProperty "DoubleIdentity <-> MyIdentity Isomorphism (R -> L)" $
+            \(di :: DoubleIdentity Int) -> coerce (doubleToSingle di) == di
         ],
       testGroup
         "UnitF Functor Laws"
@@ -244,7 +258,13 @@ sandBoxSuite =
           testProperty "Extend Co-associativity" $
             \(p :: MyProxy Int) -> duplicated (duplicated p) == fmap duplicated (duplicated p),
           testProperty "Representable Tabulate-Index" $
-            \(p :: MyProxy Int) -> tabulate (index p) == p
+            \(p :: MyProxy Int) -> tabulate (index p) == p,
+          testProperty "Zero Functor Identity" $
+            withMaxSuccess 0 $ \(z :: Zero Int) -> fmap id z == z,
+          testProperty "Adjunction Triangular Law 1: counit . fmap unit == id" $
+            withMaxSuccess 0 $ \(z :: Zero Int) -> counit (fmap unit z :: Zero (MyProxy (Zero Int))) == z,
+          testProperty "Adjunction Triangular Law 2: fmap counit . unit == id" $
+            withMaxSuccess 0 $ \(p :: MyProxy Int) -> fmap counit (unit p :: MyProxy (Zero (MyProxy Int))) == p
         ],
       testGroup
         "MyIdentity Laws"
@@ -276,7 +296,7 @@ sandBoxSuite =
           testProperty "Representable Tabulate-Index" $
             \(mi :: MyIdentity Int) -> tabulate (index mi) == mi,
           testProperty "Lookup Identity" $
-            \(mi :: MyIdentity Int) -> lookup () mi == Just (extract mi)
+            \(mi :: MyIdentity Int) -> Data.Key.lookup () mi == Just (extract mi)
         ],
       testGroup
         "MyReader Laws"
@@ -301,7 +321,7 @@ sandBoxSuite =
               eqReader r ((a <!> b) <!> c) (a <!> (b <!> c)),
           testProperty "Extend Co-associativity" $
             \(r :: Int, mr :: MyReader Int Int) ->
-              runMyReader (runMyReader (duplicated (duplicated mr)) r) r == runMyReader (runMyReader (fmap duplicated (duplicated mr)) r) r,
+              eqReader r (runMyReader (runMyReader (duplicated (duplicated mr)) r) r) (runMyReader (runMyReader (fmap duplicated (duplicated mr)) r) r),
           testProperty "Distributive Law" $
             \(r :: Int, mr :: MyReader Int Int) ->
               eqReader r (distribute (Identity mr)) (fmap Identity mr),
