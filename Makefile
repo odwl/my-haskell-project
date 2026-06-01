@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda
+.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper
 
 # Load local environment variables
 -include .env
@@ -56,6 +56,10 @@ watch-sandbox:
 # Run tests on file change but isolate only "Exercism" tests
 watch-exercism:
 	ghcid --command="cabal repl exercism-test" --test=':main' --restart=src --reload=test
+
+# Run tests on file change but isolate only "Zipper" tests
+watch-zipper:
+	TASTY_PATTERN="Zipper Tests" ghcid --command="cabal repl exercism-test" --test=':main' --restart=src --reload=test
 
 
 # Clean build artifacts

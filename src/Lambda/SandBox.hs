@@ -725,7 +725,10 @@ instance Representable MyIdentity where
   tabulate f = MyIdentity (f ()) 
   index :: MyIdentity a -> () -> a
   index (MyIdentity a) () = a
-
+instance Monad MyIdentity where 
+  (>>=) :: MyIdentity a -> (a -> MyIdentity b) -> MyIdentity b
+  -- MyIdentity a >>= f = f a
+  (>>=) = flip ($) . extract
 
 
 data MyReader r a = MyReader { runMyReader :: r -> a }

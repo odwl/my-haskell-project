@@ -1,11 +1,13 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 
 module Exercism.ZipperTest (zipperTests) where
 
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromJust, fromMaybe)
 import Exercism.Zipper
   ( BinTree (BT),
-    Zipper,
+    BinTreeZipper,
     focusedTree,
     fromTree,
     left,
@@ -21,6 +23,9 @@ import Exercism.Zipper
     toTree,
     up,
     value,
+    ListZipper,
+    GenericZipper (..),
+    Copointed (..),
   )
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
@@ -37,7 +42,7 @@ import Test.Tasty.QuickCheck
 
 -- | The master test tree for Zipper functionality.
 zipperTests :: TestTree
-zipperTests = testGroup "Zipper Tests" [tests, customTests, learningExerciseTests, quickCheckTests]
+zipperTests = testGroup "Zipper Tests" [tests, customTests, learningExerciseTests, quickCheckTests, listZipperTests]
 
 tests :: TestTree
 tests =
@@ -117,6 +122,19 @@ customTests =
          in (value <$> (right zip1 >>= prev >>= next)) @?= Just 3
     ]
 
+listZipperTests :: TestTree
+listZipperTests =
+  testGroup
+    "ListZipper Tests"
+    [ testCase "extract / copoint focused element" $
+        let lz = GenericZipper [1, 2] (3 :| [4, 5]) :: ListZipper Int
+         in copoint lz @?= 3,
+      testCase "fmap maps over focus and crumbs" $
+        let lz = GenericZipper [1, 2] (3 :| [4, 5]) :: ListZipper Int
+            expected = GenericZipper [10, 20] (30 :| [40, 50]) :: ListZipper Int
+         in fmap (*10) lz @?= expected
+    ]
+
 quickCheckTests :: TestTree
 quickCheckTests =
   testGroup
@@ -134,7 +152,7 @@ prop_BinTreeInvariant tree =
     ]
 
 -- | Property: Zipper satisfies fundamental laws:
-prop_ZipperInvariant :: Zipper Int -> Property
+prop_ZipperInvariant :: BinTreeZipper Int -> Property
 prop_ZipperInvariant z =
   conjoin
     [ property $ all ((== Just z) . next) (prev z),
@@ -227,14 +245,14 @@ instance Arbitrary Move where
   arbitrary = elements [GoLeft, GoRight, GoUp, GoPrev, GoNext]
 
 -- | Helper to safely apply a 'Move' to a zipper, bouncing off boundaries.
-applyMove :: Move -> Zipper a -> Zipper a
+applyMove :: Move -> BinTreeZipper a -> BinTreeZipper a
 applyMove GoLeft z = Data.Maybe.fromMaybe z (left z)
 applyMove GoRight z = Data.Maybe.fromMaybe z (right z)
 applyMove GoUp z = Data.Maybe.fromMaybe z (up z)
 applyMove GoPrev z = Data.Maybe.fromMaybe z (prev z)
 applyMove GoNext z = Data.Maybe.fromMaybe z (next z)
 
-instance (Arbitrary a) => Arbitrary (Zipper a) where
+instance (Arbitrary a) => Arbitrary (BinTreeZipper a) where
   arbitrary = do
     tree <- arbitrary
     moves <- arbitrary

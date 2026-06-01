@@ -36,7 +36,8 @@ common share-tests-deps
     adjunctions,
     keys,
     semigroupoids,
-    comonad
+    comonad,
+    pointed
 
 
 -- The main library for the project
@@ -91,7 +92,8 @@ library
     adjunctions,
     keys,
     semigroupoids,
-    comonad
+    comonad,
+    pointed
 
 test-suite lambda-test
   import: share-tests-deps
