@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveFunctor, PatternSynonyms, TypeSynonymInstances #-}
-{-# LANGUAGE TypeFamilies, DeriveGeneric, FlexibleInstances #-}
+{-# LANGUAGE DeriveFunctor, PatternSynonyms, TypeSynonymInstances, FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies, DeriveGeneric, FlexibleInstances, UndecidableInstances #-}
 module Exercism.Zipper
   ( BinTree (..),
     BinTreeZipper,
@@ -74,9 +74,10 @@ type instance Context NonEmpty a = a
 -- For a Binary Tree, the context is exactly your custom 'Crumb' type:
 type instance Context BinTree a = Crumb a
 
-instance Eq a => Eq (GenericZipper BinTree a) where
+instance (Eq (f a), Eq (Context f a)) => Eq (GenericZipper f a) where
   (GenericZipper c1 f1) == (GenericZipper c2 f2) = c1 == c2 && f1 == f2
 
+  
 instance Show a => Show (GenericZipper BinTree a) where
   show (GenericZipper c f) = "Zip " ++ show c ++ " " ++ show f
 
@@ -86,8 +87,6 @@ instance Functor (GenericZipper BinTree) where
 instance Copointed f => Copointed (GenericZipper f) where
   copoint = focus >>> copoint
 
-instance Eq a => Eq (GenericZipper NonEmpty a) where
-  (GenericZipper c1 f1) == (GenericZipper c2 f2) = c1 == c2 && f1 == f2
 
 instance Show a => Show (GenericZipper NonEmpty a) where
   show (GenericZipper c f) = "ListZip " ++ show c ++ " " ++ show f
