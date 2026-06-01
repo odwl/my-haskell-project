@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, PatternSynonyms, TypeSynonymInstances, FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor, PatternSynonyms, TypeSynonymInstances, FlexibleContexts, ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies, DeriveGeneric, FlexibleInstances, UndecidableInstances #-}
 module Exercism.Zipper
   ( BinTree (..),
@@ -30,6 +30,8 @@ import Data.Copointed (Copointed (..))
 import Data.List (foldl')
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Proxy (Proxy (..))
+import Data.Typeable (Typeable, typeRep)
 
 data BinTree a = BT
   { btValue :: a,
@@ -77,9 +79,9 @@ type instance Context BinTree a = Crumb a
 instance (Eq (f a), Eq (Context f a)) => Eq (GenericZipper f a) where
   (GenericZipper c1 f1) == (GenericZipper c2 f2) = c1 == c2 && f1 == f2
 
-  
-instance Show a => Show (GenericZipper BinTree a) where
-  show (GenericZipper c f) = "Zip " ++ show c ++ " " ++ show f
+instance (Show (f a), Show (Context f a), Typeable f) => Show (GenericZipper f a) where
+  show (GenericZipper c f) =
+    "GenericZipper " ++ show (typeRep (Proxy :: Proxy f)) ++ " " ++ show c ++ " " ++ show f
 
 instance Functor (GenericZipper BinTree) where
   fmap f (GenericZipper c t) = GenericZipper (fmap (fmap f) c) (fmap f t)
@@ -87,9 +89,6 @@ instance Functor (GenericZipper BinTree) where
 instance Copointed f => Copointed (GenericZipper f) where
   copoint = focus >>> copoint
 
-
-instance Show a => Show (GenericZipper NonEmpty a) where
-  show (GenericZipper c f) = "ListZip " ++ show c ++ " " ++ show f
 
 instance Functor (GenericZipper NonEmpty) where
   fmap f (GenericZipper c t) = GenericZipper (fmap f c) (fmap f t)
