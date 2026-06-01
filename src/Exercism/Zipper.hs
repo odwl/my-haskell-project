@@ -42,6 +42,9 @@ instance Comonad BinTree where
   extract (BT v _ _) = v
   duplicate tree@(BT _ ml mr) = BT tree (duplicate <$> ml) (duplicate <$> mr) 
 
+instance Copointed BinTree where
+  copoint = extract 
+
 -- For a deep dive into the algebra and calculus of data types (where the derivative 
 -- of a type is its type of one-hole contexts), see:
 -- https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types
@@ -80,11 +83,8 @@ instance Show a => Show (GenericZipper BinTree a) where
 instance Functor (GenericZipper BinTree) where
   fmap f (GenericZipper c t) = GenericZipper (fmap (fmap f) c) (fmap f t)
 
-instance Copointed (GenericZipper BinTree) where
-  copoint = focus >>> btValue
-
-instance Copointed (GenericZipper NonEmpty) where
-  copoint = focus >>> NE.head
+instance Copointed f => Copointed (GenericZipper f) where
+  copoint = focus >>> copoint
 
 instance Eq a => Eq (GenericZipper NonEmpty a) where
   (GenericZipper c1 f1) == (GenericZipper c2 f2) = c1 == c2 && f1 == f2
