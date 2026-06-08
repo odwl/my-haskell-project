@@ -19,6 +19,7 @@ theorem concatAssociative (a b c : String) : (a ++ b) ++ c = a ++ (b ++ c) :=
 theorem if3eq3 : (if 3 == 3 then 5 else 7) = 5 := rfl
 
 example (a b c: Nat) : (if a == a then b else c) = b := by simp
+example (a b c: Nat) : (if a == a +1 then b else c ) = c := by simp
 
 -- joinStringWith
 def joinStringsWith (sep a b: String) : String := a ++ sep ++ b
@@ -26,7 +27,6 @@ def joinStringsWith (sep a b: String) : String := a ++ sep ++ b
 
 example : String -> String -> String := joinStringsWith ": "
 
-example (a b c: Nat) : (if a == a +1 then b else c ) = c := by simp
 
 def add1 (n : Nat) : Nat := n + 1
 
