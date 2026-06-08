@@ -1,11 +1,11 @@
-.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper
+.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean
 
 # Load local environment variables
 -include .env
 
 # Haskell Toolchain Setup
 GHCUP_BIN := $(HOME)/.ghcup/bin
-export PATH := $(GHCUP_BIN):$(HOME)/.cabal/bin:$(PATH)
+export PATH := $(HOME)/.elan/bin:$(GHCUP_BIN):$(HOME)/.cabal/bin:$(PATH)
 export LIBRARY_PATH := $(CURDIR)/.local-lib:$(LIBRARY_PATH)
 
 
@@ -16,6 +16,25 @@ build:
 # Run all tests
 test:
 	cabal test
+
+# Run Lean Hello World
+run-lean:
+	lean --run lean/Main.lean
+
+# Watch Lean Hello World for changes
+watch-lean:
+	@echo "Watching lean/Main.lean for changes..."
+	@LAST_MOD=""; \
+	while true; do \
+		MOD=$$(stat -c %Y lean/Main.lean 2>/dev/null); \
+		if [ "$$MOD" != "$$LAST_MOD" ]; then \
+			clear; \
+			echo "lean/Main.lean changed. Re-running..."; \
+			$(MAKE) run-lean; \
+			LAST_MOD=$$MOD; \
+		fi; \
+		sleep 1; \
+	done
 
 # Run hlint on source and test directories
 lint hlint:
@@ -52,6 +71,10 @@ watch-lens:
 # Run tests on file change but isolate only "SandBox Tests"
 watch-sandbox:
 	TASTY_PATTERN="SandBox" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+
+# Run tests on file change but isolate only "Free, Cofree and Coyoneda Tests"
+watch-free:
+	TASTY_PATTERN="Free" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
 
 # Run tests on file change but isolate only "Exercism" tests
 watch-exercism:

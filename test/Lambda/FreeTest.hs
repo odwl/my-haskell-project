@@ -38,32 +38,32 @@ prop_cofree_associativity c = duplicate (duplicate c) === fmap duplicate (duplic
 -- | Free Semigroup adjunction properties
 prop_counit_homo :: NonEmpty String -> NonEmpty String -> Property
 prop_counit_homo xs ys = 
-    counitSemigroup (xs <> ys) === counitSemigroup xs <> counitSemigroup ys
+    counitSG (xs <> ys) === counitSG xs <> counitSG ys
 
 prop_triangle1 :: String -> Property
 prop_triangle1 x = 
-    counitSemigroup (unitSemigroup x) === x
+    counitSG (unitSG x) === x
 
 prop_triangle2 :: NonEmpty Int -> Property
 prop_triangle2 xs = 
-    counitSemigroup (NE.map unitSemigroup xs) === xs
+    counitSG (NE.map unitSG xs) === xs
 
 -- | Free Monoid adjunction properties
 prop_counitMonoid_homo :: [String] -> [String] -> Property
 prop_counitMonoid_homo xs ys = 
-    counitMonoid (xs <> ys) === counitMonoid xs <> counitMonoid ys
+    counitMon (xs <> ys) === counitMon xs <> counitMon ys
 
 prop_counitMonoid_mempty :: Property
 prop_counitMonoid_mempty = 
-    counitMonoid [] === (mempty :: String)
+    counitMon [] === (mempty :: String)
 
 prop_triangleMonoid1 :: String -> Property
 prop_triangleMonoid1 x = 
-    counitMonoid (unitMonoid x) === x
+    counitMon (unitMon x) === x
 
 prop_triangleMonoid2 :: [Int] -> Property
 prop_triangleMonoid2 xs = 
-    counitMonoid (map unitMonoid xs) === xs
+    counitMon (map unitMon xs) === xs
 
 freeTests :: TestTree
 freeTests = testGroup "Free, Cofree and Coyoneda Tests"

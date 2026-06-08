@@ -37,8 +37,8 @@ common share-tests-deps
     keys,
     semigroupoids,
     comonad,
-    pointed
-
+    pointed,
+    data-category
 
 -- The main library for the project
 library
@@ -63,6 +63,7 @@ library
     Lambda.Subdist
     Lambda.Lens
     Lambda.SandBox
+    Lambda.Free
 
   hs-source-dirs: src
   default-language: Haskell2010
@@ -93,8 +94,8 @@ library
     keys,
     semigroupoids,
     comonad,
-    pointed
-
+    pointed,
+    data-category
 test-suite lambda-test
   import: share-tests-deps
   type: exitcode-stdio-1.0
@@ -116,6 +117,7 @@ test-suite lambda-test
     Lambda.SubdistTest
     LambdaTest
     Lambda.SandBoxTest
+    Lambda.FreeTest
 
   build-depends:
     QuickCheck,
@@ -176,6 +178,7 @@ test-suite all-tests
     Lambda.SubdistTest
     LambdaTest
     Lambda.SandBoxTest
+    Lambda.FreeTest
 
   build-depends:
     QuickCheck,

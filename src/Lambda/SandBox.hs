@@ -16,6 +16,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE EmptyCase #-}
+{-# LANGUAGE EmptyDataDeriving #-}
 
 
 module Lambda.SandBox where
@@ -639,9 +640,7 @@ curryAdjunction (env, _) g = g env
 -- 1. ! Functor
 -- ========================================================================= --
 
-data Zero a = Zero Void deriving (Show, Eq)
-instance Functor Zero where -- Cannot be Applicative.
-  fmap _ (Zero v) = absurd v
+data Zero a = Zero Void deriving (Show, Eq, Functor)
 type instance Key Zero = Void
 instance Keyed Zero where
   mapWithKey :: (Key Zero -> a -> b) -> Zero a -> Zero b
@@ -659,11 +658,21 @@ instance Comonad Zero where
 instance Extend Zero where 
   duplicated :: Zero a -> Zero (Zero a)
   duplicated (Zero v) = absurd v
+instance Semigroup (Zero a) where 
+  Zero x <> _  = absurd x
+-- instance Monoid (Zero a) where 
+--   mempty = Zero undefined
+
+data MyV1 a deriving (Show, Eq, Ord, Read, Functor)
+instance Semigroup (MyV1 a) where 
+  z <> _ = case z of {}
+
+-- instance Alt (MyV1 a) where 
+--   x <!> y = 
+
 
 -- The Terminal Bang Functor (!) - equivalalent to Const ().
-data MyProxy a = MyProxy deriving (Show, Eq)
-instance Functor MyProxy where -- cannot be a comonad
-  fmap _ _ = MyProxy
+data MyProxy a = MyProxy deriving (Show, Eq, Ord, Read, Functor) -- cannot be a semigroup
 instance Alt MyProxy where
   _ <!> _ = MyProxy
 instance Plus MyProxy where 
@@ -691,9 +700,7 @@ instance Representable MyProxy where
   tabulate _ = MyProxy
   index MyProxy = absurd
 
-newtype MyIdentity a = MyIdentity a deriving (Show, Eq)
-instance Functor MyIdentity where
-  fmap f (MyIdentity a) = MyIdentity (f a)
+newtype MyIdentity a = MyIdentity a deriving (Show, Eq, Semigroup, Monoid, Functor)
 instance Alt MyIdentity where -- cannot be Plus 
   idX <!> _ = idX
 instance Extend MyIdentity where 
@@ -730,10 +737,7 @@ instance Monad MyIdentity where
   -- MyIdentity a >>= f = f a
   (>>=) = flip ($) . extract
 
-
-data MyReader r a = MyReader { runMyReader :: r -> a }
-instance Functor (MyReader r) where
-  fmap f (MyReader g) = MyReader $ g >>> f
+data MyReader r a = MyReader { runMyReader :: r -> a } deriving (Functor)
 instance Alt (MyReader r) where
   ra <!> _ = ra
 -- instance Plus (MyReader r) where 
@@ -815,9 +819,7 @@ instance Adjunction MyIdentity MyIdentity where
   rightAdjunct :: (a -> MyIdentity b) -> MyIdentity a -> b
   rightAdjunct f = extract >>> f >>> extract 
 
-newtype MyWriter r a = MyWriter (r, a) deriving (Show, Eq)
-instance Functor (MyWriter r) where
-  fmap f (MyWriter pair) = MyWriter $ f <$> pair
+newtype MyWriter r a = MyWriter (r, a) deriving (Show, Eq, Functor)
 
 instance Adjunction (MyWriter r) (MyReader r) where 
   unit :: a -> MyReader r (MyWriter r a)
@@ -845,9 +847,7 @@ idToReader (MyIdentity a) = const a
 sampleMyProxy :: MyProxy Int 
 sampleMyProxy = MyProxy
 -- 
-newtype DeltaF a = DeltaF (a, a) deriving (Show, Eq)
-instance Functor DeltaF where 
-  fmap f (DeltaF pair) = DeltaF $ (f *** f) pair
+newtype DeltaF a = DeltaF (a, a) deriving (Show, Eq, Functor)
 instance Extend DeltaF where
   duplicated :: DeltaF a -> DeltaF (DeltaF a)
   duplicated (DeltaF (x, y)) = DeltaF (DeltaF (x, y), DeltaF (y, y))
@@ -894,9 +894,7 @@ sampleDeltaF = DeltaF (1, 2)
 -- instance Functor U1 where
 --   fmap _ U1 = U1
 
-data UnitF a = UnitF () deriving (Show, Eq)
-instance Functor UnitF where
-  fmap _ (UnitF ()) = UnitF ()
+data UnitF a = UnitF () deriving (Show, Eq, Functor)
 
 newtype DoubleIdentity a = DoubleIdentity (Compose MyIdentity MyIdentity a)
   deriving stock (Show, Eq)

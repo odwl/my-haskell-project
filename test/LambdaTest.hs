@@ -12,6 +12,7 @@ import Lambda.RandomWalkTest (randomWalkTests)
 import Lambda.SandBoxTest (sandBoxSuite)
 import Lambda.StateTest (stateTests)
 import Lambda.SubdistTest (subdistTests)
+import Lambda.FreeTest (freeTests)
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -79,5 +80,6 @@ lambdaSuite =
       safeDivTests,
       stateTests,
       subdistTests,
+      freeTests,
       sandBoxSuite
     ]

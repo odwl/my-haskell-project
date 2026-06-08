@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Exercism.ZipperTest (zipperTests) where
 
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 import Data.Maybe (fromJust, fromMaybe)
 import Exercism.Zipper
   ( BinTree (BT),
     BinTreeZipper,
     focusedTree,
-    fromTree,
+    toZipper,
     left,
     mirror,
     modifyTree,
@@ -20,13 +20,17 @@ import Exercism.Zipper
     setRight,
     setTree,
     setValue,
-    toTree,
+    fromZipper,
     up,
-    value,
     ListZipper,
     GenericZipper (..),
-    Copointed (..),
+    smooth,
+    smoothZipper,
+    TPossible (..),
+    TChoice (..)
   )
+import Control.Comonad (Comonad (..))
+import Data.Functor.Rep (Representable (..))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck
@@ -38,6 +42,8 @@ import Test.Tasty.QuickCheck
     property,
     sized,
     testProperty,
+    (===),
+    (==>),
   )
 
 -- | The master test tree for Zipper functionality.
@@ -66,35 +72,35 @@ tests =
         [ testGroup
             "zipper"
             [ testCase "data is retained" $
-                toTree (fromTree t1) @?= t1,
+                fromZipper (toZipper t1) @?= t1,
               testCase "left, right and value" $
-                (value . fromJust . right . fromJust . left . fromTree) t1 @?= 3,
+                (extract . fromJust . right . fromJust . left . toZipper) t1 @?= 3,
               testCase "dead end" $
-                (left . fromJust . left . fromTree) t1 @?= Nothing,
+                (left . fromJust . left . toZipper) t1 @?= Nothing,
               testCase "traversing up from top" $
-                (up . fromTree) t1 @?= Nothing,
+                (up . toZipper) t1 @?= Nothing,
               testCase "left, right, and up" $
-                (value . fromJust . right . fromJust . left . fromJust . up . fromJust . right . fromJust . up . fromJust . left . fromTree) t1 @?= 3,
+                (extract . fromJust . right . fromJust . left . fromJust . up . fromJust . right . fromJust . up . fromJust . left . toZipper) t1 @?= 3,
               testCase "tree from deep focus" $
-                (toTree . fromJust . right . fromJust . left . fromTree) t1 @?= t1,
+                (fromZipper . fromJust . right . fromJust . left . toZipper) t1 @?= t1,
               testCase "setValue" $
-                (toTree . setValue 5 . fromJust . left . fromTree) t1 @?= t2,
+                (fromZipper . setValue 5 . fromJust . left . toZipper) t1 @?= t2,
               testCase "setValue after traversing up" $
-                (toTree . setValue 5 . fromJust . up . fromJust . right . fromJust . left . fromTree) t1 @?= t2,
+                (fromZipper . setValue 5 . fromJust . up . fromJust . right . fromJust . left . toZipper) t1 @?= t2,
               testCase "setLeft with Just" $
-                (toTree . setLeft (leaf 5) . fromJust . left . fromTree) t1 @?= t3,
+                (fromZipper . setLeft (leaf 5) . fromJust . left . toZipper) t1 @?= t3,
               testCase "setRight with Nothing" $
-                (toTree . setRight Nothing . fromJust . left . fromTree) t1 @?= t4,
+                (fromZipper . setRight Nothing . fromJust . left . toZipper) t1 @?= t4,
               testCase "setRight with subtree" $
-                (toTree . setRight (Just t5) . fromTree) t1 @?= t6,
+                (fromZipper . setRight (Just t5) . toZipper) t1 @?= t6,
               testCase "setValue on deep focus" $
-                (toTree . setValue 5 . fromJust . right . fromJust . left . fromTree) t1 @?= t7,
+                (fromZipper . setValue 5 . fromJust . right . fromJust . left . toZipper) t1 @?= t7,
               testCase "setTree" $
-                (toTree . setTree t5 . fromJust . right . fromTree) t1 @?= t6,
+                (fromZipper . setTree t5 . fromJust . right . toZipper) t1 @?= t6,
               testCase "modifyTree" $
-                (value . modifyTree (\(BT v l r) -> BT (v + 10) l r) . fromJust . left . fromTree) t1 @?= 12,
+                (extract . modifyTree (\(BT v l r) -> BT (v + 10) l r) . fromJust . left . toZipper) t1 @?= 12,
               testCase "different paths to same zipper" $
-                (right . fromJust . up . fromJust . left . fromTree) t1 @?= (right . fromTree) t1
+                (right . fromJust . up . fromJust . left . toZipper) t1 @?= (right . toZipper) t1
             ],
           testGroup
             "mirror"
@@ -118,8 +124,8 @@ customTests =
     "custom invariant tests"
     [ testCase "prev and next siblings" $
         let tree = BT 1 (Just (BT 2 Nothing Nothing)) (Just (BT 3 Nothing Nothing)) :: BinTree Int
-            zip1 = fromTree tree
-         in (value <$> (right zip1 >>= prev >>= next)) @?= Just 3
+            zip1 = toZipper tree
+         in (extract <$> (right zip1 >>= prev >>= next)) @?= Just 3
     ]
 
 listZipperTests :: TestTree
@@ -128,26 +134,53 @@ listZipperTests =
     "ListZipper Tests"
     [ testCase "extract / copoint focused element" $
         let lz = GenericZipper [1, 2] (3 :| [4, 5]) :: ListZipper Int
-         in copoint lz @?= 3,
+         in extract lz @?= 3,
       testCase "fmap maps over focus and crumbs" $
         let lz = GenericZipper [1, 2] (3 :| [4, 5]) :: ListZipper Int
             expected = GenericZipper [10, 20] (30 :| [40, 50]) :: ListZipper Int
-         in fmap (*10) lz @?= expected
+         in fmap (*10) lz @?= expected,
+      testProperty "smooth and smoothZipper are equivalent" prop_smoothEquivalence
     ]
+
+prop_smoothEquivalence :: [Double] -> Property
+prop_smoothEquivalence xs =
+  (not (null xs)) ==>
+    case nonEmpty xs of
+      Nothing -> property True
+      Just ne ->
+        let zipperResult = toList $ fromZipper $ smoothZipper (toZipper ne)
+            listResult   = smooth xs
+        in zipperResult === listResult
+  where
+    toList (y :| ys) = y : ys
 
 quickCheckTests :: TestTree
 quickCheckTests =
   testGroup
     "QuickCheck properties"
     [ testProperty "Zipper structural invariants" prop_ZipperInvariant,
-      testProperty "BinTree structural invariants" prop_BinTreeInvariant
+      testProperty "BinTree structural invariants" prop_BinTreeInvariant,
+      testProperty "TPossible index . tabulate = id" prop_representable_index_tabulate,
+      testProperty "TPossible tabulate . index = id" prop_representable_tabulate_index
     ]
+
+-- | Property: TPossible is representable, index . tabulate = id
+prop_representable_index_tabulate :: Int -> Int -> TChoice -> Property
+prop_representable_index_tabulate valL valR c =
+  let g L = valL
+      g R = valR
+      t = tabulate g :: TPossible Int
+  in index t c === g c
+
+-- | Property: TPossible is representable, tabulate . index = id
+prop_representable_tabulate_index :: TPossible Int -> Property
+prop_representable_tabulate_index x = tabulate (index x) === x
 
 -- | QuickCheck property: BinTree structural invariants
 prop_BinTreeInvariant :: BinTree Int -> Property
 prop_BinTreeInvariant tree =
   conjoin
-    [ property $ toTree (fromTree tree) == tree,
+    [ property $ fromZipper (toZipper tree) == tree,
       property $ mirror (mirror tree) == tree
     ]
 
@@ -187,16 +220,16 @@ learningExerciseTests =
         (Just $ BT "3 Revised" Nothing (Just $ BT "7" Nothing Nothing))
 
     pruneAndModify tree = do
-      node3 <- right (fromTree tree)
+      node3 <- right (toZipper tree)
       let modNode3 = setLeft Nothing (setValue "3 Revised" node3)
       node6 <- up modNode3 >>= left >>= right
-      return $ toTree (setValue "6 Modified" node6)
+      return $ fromZipper (setValue "6 Modified" node6)
 
     mirrorDeepToDeep tree = do
-      z6 <- left (fromTree tree) >>= right
+      z6 <- left (toZipper tree) >>= right
       let t6Mirrored = mirror (focusedTree z6)
       z3 <- up z6 >>= up >>= right
-      return $ toTree (setRight (Just t6Mirrored) z3)
+      return $ fromZipper (setRight (Just t6Mirrored) z3)
 
     mirrorInitialTree =
       BT
@@ -256,4 +289,12 @@ instance (Arbitrary a) => Arbitrary (BinTreeZipper a) where
   arbitrary = do
     tree <- arbitrary
     moves <- arbitrary
-    return $ foldl (flip applyMove) (fromTree tree) (moves :: [Move])
+    return $ foldl (flip applyMove) (toZipper tree) (moves :: [Move])
+
+instance Arbitrary TChoice where
+  arbitrary = elements [L, R]
+
+instance (Arbitrary a) => Arbitrary (TPossible a) where
+  arbitrary = TPossible <$> arbitrary <*> arbitrary
+
+

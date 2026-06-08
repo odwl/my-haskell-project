@@ -8,17 +8,20 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Lambda.Free
   ( -- Free Semigroup Adjunction
-    unitSemigroup,
-    counitSemigroup,
+    unitSG,
+    counitSG,
     phi,
     psi,
 
     -- Free Monoid Adjunction
-    unitMonoid,
-    counitMonoid,
+    unitMon,
+    counitMon,
 
     -- Free Functor
     Coyoneda (..),
@@ -68,32 +71,187 @@ import qualified Data.Set as S
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
 import Data.Semigroup (sconcat)
-
---------------------------------------------------------------------------------
+import qualified Data.Category as C
+import qualified Data.Category.Functor as F
+import Data.Category.Functor ((:%), (%), (:.:)(..))
+import Data.Category.Adjunction (Adjunction, mkAdjunctionInit)
+import qualified Data.Category.Monoidal as M
+import Data.Maybe (fromMaybe)
+import Data.Void (Void, absurd)
 -- Free Semigroup.   NonEmpty -| U
 --------------------------------------------------------------------------------
 
-unitSemigroup :: a -> NonEmpty a 
-unitSemigroup a = (a :| [])
+data SemigroupCat a b where
+  SemigroupArr :: (Semigroup a, Semigroup b) => (a -> b) -> SemigroupCat a b
 
-counitSemigroup :: Semigroup a => NonEmpty a -> a 
-counitSemigroup = sconcat 
+instance C.Category SemigroupCat where
+  src (SemigroupArr _) = SemigroupArr (\x -> x)
+  tgt (SemigroupArr _) = SemigroupArr (\x -> x)
+  (SemigroupArr g) . (SemigroupArr f) = SemigroupArr (f >>> g)
 
-phi :: Semigroup b => (NonEmpty a -> b) -> a -> b
-phi f a = f (a :| [])
+data ForgetSemigroup = ForgetSemigroup
+
+instance F.Functor ForgetSemigroup where
+  type Dom ForgetSemigroup = SemigroupCat
+  type Cod ForgetSemigroup = (->)
+  type ForgetSemigroup :% a = a
+  ForgetSemigroup % (SemigroupArr f) = f
+
+data FreeSemigroup = FreeSemigroup
+
+instance F.Functor FreeSemigroup where
+  type Dom FreeSemigroup = (->)
+  type Cod FreeSemigroup = SemigroupCat
+  type FreeSemigroup :% a = NonEmpty a
+  FreeSemigroup % f = SemigroupArr (fmap f)
+
+unitSG :: a -> NonEmpty a 
+unitSG a = (a :| [])
+
+counitSG :: Semigroup a => NonEmpty a -> a 
+counitSG = sconcat 
+
+freeForgetAdjunction :: Adjunction SemigroupCat (->) FreeSemigroup ForgetSemigroup
+freeForgetAdjunction = mkAdjunctionInit FreeSemigroup ForgetSemigroup unit' universalLifting
+  where
+    -- The unit of the adjunction: a -> NonEmpty a
+    unit' :: (a -> a) -> (a -> NonEmpty a)
+    unit' _ = unitSG
+
+    -- The Universal Property: Given a function `f : a -> b` where `b` is a Semigroup,
+    -- there is a unique homomorphism `NonEmpty a -> b`.
+    universalLifting :: SemigroupCat b b -> (a -> b) -> SemigroupCat (NonEmpty a) b
+    universalLifting (SemigroupArr _) f = SemigroupArr (sconcat . fmap f)
+
+-- The Composed Functor (Monad)
+type T = ForgetSemigroup :.: FreeSemigroup
+
+-- ==============================================================================
+-- The Comonad in SemigroupCat: W = Free . Forget
+-- W maps a Semigroup `a` to `NonEmpty a`.
+-- ==============================================================================
+
+semigroupComonad :: M.Comonad (FreeSemigroup :.: ForgetSemigroup)
+semigroupComonad = M.adjunctionComonad freeForgetAdjunction
+
+-- extract is the counit of the adjunction (epsilon)
+-- Notice how this requires `Semigroup a`, which perfectly matches SemigroupCat!
+extractSG :: Semigroup a => NonEmpty a -> a
+extractSG = sconcat
+
+-- duplicate is F(eta_{G(a)}). 
+-- G(a) = a. eta_a = unitSG. F(f) = fmap f. 
+-- Therefore, duplicate is `fmap unitSG`.
+duplicateSG :: Semigroup a => NonEmpty a -> NonEmpty (NonEmpty a)
+duplicateSG = fmap unitSG
+
+-- Both of these functions are valid Semigroup Homomorphisms!
+-- sconcat (xs <> ys) == sconcat xs <> sconcat ys
+-- fmap unitSG (xs <> ys) == fmap unitSG xs <> fmap unitSG ys
+
+-- CoKleisli composition in SemigroupCat
+composeSG :: Semigroup a => (NonEmpty a -> b) -> (NonEmpty b -> c) -> (NonEmpty a -> c)
+composeSG f g = fmap (unitSG >>> f) >>> g
+
+phi :: Semigroup b => (NonEmpty a -> b) -> a -> b 
+phi f = unitSG >>> f
 
 psi :: Semigroup b => (a -> b) -> NonEmpty a -> b
-psi f list = sconcat (NE.map f list) 
+psi f = fmap f >>> counitSG
+
 
 --------------------------------------------------------------------------------
 -- Free Monoid.   [] -| U
 --------------------------------------------------------------------------------
 
-unitMonoid :: a -> [a]
-unitMonoid a = [a]
+unitMon :: a -> [a] -- aka pure/return in Monad
+unitMon a = [a]
 
-counitMonoid :: Monoid a => [a] -> a
-counitMonoid = mconcat
+counitMon :: Monoid a => [a] -> a -- join = mconcat
+counitMon = mconcat
+
+-- [] is not a Control.Comonad but is a Comonad in the category of Monoid.
+extractMon :: Monoid a => [a] -> a
+extractMon = counitMon
+
+duplicateMon :: [a] -> [[a]]
+duplicateMon = fmap unitMon
+
+-- CoKeisli 
+idMon :: Monoid a => [a] -> a
+idMon = counitMon
+
+composeMon :: (Monoid a, Monoid b, Monoid c) => ([b] -> c) -> ([a] -> b) -> ([a] -> c)
+composeMon g f = fmap unitMon >>> fmap f >>> g
+
+
+--------------------------------------------------------------------------------
+-- The Empty Diagonal Adjunction (Initial -| Delta -| Terminal)
+--------------------------------------------------------------------------------
+-- Let `Delta` be the unique functor from Hask to the Terminal Category `1`.
+-- `Delta(a) = ()`.
+--
+-- This functor has BOTH a Left Adjoint and a Right Adjoint!
+-- 1. Left Adjoint (Initial Object): `F_initial(()) = Void`
+-- 2. Right Adjoint (Terminal Object): `F_terminal(()) = ()`
+
+-- === Left Adjoint: Initial -| Delta ===
+-- F_initial(()) = Void
+-- Delta(a) = ()
+
+-- Unit (eta : () -> Delta(F_initial(())))
+-- eta : () -> ()
+unitInitial :: () -> ()
+unitInitial () = ()
+
+-- Counit (epsilon : F_initial(Delta(a)) -> a)
+-- epsilon : Void -> a
+counitInitial :: Void -> a
+counitInitial = absurd
+
+-- === Right Adjoint: Delta -| Terminal ===
+-- Delta(a) = ()
+-- F_terminal(()) = ()
+
+-- Unit (eta : a -> F_terminal(Delta(a)))
+-- eta : a -> ()
+unitTerminal :: a -> ()
+unitTerminal _ = ()
+
+-- Counit (epsilon : Delta(F_terminal(())) -> ())
+-- epsilon : () -> ()
+counitTerminal :: () -> ()
+counitTerminal () = ()
+
+--------------------------------------------------------------------------------
+-- Free Monoid on a Semigroup.   Maybe -| U
+--------------------------------------------------------------------------------
+-- Crucial point, when s is a semigroup, Maybe s is a monoid.
+
+unitMaybe :: Semigroup s => s -> Maybe s -- eta
+unitMaybe = Just
+
+counitMaybe :: Monoid m => Maybe m -> m  -- epsilon (evaluates the freely added unit to mempty)
+counitMaybe = fromMaybe mempty
+
+-- The Monad in Semigroup (T = U . F = Maybe)
+-- join is G(epsilon_{F(s)}). Because F(s) = Maybe s is a Monoid, we can just use counit!
+joinMaybe :: Semigroup s => Maybe (Maybe s) -> Maybe s
+joinMaybe = counitMaybe
+
+-- The Comonad in MonoidCat (W = F . U = Maybe)
+extractMaybe :: Monoid m => Maybe m -> m
+extractMaybe = counitMaybe
+
+duplicateMaybe :: Monoid m => Maybe m -> Maybe (Maybe m)
+duplicateMaybe = fmap unitMaybe
+
+-- CoKleisli in MonoidCat
+idMaybe :: Monoid m => Maybe m -> m
+idMaybe = counitMaybe
+
+composeMaybe :: (Monoid a, Monoid b, Monoid c) => (Maybe b -> c) -> (Maybe a -> b) -> (Maybe a -> c)
+composeMaybe g f = fmap unitMaybe >>> fmap f >>> g
 
 --------------------------------------------------------------------------------
 -- Free Functor - Coyoneda
