@@ -27,6 +27,9 @@ def joinStringsWith (sep a b: String) : String := a ++ sep ++ b
 
 example : String -> String -> String := joinStringsWith ": "
 
+def volume (l w h: Nat) : Nat := l * w * h
+example : volume 1 2 3 = 6 := rfl
+
 
 def add1 (n : Nat) : Nat := n + 1
 

@@ -6,6 +6,8 @@ This project is a comprehensive collection of Haskell exercises and practical CL
 
 ## 📂 Project Structure
 
+- **lean/**
+    - `Main.lean`: Lean 4 entrypoint with expressions, proofs (e.g. string concatenation associativity), and `#guard` unit tests.
 - **src/Lambda/**
     - `Functor.hs`: Implementation of `MaybeList`, `MyMaybe`, and `MyReader`. Now includes **`Maybe` arithmetic functions** (`myDiv`, `mySum`, `myMult`).
     - `HoverDam.hs`: A **probabilistic Hover Dam** state machine using the **`Subdist`** (Probability Distribution) monad.
@@ -111,6 +113,14 @@ We've implemented explicit structural utilities for manipulating tuples as both 
 5. **Run the Weather Client**
    ```bash
    cabal run weather-client
+   ```
+6. **Run Lean 4 Code**
+   ```bash
+   make run-lean
+   ```
+7. **Watch Lean 4 Code** (automatically re-runs on save)
+   ```bash
+   make watch-lean
    ```
 
 ## 🧪 Testing Framework
