@@ -12,8 +12,8 @@ theorem stringConcat_AB_C : String.append "A" (String.append "B" "C") = "ABC" :=
 -- String.append (String.append "A" "B") "C"
 theorem stringConcat_A_BC : String.append (String.append "A" "B") "C" = "ABC" := rfl
 
-theorem concatAssociative (a b c : String) : String.append a (String.append b c) = String.append (String.append a b) c :=
-  String.append_assoc.symm
+theorem concatAssociative (a b c : String) : String.append (String.append a b) c = String.append a (String.append b c) :=
+  String.append_assoc
 
 
 
