@@ -1,3 +1,5 @@
+import Mathlib
+
 /-
 Evaluating Expressions
 Reference: https://anggtwu.net/2023.1-LA/fplean4-inicio.pdf
@@ -50,9 +52,9 @@ def add1 (n : Nat) : Nat := n + 1
 
 theorem add1_7_eq_8 : add1 7 = 8 := rfl
 
-def main : IO Unit := do
-  IO.println "Hello, World!"
-  IO.println (add1 7)
+-- def main : IO Unit := do
+--   IO.println "Hello, World!"
+--   IO.println (add1 7)
 
 def safeHead : List a -> Option a
   |  [] => none
@@ -142,12 +144,55 @@ def zip : (xs : List α) -> (ys : List β) -> List (α × β)
 #guard zip ([] : List Nat) [1,2,3] == []
 #guard zip [1,2,3] ([] : List Nat) == []
 
-theorem zip_eq {α β : Type} (xs : List α) (ys : List β) :
-    zip xs ys = List.zip xs ys := by
-    induction xs generalizing ys with
-    | nil => rfl
-    | cons x xs' ih =>
-        cases ys with
-        | nil => rfl
-        | cons y ys' =>
-            simp [zip, ih]
+theorem zip_eq :  (xs : List α) -> (ys : List β) -> zip xs ys = List.zip xs ys
+    | [], _ => rfl
+    | x::xs, [] => rfl
+    | x::xs, y::ys => by
+        simp [zip, zip_eq xs ys]
+
+    -- induction xs generalizing ys with
+    -- | nil => rfl
+    -- | cons x xs' ih =>
+    --     cases ys with
+    --     | nil => rfl
+    --     | cons y ys' =>
+    --         simp [zip, ih]
+
+def take : Nat -> List α -> List α
+| 0, _ => []
+| _, [] => []
+| n, (x::xs) => x :: take (n - 1) xs
+
+#guard take 3 [1,2,3,4,5] == [1,2,3]
+#guard take 1 [1,2,3,4,5] == [1]
+#guard take 5 [1,2,3] == [1,2,3]
+#guard take 3 ["bolete", "oyster"] == ["bolete", "oyster"]
+#guard take 1 ["bolete", "oyster"] == ["bolete"]
+
+theorem take_eq : (n:Nat) -> (xs : List α) -> take n xs = List.take n xs
+    | 0, [] => rfl
+    | 0, x::xs => rfl
+    | n+1, [] => rfl
+    | n+1, x::xs => by
+        simp [take, take_eq n xs]
+
+def prodSumDistrib {α β γ : Type} : α × (β ⊕ γ) -> (α × β) ⊕ (α × γ)
+  | (a, Sum.inl b) => Sum.inl (a, b)
+  | (a, Sum.inr c) => Sum.inr (a, c)
+
+#guard prodSumDistrib (1, Sum.inl 2) == (Sum.inl (1, 2) : Sum (Nat × Nat) (Nat × Nat))
+#guard prodSumDistrib (1, Sum.inr 3) == (Sum.inr (1, 3) : Sum (Nat × Nat) (Nat × Nat))
+
+-----------------------------------------------------
+-- Proving our custom function equals Mathlib's!
+-----------------------------------------------------
+
+example {α β γ : Type} :
+  @prodSumDistrib α β γ = (Equiv.prodSumDistrib α β γ).toFun := by
+  funext ⟨a, bc⟩
+  cases bc <;> rfl
+
+def main : IO Unit := do
+let englishGreeting := IO.println "Hello!"
+IO.println "Bonjour!"
+englishGreeting
