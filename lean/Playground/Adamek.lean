@@ -32,7 +32,7 @@ instance : Category J where
 -- Show that 1 (one) is terminal in J
 def J.one_is_terminal : IsTerminal J.one :=
   IsTerminal.ofUniqueHom
-    (fun X => match X with
+    (fun
       | .zero => .f
       | .one => .id_one)
     (fun _ m => by cases m <;> rfl)
