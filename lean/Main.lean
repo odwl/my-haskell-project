@@ -1,4 +1,4 @@
-import Mathlib
+import Mathlib.Logic.Equiv.Basic
 
 /-
 Evaluating Expressions
@@ -196,3 +196,38 @@ def main : IO Unit := do
 let englishGreeting := IO.println "Hello!"
 IO.println "Bonjour!"
 englishGreeting
+
+
+instance : Functor Option where
+  map f
+    | none => none
+    | some x => some (f x)
+  mapConst a
+    | none => none
+    | some _ => some a
+
+instance : LawfulFunctor Option where
+  id_map
+    | none => rfl
+    | some _ => rfl
+  map_const := rfl
+  comp_map
+    | _, _, none => rfl
+    | _, _, some _ => rfl
+
+
+instance : Applicative Option where
+  pure := some
+  seq
+    | none, _ => none
+    | some f, g => f <$> g ()
+
+def bind {α β : Type} : Option α → (α → Option β) → Option β
+    | none, _ => none
+    | some x, f => f x
+
+-- #eval fmap (fun x => x + 1) (some 1)
+
+-- #eval apply (some (fun x => x + 1)) (some 1)
+
+-- #eval bind (some 1) (fun x => some (x + 1))

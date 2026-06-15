@@ -50,3 +50,20 @@ get_drive_files.py
 ### LiquidHaskell ###
 .liquid/
 **/.liquid/
+
+### Python Cache and Env ###
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+.ipynb_checkpoints/
+.pytest_cache/
+
+### Lean Cache (Root fallback) ###
+.lake/
+
+### Local Sandbox ###
+scratch/
