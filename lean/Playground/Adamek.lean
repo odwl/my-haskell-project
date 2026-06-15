@@ -30,15 +30,12 @@ instance : Category J where
   assoc g h k := by cases g <;> cases h <;> cases k <;> rfl
 
 -- Show that 1 (one) is terminal in J
-def J.one_is_terminal_hom : ∀ X : J, X ⟶ J.one
-  | .zero => .f
-  | .one => .id_one
-
-lemma J.one_is_terminal_uniq (X : J) (m : X ⟶ J.one) : m = J.one_is_terminal_hom X := by
-  cases m <;> rfl
-
 def J.one_is_terminal : IsTerminal J.one :=
-  IsTerminal.ofUniqueHom J.one_is_terminal_hom J.one_is_terminal_uniq
+  IsTerminal.ofUniqueHom
+    (fun X => match X with
+      | .zero => .f
+      | .one => .id_one)
+    (fun _ m => by cases m <;> rfl)
 
 -- Define the diagram D : J ⥤ C mapping 0 ↦ ⊥_ C and 1 ↦ F(⊥_ C)
 variable {C : Type*} [Category C] [HasInitial C] (F : C ⥤ C)
