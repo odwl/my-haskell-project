@@ -35,11 +35,7 @@ def J.one_is_terminal_hom : ∀ X : J, X ⟶ J.one
   | .one => .id_one
 
 lemma J.one_is_terminal_uniq (X : J) (m : X ⟶ J.one) : m = J.one_is_terminal_hom X := by
-  cases X
-  · cases m
-    rfl
-  · cases m
-    rfl
+  cases m <;> rfl
 
 def J.one_is_terminal : IsTerminal J.one :=
   IsTerminal.ofUniqueHom J.one_is_terminal_hom J.one_is_terminal_uniq
