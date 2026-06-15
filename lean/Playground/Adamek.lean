@@ -60,3 +60,10 @@ noncomputable def D : J ⥤ C where
 -- Prove that F(⊥_ C) is the colimit of D
 noncomputable def D_colimit : IsColimit (coconeOfDiagramTerminal J.one_is_terminal (D F)) :=
   colimitOfDiagramTerminal J.one_is_terminal (D F)
+
+-- Register the HasTerminal instance for J
+instance : HasTerminal J := J.one_is_terminal.hasTerminal
+
+-- Obtain the isomorphism between the colimit and F(⊥_ C)
+noncomputable def D_colimit_iso : colimit (D F) ≅ F.obj (⊥_ C) :=
+  colimitOfTerminal (D F) ≪≫ (D F).mapIso (IsTerminal.uniqueUpToIso terminalIsTerminal J.one_is_terminal)
