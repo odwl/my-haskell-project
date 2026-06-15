@@ -37,8 +37,12 @@ def J.one_is_terminal : IsTerminal J.one :=
       | .one => .id_one)
     (fun _ m => by cases m <;> rfl)
 
+-- Register the HasTerminal instance for J
+instance : HasTerminal J := J.one_is_terminal.hasTerminal
+
 -- Define the diagram D : J ⥤ C mapping 0 ↦ ⊥_ C and 1 ↦ F(⊥_ C)
 variable {C : Type*} [Category C] [HasInitial C] (F : C ⥤ C)
+
 
 noncomputable def D : J ⥤ C where
   obj X := match X with
@@ -57,13 +61,15 @@ noncomputable def D : J ⥤ C where
     | .zero, .one, .one, .f, .id_one => by simp
     | .one, .one, .one, .id_one, .id_one => by simp
 
--- Prove that F(⊥_ C) is the colimit of D
-noncomputable def D_colimit : IsColimit (coconeOfDiagramTerminal J.one_is_terminal (D F)) :=
-  colimitOfDiagramTerminal J.one_is_terminal (D F)
-
--- Register the HasTerminal instance for J
-instance : HasTerminal J := J.one_is_terminal.hasTerminal
-
 -- Obtain the isomorphism between the colimit and F(⊥_ C)
 noncomputable def D_colimit_iso : colimit (D F) ≅ F.obj (⊥_ C) :=
   colimitOfTerminal (D F) ≪≫ (D F).mapIso (IsTerminal.uniqueUpToIso terminalIsTerminal J.one_is_terminal)
+
+-- Prove that for any diagram D : J ⥤ C, its value at J.one is its colimit
+noncomputable def J_colimit {C : Type*} [Category C] (D : J ⥤ C) :
+    IsColimit (coconeOfDiagramTerminal J.one_is_terminal D) :=
+  colimitOfDiagramTerminal J.one_is_terminal D
+
+-- Prove that F(⊥_ C) is the colimit of D
+noncomputable def D_colimit : IsColimit (coconeOfDiagramTerminal J.one_is_terminal (D F)) :=
+  J_colimit (D F)
