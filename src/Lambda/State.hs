@@ -55,3 +55,7 @@ replace l = fmap (`lookup` l)
 
 convert :: Expr (Maybe a) -> Maybe (Expr a)
 convert = sequenceA
+
+eval :: Expr Int -> Int
+eval (Var n) = n
+eval (Add e1 e2) = eval e1 + eval e2
