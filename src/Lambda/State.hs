@@ -8,8 +8,9 @@ module Lambda.State (module Lambda.State, module Control.Monad.State) where
 -- chapter 14 of "Category Theory for Programmers" by Bartosz Milewski.
 -- Link: https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf
 
-import Control.Monad (ap)
+import Control.Category ((>>>))
 import Control.Monad.State (State, state)
+import Control.Monad (ap)
 import Data.Word
 
 type Random a = State Integer a
@@ -34,16 +35,20 @@ randomizeExpr = traverse (const fresh)
 data Expr a = Var a | Add (Expr a) (Expr a) deriving (Show, Functor, Eq, Foldable, Traversable)
 
 instance Applicative Expr where
-  pure :: a -> Expr a
   pure = Var
-
-  (<*>) :: Expr (a -> b) -> Expr a -> Expr b
   (<*>) = ap
+  -- (<*>) :: Expr (a -> b) -> Expr a -> Expr b
+  -- (<*>) (Var f) = fmap f 
+  -- (<*>) (Add ef1 ef2) = liftA2 Add (ef1 <*>) (ef2 <*>)
 
 instance Monad Expr where
-  (>>=) :: Expr a -> (a -> Expr b) -> Expr b
-  Var x >>= f = f x
-  Add e1 e2 >>= f = Add (e1 >>= f) (e2 >>= f)
+  -- (>>=) :: Expr a -> (a -> Expr b) -> Expr b
+  (>>=) add = (<$> add) >>> join
+
+-- just for fun. 
+join :: Expr (Expr a) -> Expr a 
+join (Var e) = e 
+join (Add e1 e2) = Add (join e1) (join e2)  
 
 replace :: (Eq a) => [(a, b)] -> Expr a -> Expr (Maybe b)
 replace l = fmap (`lookup` l)

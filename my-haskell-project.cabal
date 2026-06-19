@@ -64,6 +64,8 @@ library
     Lambda.Lens
     Lambda.SandBox
     Lambda.Free
+    Lambda.Limit
+
 
   hs-source-dirs: src
   default-language: Haskell2010
@@ -118,6 +120,8 @@ test-suite lambda-test
     LambdaTest
     Lambda.SandBoxTest
     Lambda.FreeTest
+    Lambda.LimitTest
+
 
   build-depends:
     QuickCheck,
@@ -179,6 +183,7 @@ test-suite all-tests
     LambdaTest
     Lambda.SandBoxTest
     Lambda.FreeTest
+    Lambda.LimitTest
 
   build-depends:
     QuickCheck,

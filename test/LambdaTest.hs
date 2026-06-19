@@ -13,6 +13,8 @@ import Lambda.SandBoxTest (sandBoxSuite)
 import Lambda.StateTest (stateTests)
 import Lambda.SubdistTest (subdistTests)
 import Lambda.FreeTest (freeTests)
+import Lambda.LimitTest (limitTests)
+
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -81,5 +83,6 @@ lambdaSuite =
       stateTests,
       subdistTests,
       freeTests,
+      limitTests,
       sandBoxSuite
     ]

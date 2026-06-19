@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean
+.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit
 
 # Load local environment variables
 -include .env
@@ -75,6 +75,11 @@ watch-sandbox:
 # Run tests on file change but isolate only "Free, Cofree and Coyoneda Tests"
 watch-free:
 	TASTY_PATTERN="Free" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+
+# Run tests on file change but isolate only "Limit and Colimit Tests"
+watch-limit:
+	TASTY_PATTERN="Limit and Colimit Tests" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+
 
 # Run tests on file change but isolate only "Exercism" tests
 watch-exercism:
