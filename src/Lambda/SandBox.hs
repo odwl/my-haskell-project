@@ -42,14 +42,18 @@ import Data.Functor.Plus (Plus (..))
 import Data.Functor.Rep (Representable (..))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
 import Data.Key (Key, Keyed (..), Lookup (..))
-import Data.List (isPrefixOf, sortOn, tails)
+import Data.List (isPrefixOf, sortOn, tails, group, nub)
 import Data.Maybe (fromMaybe)
 import Data.Monoid (Endo (..), Sum (..))
 import Data.Profunctor (Profunctor (..), Strong (..))
 import Data.Tuple (swap)
 import Data.Void (Void, absurd)
+import qualified Data.Set as Set
+
+import Data.Foldable (Foldable(..), fold)
+import Data.List.NonEmpty (NonEmpty(..))
 import Lambda (safeHead)
-import Prelude hiding (id, (.))
+import Prelude hiding (id, (.), filter, reverse, iterate)
 import Safe (tailMay)
 
 -- | splits an even length list such as [1,2,3,4,5,6] -> ([1,2,3], [4,5,6])
@@ -904,3 +908,245 @@ newtype DoubleIdentity a = DoubleIdentity (Compose MyIdentity MyIdentity a)
 doubleToSingle :: DoubleIdentity ~> MyIdentity
 doubleToSingle = coerce 
 
+foldr' :: Foldable f => (a -> b -> b) -> b -> f a -> b 
+-- foldr' g b as =  appEndo (foldMap (g >>> Endo) as) b
+foldr' g =  flip (foldMap (g >>> Endo) >>> appEndo) 
+
+
+data Tree a = Empty | Leaf a | Node (Tree a) a (Tree a) deriving (Show, Functor)
+
+instance Foldable Tree where 
+  fold Empty = mempty 
+  fold (Leaf a) = a 
+  fold (Node l a r) = fold l <> a <> fold r 
+  foldMap f = fmap f >>> fold
+  
+
+newtype Parser a = Parser {runParser :: String -> Maybe (String, a)} deriving (Functor)
+instance Applicative Parser where 
+  pure :: a -> Parser a  
+  pure x = Parser (\s -> Just (s, x))
+  (<*>) :: Parser (a -> b) -> Parser a -> Parser b 
+  (<*>) (Parser f) (Parser g) = Parser (\s -> do 
+    (s', f')  <- f s
+    (s'', x)  <- g s'
+    return (s'', f' x))
+
+instance Alternative Parser where 
+  empty = Parser (\_ -> Nothing)
+  (<|>) :: Parser a -> Parser a -> Parser a 
+  (<|>) (Parser f) (Parser g) = Parser (\s -> f s <|> g s) 
+
+char :: Char -> Parser Char 
+char c = Parser (\s -> case s of 
+  (y:ys) | y == c -> Just (ys, c)
+  _ -> Nothing)
+
+string :: String -> Parser String 
+string [] = pure ""
+string (x:xs) = liftA2 (:) (char x) (string xs)
+
+string' :: String -> Parser String 
+string' = foldr fn (pure "") where 
+  fn c p = liftA2 (:) (char c) p 
+
+string'' :: String -> Parser String 
+string'' = traverse char 
+
+seq :: Applicative f => Maybe (f a) -> f (Maybe a)
+seq Nothing = pure Nothing
+seq (Just fa) = Just <$> fa
+
+-- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m 
+-- foldMap f container = foldr (\a b -> f a <> b) mempty container
+-- foldMap' f  = foldr (\a b -> f a <> b) mempty 
+-- foldMap'' f = foldr (\a -> (f a <>)) mempty 
+-- foldMap''' f = foldr ((<>) . f) mempty
+
+-- foldr f acc container = appEndo (foldMap (\a -> Endo (f a)) container) acc
+-- foldr' f = flip $ appEndo . foldMap (Endo . f)
+
+sumsq :: Int -> Int 
+-- sumsq n = sum $ map (^2)[1..n]
+-- sumsq n = foldr (\x acc -> acc + x * x) 0 [1..n]
+sumsq n = foldr (\x acc -> x * x + acc) 0 [1..n]
+
+-- Define length, which returns the number of elements in a list, 
+-- using foldr . Redefine it using foldl.
+
+lengthFoldr :: [a] -> Int 
+lengthFoldr list = foldr (\_ acc -> acc + 1) 0 list 
+
+lengthFoldl :: [a] -> Int 
+lengthFoldl list = foldl' (\acc _ -> acc + 1) 0 list 
+
+-- Define minlist, which returns the smallest integer in a non-empty list of integers,
+-- using foldr1 . Redefine it using foldl1 .
+
+minList :: NonEmpty Int -> Int 
+minList = foldr1 min
+
+minList' :: [Int] -> Int
+minList' = foldl1 min
+
+-- (4) Define reverse, which reverses a list, using foldr.
+reverse :: [a] -> [a]
+reverse = foldr (\x acc -> acc ++ [x]) [] 
+reverse' :: [a] -> [a]
+reverse' list = foldr (\x acc -> acc . (x:)) id list []
+
+reverse'' :: [a] -> [a]
+-- reverse'' list = foldr (\x acc -> (x:`) >>> acc) id list []
+-- reverse'' list = foldr (\x -> ((x:) >>>)) id list []
+reverse'' list = foldr ((>>>) . (:)) id list []
+
+-- (5) Using foldr , define a function remove which takes two strings as its arguments
+-- and removes every letter from the second list that occurs in the first list. For
+-- example, remove "first" "second" = "econd".
+
+remove :: String -> String -> String
+remove xs ys = let s = Set.fromList xs in 
+    foldr (\y -> if Set.notMember y s then (y:) else id) [] ys
+
+remove' :: String -> String -> String
+remove' xs ys = let s = Set.fromList xs in [y | y <- ys, Set.notMember y s]
+    -- foldr (\y -> if Set.notMember y s then (y:) else id) [] ys
+
+
+    -- (6) Define filter using foldr . Define filter again using foldl.
+
+filter :: Foldable f => (a -> Bool) -> f a -> [a]
+filter p = foldr (\x -> if p x then (x:) else id) [] 
+
+filter' :: Foldable f => (a -> Bool) -> f a -> [a]
+filter' p = reverse . foldl' (\acc x -> if p x then (x:acc) else acc) []
+
+-- The function remdups removes adjacent duplicates from a list. For example,
+-- remdups [1, 2, 2, 3, 3, 3, 1, 1] = [1, 2, 3, 1].
+-- Define remdups using foldr . Give another definition using foldl.
+
+remdups :: (Eq a, Foldable f) => f a -> [a] 
+remdups = foldr step [] where 
+  step x acc@(a:_) | x == a = acc 
+  step x acc = x : acc
+
+remdups' :: (Eq a, Foldable f) => f a -> [a]
+remdups' = reverse . foldl' step [] where 
+  step acc@(a:_) x | x == a = acc 
+  step acc x = x : acc 
+
+remdups'' :: (Eq a, Foldable f) => f a -> [a]
+remdups'' = toList >>> group >>> fmap head
+
+-- The function inits returns the list of all initial segments of a list. Thus, inits
+-- "ate" = [[], "a", "at", "ate"]. Define inits using foldr .
+
+inits :: [a] -> [[a]]
+inits = foldr step [[]]  where 
+  step x = map (x:) >>> ([]:)
+
+inits' :: [a] -> [[a]]
+inits' [] = [[]]
+inits' (x:xs) = [] : map (x:) (inits' xs)
+
+-- sing foldl define approxe n such that
+-- approxe n =
+-- X
+-- i=n
+-- i=0
+-- 1
+-- i!
+
+approxe :: Fractional a => Int -> a 
+approxe n = foldr step 1 [1..n] where 
+  step x acc = 1 + (acc / fromIntegral x)
+
+approximationsOfE :: [Double]
+approximationsOfE = scanl1 (+) ratios where
+  facts :: [Integer]
+  facts  = 1 : zipWith (*) [1..] facts
+  ratios = map ((1 /) . fromIntegral) facts
+
+approxeFoldl :: Int -> Double
+approxeFoldl n = fst $ foldl' step (1.0, 1.0) [1..n] 
+  where 
+    -- acc is (currentSum, currentFactorial)
+    -- x is the current number from 1 to n
+    step (s, f) x = 
+      let nextFact = f * fromIntegral x
+      in (s + (1 / nextFact), nextFact)
+
+sae :: Int -> [Double]
+sae n = fmap fst $ scanl step (1.0, 1.0) [1..n] where 
+    step (s, f) x = let nextFact = f * fromIntegral x 
+      in (s + (1 / nextFact), nextFact)
+
+iterate :: (a -> a) -> a -> [a]
+iterate f x = scanl step x (repeat ()) where 
+  step = f >>> const     
+
+shift :: [a] -> [a]
+shift [] = []
+shift (x:xs) = xs ++ [x]
+
+rotate :: [a] -> [[a]]
+rotate list = take (length list) (scanl step list (repeat ()))  where
+  step = shift >>> const 
+
+rotate' :: [a] -> [[a]]
+rotate' list = take (length list) $ iterate shift list 
+
+-- https://www.cantab.net/users/antoni.diller/haskell/
+
+succe :: Num a => a -> a
+succe i = i + 1
+
+prede :: Num a => a -> a
+prede i = i - 1
+
+add :: (Num a, Num b, Eq b) => a -> b -> a
+add i 0 = i
+add i j = succe (add i (prede j))
+
+mult :: (Num a, Num b, Eq a, Eq b) => a -> b -> a
+mult _ 0 = 0
+mult i j = add i $ mult i (prede j)
+
+expe :: (Num a, Num b, Eq a, Eq b) => a -> b -> a
+expe _ 0 = 1
+expe i j = mult i $ expe i (prede j)
+
+foldi :: (a -> a) -> a -> Int -> a
+foldi _ q 0 = q
+foldi f q i = f (foldi f q (pred i))
+
+add' :: Num a => a -> Int -> a
+add' a b = foldi succe a b 
+
+mult' :: (Eq a, Num a) => a -> Int -> a
+mult' a b = foldi (add a) 0 b
+
+expe' :: (Num a, Eq a) => a -> Int -> a
+expe' i j = foldi (mult i) 1 j 
+
+fact :: Int -> Int
+fact n = snd (foldi step (1, 1) n)
+  where
+    step (idx, prod) = (idx + 1, prod * idx)
+
+domain :: Eq a => [(a, b)] -> [a]
+domain  = map fst >>> nub
+
+range :: Eq b => [(a, b)] -> [b]
+range = map snd >>> nub
+  
+compose :: Eq b => [(a, b)] -> [(b, c)] -> [(a, c)]
+compose pairs1 pairs2 = [(a, c) | (a, b) <- pairs1, (b', c) <- pairs2, b == b']
+
+inverse :: [(a, b)] -> [(b, a)]
+inverse = map swap
+
+reflexive :: Eq a => [(a, a)] -> Bool
+reflexive pairs = length cand == length ref where 
+  cand = nub $ range pairs ++ domain pairs 
+  ref = nub $ map fst $ filter (\(x,y) -> x == y) pairs

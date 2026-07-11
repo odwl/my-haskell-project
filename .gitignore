@@ -67,3 +67,16 @@ ENV/
 
 ### Local Sandbox ###
 scratch/
+
+### Rust ###
+rust/target/
+.cargo/
+Cargo.lock
+
+### Secrets & Credentials ###
+credentials.json/
+credentials.json
+*.pickle
+token.pickle
+
+
