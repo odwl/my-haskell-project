@@ -1,4 +1,4 @@
-use rust::greet;
+use rust::{greet, fib, fib_fold};
 
 fn main() {
     println!("{}", greet("world"));
@@ -14,13 +14,24 @@ fn main() {
     print_type("y", &y);
     takes_i8(y);
     // takes_u32(y);
-    let start = std::time::Instant::now();
-    let res = fib(47);
-    println!("fib(47): {res} (calculated in {:?})", start.elapsed());
+    time_it("fibFold(100)", || fib_fold(100));
+}
 
-    let start_fold = std::time::Instant::now();
-    let res_fold = fib_fold(47);
-    println!("fib_fold(47): {res_fold} (calculated in {:?})", start_fold.elapsed());
+fn time_it<F, T: std::fmt::Display>(label: &str, mut f: F)
+where
+    F: FnMut() -> T,
+{
+    let iters = 10_000;
+    let res = f();
+    println!("{label}: {res}");
+
+    let start = std::time::Instant::now();
+    for _ in 0..iters {
+        std::hint::black_box(f());
+    }
+    let elapsed = start.elapsed();
+    let avg_ns = elapsed.as_nanos() as f64 / iters as f64;
+    println!("Average over {iters} runs: {avg_ns:.2} ns per calculation");
 }
 
 fn print_type<T: ?Sized>(name: &str, val: &T) {
@@ -37,16 +48,4 @@ fn takes_u32(x: u32) {
 
 fn takes_i8(y: i8) {
     println!("i8: {y}");
-}
-
-fn fib(n: u32) -> u64 {
-    let (mut a, mut b): (u64, u64) = (0, 1);
-    for _ in 0..n {
-        (a, b) = (b, a + b);
-    }
-    a
-}
-
-fn fib_fold(n: u32) -> u64 {
-    (0..n).fold((0, 1), |(a, b), _| (b, a + b)).0
 }

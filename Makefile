@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-rust build-rust check-rust test-rust watch-rust watch-rust-test
+.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-haskell-fib run-haskell-fib-llvm compare-fib run-rust run-rust-release build-rust build-rust-release check-rust test-rust watch-rust watch-rust-test
 
 # Load local environment variables
 -include .env
@@ -22,6 +22,42 @@ test: test-rust
 run-lean:
 	lean --run lean/Main.lean
 
+# Run Haskell Fibonacci benchmark executable with GHC Native Code Generator (-O2)
+run-haskell-fib:
+	cabal run -O2 fib-main
+
+# Run Haskell Fibonacci benchmark executable with GHC LLVM Backend (-O2 -fllvm)
+run-haskell-fib-llvm:
+	cabal run -O2 --ghc-options="-fllvm" fib-main
+
+# Compare Fibonacci performance across 10,000 runs: Haskell Memoized vs Haskell Uncached vs Rust Uncached vs Haskell Fast Doubling
+compare-fib:
+	@echo "=========================================================="
+	@echo "  1. Haskell GHC (-O2 Word128: Memoized / Shared)         "
+	@echo "=========================================================="
+	@cabal run -v0 -O2 fib-main -- --memoized
+	@echo ""
+	@echo "=========================================================="
+	@echo "  2. Haskell GHC (-O2 Word128: Uncached / From-Scratch)   "
+	@echo "=========================================================="
+	@cabal run -v0 -O2 fib-main -- --uncached
+	@echo ""
+	@echo "=========================================================="
+	@echo "  3. Rust (--release u128: Uncached / From-Scratch)       "
+	@echo "=========================================================="
+	@cargo run -q --release --manifest-path rust/Cargo.toml --bin fib
+	@echo ""
+	@echo "=========================================================="
+	@echo "  4. Haskell GHC (-O2 Word128: Fast Doubling O(log N))    "
+	@echo "=========================================================="
+	@cabal run -v0 -O2 fib-main -- --fibLog
+
+
+
+
+
+
+
 # Watch Lean Hello World for changes
 watch-lean:
 	@echo "Watching lean/Main.lean for changes..."
@@ -37,9 +73,13 @@ watch-lean:
 		sleep 1; \
 	done
 
-# Run Rust project
+# Run Rust project (debug)
 run-rust:
 	cargo run --manifest-path rust/Cargo.toml
+
+# Run Rust project in release mode (maximum optimization)
+run-rust-release:
+	cargo run --release --manifest-path rust/Cargo.toml
 
 # Check Rust project for errors without building binary
 check-rust:
@@ -49,9 +89,13 @@ check-rust:
 test-rust:
 	cargo test --manifest-path rust/Cargo.toml
 
-# Build Rust project
+# Build Rust project (debug)
 build-rust:
 	cargo build --manifest-path rust/Cargo.toml
+
+# Build Rust project in release mode
+build-rust-release:
+	cargo build --release --manifest-path rust/Cargo.toml
 
 # Watch Rust project for changes and re-run
 watch-rust:

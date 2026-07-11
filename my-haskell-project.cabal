@@ -38,7 +38,8 @@ common share-tests-deps
     semigroupoids,
     comonad,
     pointed,
-    data-category
+    data-category,
+    wide-word
 
 -- The main library for the project
 library
@@ -65,6 +66,7 @@ library
     Lambda.SandBox
     Lambda.Free
     Lambda.Limit
+    Fib.Algo
 
 
   hs-source-dirs: src
@@ -97,7 +99,8 @@ library
     semigroupoids,
     comonad,
     pointed,
-    data-category
+    data-category,
+    wide-word
 test-suite lambda-test
   import: share-tests-deps
   type: exitcode-stdio-1.0
@@ -222,6 +225,17 @@ executable flight-client
     text,
     bytestring,
     time
+
+executable fib-main
+  import: warnings
+  main-is: Main.hs
+  hs-source-dirs: src/Fib
+  default-language: Haskell2010
+  build-depends:
+    base >=4.14 && <5,
+    my-haskell-project,
+    wide-word
+  ghc-options: -O2
 
 benchmark parallel-bench
   import: share-tests-deps

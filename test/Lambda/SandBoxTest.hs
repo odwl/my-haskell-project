@@ -9,6 +9,9 @@ import Data.Coerce (coerce)
 import Data.Profunctor (Profunctor (..))
 import Prelude hiding (id, (.))
 import Lambda.SandBox (DeltaF (..), DoubleIdentity (..), UnitF (..), Zero (..), WriterKleisli (..), MyProxy(..), MyIdentity(..), MyReader(..), doubleToSingle, halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat', eitherBoolToNat, eitherBoolToNat')
+import Fib.Algo (fib, fibFold, fibLog, fibLogFold)
+
+
 import Control.Natural ((#))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
 import Data.Key (Lookup(..), mapWithKey)
@@ -328,6 +331,20 @@ sandBoxSuite =
           testProperty "Representable Tabulate-Index" $
             \(r :: Int, mr :: MyReader Int Int) ->
               eqReader r (tabulate (index mr)) mr
+        ],
+      testGroup
+        "FibFold Tests"
+        [ testCase "fib 100 == 354224848179261915075" $
+            fib 100 @?= 354224848179261915075,
+          testCase "fibFold 100 == 354224848179261915075" $
+            fibFold 100 @?= 354224848179261915075,
+          testCase "fibLog 100 == 354224848179261915075" $
+            fibLog 100 @?= 354224848179261915075,
+          testCase "fibLogFold 100 == 354224848179261915075" $
+            fibLogFold 100 @?= 354224848179261915075
         ]
     ]
+
+
+
 

@@ -17,6 +17,8 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE EmptyDataDeriving #-}
+{-# LANGUAGE BangPatterns #-}
+
 
 
 module Lambda.SandBox where
@@ -48,6 +50,9 @@ import Data.Monoid (Endo (..), Sum (..))
 import Data.Profunctor (Profunctor (..), Strong (..))
 import Data.Tuple (swap)
 import Data.Void (Void, absurd)
+import Data.Bits (testBit, finiteBitSize, countLeadingZeros)
+import Data.Word (Word32)
+import Data.WideWord.Word128 (Word128)
 import qualified Data.Set as Set
 
 import Data.Foldable (Foldable(..), fold)
