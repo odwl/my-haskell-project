@@ -9,7 +9,3 @@ isPangram :: String -> Bool
 isPangram text = all (flip elem lowerText) ['a' .. 'z']
   where
     lowerText = map toLower text
-
--- import Data.Char (isAlpha, isAscii, toLower)
--- import Data.Set (fromList, size)
--- isPangram = (== length ['a' .. 'z']) . size . fromList . map toLower . filter isAlpha . filter isAscii

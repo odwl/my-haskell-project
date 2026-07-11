@@ -10,10 +10,10 @@ import Data.List (sortBy)
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Ord (Down (..), comparing)
 import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
 import GHC.Generics
 import Network.HTTP.Req
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
 data GeocodeResult = GeocodeResult
   { name :: Text,

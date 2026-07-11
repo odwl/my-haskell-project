@@ -4,8 +4,8 @@
 module Exercism.BobTest (bobTests, main) where
 
 import Data.Char (isDigit, isSpace)
-import qualified Data.Text as T
 import Exercism.Bob (ResponseType (..), responseFor, responseTxt)
+import qualified Data.Text as T
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck

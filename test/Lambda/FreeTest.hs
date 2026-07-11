@@ -3,13 +3,13 @@
 
 module Lambda.FreeTest (freeTests) where
 
+import Control.Comonad (Comonad (..))
+import Data.List.NonEmpty (NonEmpty(..))
+import Lambda.Free
+import qualified Data.List.NonEmpty as NE
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Control.Comonad (Comonad (..))
-import Lambda.Free
-import Data.List.NonEmpty (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
 
 instance Arbitrary a => Arbitrary (NonEmpty a) where
   arbitrary = (:|) <$> arbitrary <*> arbitrary

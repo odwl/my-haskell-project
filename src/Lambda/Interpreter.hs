@@ -12,8 +12,8 @@ where
 import Control.Monad (when)
 import Control.Monad.State
 import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
 import Lambda.Parser
+import qualified Data.Map.Strict as Map
 
 type Memory = Map Id Value
 

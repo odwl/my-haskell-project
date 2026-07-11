@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, PatternSynonyms, FlexibleContexts, ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies, FlexibleInstances, UndecidableInstances, AllowAmbiguousTypes, TypeApplications, InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 module Exercism.Zipper
   ( BinTree (..),
     BinTreeZipper,
@@ -38,11 +39,9 @@ import Data.Distributive (Distributive (..))
 import Data.Functor.Rep (Representable (..))
 import Data.Kind (Type)
 import Data.List.NonEmpty (NonEmpty (..), (<|), nonEmpty, toList)
+import Data.Maybe (listToMaybe, fromMaybe)
 import Data.Proxy (Proxy (..))
 import Data.Typeable (Typeable, typeRep)
-import Data.Maybe (catMaybes, listToMaybe, fromMaybe)
-import Data.Functor.Const (Const (..))
-import Lambda.Functor (MyIdentity (..), MyProxy (..))
 
 data BinTree a = BT
   { btValue :: a,
@@ -54,7 +53,7 @@ data BinTree a = BT
 instance Comonad BinTree where 
   extract (BT v _ _) = v
   duplicate tree@(BT _ ml mr) = BT tree (duplicate <$> ml) (duplicate <$> mr) 
-
+  
 instance Copointed BinTree where
   copoint = extract 
 
@@ -124,15 +123,15 @@ instance Differentiable [] where
   downGeneric Next (GenericZipper cs (x : xs)) = Just $ GenericZipper (x : cs) xs 
   downGeneric Next (GenericZipper _ []) = Nothing 
   
-  upGeneric (GenericZipper (c:cs) focus) = Just $ GenericZipper cs (c:focus)
+  upGeneric (GenericZipper (c:cs) foc) = Just $ GenericZipper cs (c:foc)
   upGeneric (GenericZipper [] _) = Nothing 
 
   childrenZippers cs t@(x : xs) = GenericZipper cs t : childrenZippers (x : cs) xs
   childrenZippers _ [] = []
 
-  duplicateCrumbs (c:cs) focus = p : duplicateCrumbs cs (c : focus)
+  duplicateCrumbs (c:cs) foc = p : duplicateCrumbs cs (c : foc)
     where
-      p = GenericZipper cs (c : focus)
+      p = GenericZipper cs (c : foc)
   duplicateCrumbs [] _ = []
   
 instance Differentiable NonEmpty where 
@@ -140,17 +139,17 @@ instance Differentiable NonEmpty where
 
   downGeneric Next (GenericZipper cs (x :| xs)) = GenericZipper (x : cs) <$> nonEmpty xs
 
-  upGeneric (GenericZipper (c:cs) focus) = Just $ GenericZipper cs (c <| focus)
+  upGeneric (GenericZipper (c:cs) foc) = Just $ GenericZipper cs (c <| foc)
   upGeneric (GenericZipper [] _) = Nothing
 
   childrenZippers cs (x :| xs) = GenericZipper cs (x :| xs) :| go (x : cs) xs
     where
       go _ [] = []
-      go crumbs (y : ys) = GenericZipper crumbs (y :| ys) : go (y : crumbs) ys
+      go crmbs (y : ys) = GenericZipper crmbs (y :| ys) : go (y : crmbs) ys
 
-  duplicateCrumbs (c:cs) focus = p : duplicateCrumbs cs (c <| focus)
+  duplicateCrumbs (c:cs) foc = p : duplicateCrumbs cs (c <| foc)
     where
-      p = GenericZipper cs (c <| focus)
+      p = GenericZipper cs (c <| foc)
   duplicateCrumbs [] _ = []
 
 instance Differentiable BinTree where
@@ -252,8 +251,8 @@ mirror (BT v l r) = BT v (fmap mirror r) (fmap mirror l)
 
 smooth :: Fractional a => [a] -> [a]
 smooth [] = []
-smooth xs = zipWith3 average (head xs : xs) xs (tail xs ++ [last xs])
-    where average x y z = (x + y + z) / 3
+smooth (x:xs) = zipWith3 average (x : x : xs) (x : xs) (xs ++ [last (x : xs)])
+    where average a b c = (a + b + c) / 3
 
 smoothZipper :: Fractional a => ListZipper a -> ListZipper a
 smoothZipper = extend getLocalAverage

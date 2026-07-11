@@ -9,7 +9,6 @@ maintainer: odewolf@gmail.com
 common warnings
   ghc-options:
     -Wall
-    -fbyte-code
 
 -- Common test dependencies, shared across all test suites
 common share-tests-deps
@@ -66,6 +65,7 @@ library
     Lambda.SandBox
     Lambda.Free
     Lambda.Limit
+    Lambda.DataKinds
     Fib.Algo
 
 
@@ -124,6 +124,7 @@ test-suite lambda-test
     Lambda.SandBoxTest
     Lambda.FreeTest
     Lambda.LimitTest
+    Lambda.DataKindsTest
 
 
   build-depends:
@@ -187,6 +188,7 @@ test-suite all-tests
     Lambda.SandBoxTest
     Lambda.FreeTest
     Lambda.LimitTest
+    Lambda.DataKindsTest
 
   build-depends:
     QuickCheck,

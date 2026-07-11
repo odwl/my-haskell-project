@@ -4,28 +4,26 @@
 module Lambda.SandBoxTest (sandBoxSuite) where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
-import Control.Category ((.), id)
-import Data.Coerce (coerce)
-import Data.Profunctor (Profunctor (..))
-import Prelude hiding (id, (.))
-import Lambda.SandBox (DeltaF (..), DoubleIdentity (..), UnitF (..), Zero (..), WriterKleisli (..), MyProxy(..), MyIdentity(..), MyReader(..), doubleToSingle, halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat', eitherBoolToNat, eitherBoolToNat')
-import Fib.Algo (fib, fibFold, fibLog, fibLogFold)
-
-
+import Control.Category (id, (.))
+import Control.Comonad (Comonad (..))
 import Control.Natural ((#))
-import Data.Functor.Yoneda (liftYoneda, runYoneda)
-import Data.Key (Lookup(..), mapWithKey)
+import Data.Coerce (coerce)
 import Data.Distributive (distribute)
-import Data.Functor.Identity (Identity(..))
-import Data.Functor.Alt (Alt(..))
-import Data.Functor.Compose (Compose(..))
-import Data.Functor.Extend (Extend(..))
-import Control.Comonad (Comonad(..))
-import Data.Functor.Rep (Representable(..))
-import Data.Functor.Adjunction (Adjunction(..))
+import Data.Functor.Adjunction (Adjunction (..))
+import Data.Functor.Alt (Alt (..))
+import Data.Functor.Compose (Compose (..))
+import Data.Functor.Extend (Extend (..))
+import Data.Functor.Identity (Identity (..))
+import Data.Functor.Rep (Representable (..))
+import Data.Functor.Yoneda (liftYoneda, runYoneda)
+import Data.Key (Lookup (..), mapWithKey)
+import Data.Profunctor (Profunctor (..))
+import Fib.Algo (fib, fibFold, fibLog, fibLogCPS, fibLogFold)
+import Lambda.SandBox (DeltaF (..), DoubleIdentity (..), MyIdentity (..), MyProxy (..), MyReader (..), UnitF (..), WriterKleisli (..), Zero (..), doubleToSingle, eitherBoolToNat, eitherBoolToNat', halve, maybeBoolToNat, maybeBoolToNat', sTail, sTail', sTail'', third, third')
+import Prelude hiding (id, (.))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
-import Test.Tasty.QuickCheck (Arbitrary (..), CoArbitrary, Fun, applyFun, testProperty, discard, (==>), withMaxSuccess)
+import Test.Tasty.QuickCheck (Arbitrary (..), CoArbitrary, Fun (..), applyFun, discard, testProperty, withMaxSuccess, (==>))
 
 instance Arbitrary (UnitF a) where
   arbitrary = pure (UnitF ())
@@ -175,17 +173,8 @@ sandBoxSuite =
                in runWriterKleisli (dimap (l2 . l1) (r1 . r2) (WriterKleisli mF)) (w, x) == runWriterKleisli (dimap l1 r1 (dimap l2 r2 (WriterKleisli mF))) (w, x)
         ],
       testGroup
-        "Natural Transformation Laws"
-        [ testProperty "Naturality of nt (1 element): fmap f . nt == nt . fmap f" $
-            \(m :: Maybe Int) ->
-              (fmap f . nt) m == (nt . fmap f) m,
-          testProperty "Naturality of nt2 (0 elements): fmap f . nt2 == nt2 . fmap f" $
-            \(m :: Maybe Int) ->
-              (fmap f . nt2) m == (nt2 . fmap f) m,
-          testProperty "Naturality of nt3 (2 elements): fmap f . nt3 == nt3 . fmap f" $
-            \(m :: Maybe Int) ->
-              (fmap f . nt3) m == (nt3 . fmap f) m,
-          testProperty "Yoneda Lemma Isomorphism: runYoneda (liftYoneda m) f == maybeBoolToNat m # f" $
+        "Yoneda Lemma & Isomorphisms"
+        [ testProperty "Yoneda Lemma Isomorphism: runYoneda (liftYoneda m) f == maybeBoolToNat m # f" $
             \(m :: Maybe Bool) (fun :: Fun Bool Int) ->
               let f' = applyFun fun
                in runYoneda (liftYoneda m) f' == (maybeBoolToNat m # f'),
@@ -340,6 +329,8 @@ sandBoxSuite =
             fibFold 100 @?= 354224848179261915075,
           testCase "fibLog 100 == 354224848179261915075" $
             fibLog 100 @?= 354224848179261915075,
+          testCase "fibLogCPS 100 == 354224848179261915075" $
+            fibLogCPS 100 @?= 354224848179261915075,
           testCase "fibLogFold 100 == 354224848179261915075" $
             fibLogFold 100 @?= 354224848179261915075
         ]

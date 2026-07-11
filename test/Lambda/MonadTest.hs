@@ -23,8 +23,6 @@ genEvenNum :: Gen Int
 genEvenNum = fmap (2 *) randomNum
 
 genEvenNumBetter :: Gen Int
--- genEvenNumBetter = choose (2, 100)
--- genEvenNumBetter = liftA2 (+) randomNum randomNum
 genEvenNumBetter = do
   x <- randomNum -- "Draw" the first number
   y <- randomNum -- "Draw" the second number

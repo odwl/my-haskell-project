@@ -1,11 +1,12 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE EmptyCase #-}
+{-# LANGUAGE ListTuplePuns #-}
 
 module Lambda.ListAverage where
 
 import Control.Monad (foldM, (>=>))
 import Control.Monad.State
-import Data.Foldable (foldl', foldr')
+import Data.Foldable (foldr')
 import Data.Functor.Const (Const (..), getConst)
 import Data.Monoid (Sum (..), getSum)
 
@@ -104,34 +105,15 @@ lenCase :: [Double] -> Int
 lenCase [] = 0
 lenCase (_ : xs) = 1 + lenCase xs
 
--- -- | Returns the sum of all elements
--- mySum :: [Double] -> Double
--- mySum = sum
-
--- -- | Returns the count of all elements
--- myCount :: [Double] -> Int
--- myCount = foldl (\acc _ -> acc + 1) 0
-
--- -- | Tells the writer to increment the count by 1.
--- increment :: Double -> Sum Double
--- increment _ = Sum 1
-
--- -- | Uses the Monoid instance of Sum to accumulate
--- myCountMonoid :: [Double] -> Int
--- myCountMonoid xs = getSum $ foldMap (\_ -> Sum 1) xs
-
 -- | Uses the Applicative instance of Const (which relies on <*>) to accumulate
 myCountApplicative :: [Double] -> Int
 myCountApplicative xs = getSum $ getConst $ traverse (\_ -> Const (Sum 1)) xs
 
--- -- | Computes sum and count in a single traversal
+-- | Computes sum and count in a single strict traversal
 sumAndCount :: [Double] -> (Double, Int)
-sumAndCount = foldl (\(s, c) x -> (s + x, c + 1)) (0, 0)
+sumAndCount = foldl' (\(s, c) x -> (s + x, c + 1)) (0, 0)
 
--- sumAndCount = foldl (flip ((flip bimap (+ 1)) . (+))) (0, 0)
--- sumAndCount = foldl (\acc x -> bimap (+ x) (+ 1) acc) (0, 0)
-
--- -- -- | Use the result of sumAndCount to find the average
+-- | Use the result of sumAndCount to find the average
 average :: [Double] -> Double
 average = (\(s, c) -> s / fromIntegral c) . sumAndCount
 

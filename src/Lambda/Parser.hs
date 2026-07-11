@@ -27,9 +27,9 @@ import Control.Monad (guard)
 import Control.Monad.Combinators.Expr (Operator (..), makeExprParser)
 import Data.Char (isAlpha, isAlphaNum, isAscii)
 import Data.Void (Void)
+import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec (Parsec, choice, many, notFollowedBy, satisfy, sepBy1, try, (<|>))
 import Text.Megaparsec.Char (alphaNumChar, letterChar, space1, string)
-import qualified Text.Megaparsec.Char.Lexer as L
 
 -- ==========================================
 -- Types Definitions

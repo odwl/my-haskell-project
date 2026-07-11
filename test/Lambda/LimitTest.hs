@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Lambda.LimitTest (limitTests) where
 
+import Lambda.Limit
 import Test.Tasty
 import Test.Tasty.QuickCheck
-import Lambda.Limit
 
 instance Arbitrary (TerminalM a) where
   arbitrary = pure (TerminalM ())

@@ -9,8 +9,8 @@ module Lambda.State (module Lambda.State, module Control.Monad.State) where
 -- Link: https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf
 
 import Control.Category ((>>>))
-import Control.Monad.State (State, state)
 import Control.Monad (ap)
+import Control.Monad.State (State, state)
 import Data.Word
 
 type Random a = State Integer a

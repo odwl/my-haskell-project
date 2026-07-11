@@ -5,9 +5,9 @@ module Exercism.ParallelTest (parallelTests) where
 import Data.Map (empty, fromList, lookup, singleton)
 import Data.Text (concat)
 import Exercism.Parallel (frequency)
+import Prelude hiding (concat, lookup)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
-import Prelude hiding (concat, lookup)
 
 parallelTests :: TestTree
 parallelTests =

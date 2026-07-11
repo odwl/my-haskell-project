@@ -44,21 +44,19 @@ import Data.Functor.Plus (Plus (..))
 import Data.Functor.Rep (Representable (..))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
 import Data.Key (Key, Keyed (..), Lookup (..))
-import Data.List (isPrefixOf, sortOn, tails, group, nub)
+import Data.List (isPrefixOf, nub, sortOn, tails)
 import Data.Maybe (fromMaybe)
 import Data.Monoid (Endo (..), Sum (..))
 import Data.Profunctor (Profunctor (..), Strong (..))
 import Data.Tuple (swap)
 import Data.Void (Void, absurd)
-import Data.Bits (testBit, finiteBitSize, countLeadingZeros)
-import Data.Word (Word32)
-import Data.WideWord.Word128 (Word128)
 import qualified Data.Set as Set
 
 import Data.Foldable (Foldable(..), fold)
 import Data.List.NonEmpty (NonEmpty(..))
 import Lambda (safeHead)
 import Prelude hiding (id, (.), filter, reverse, iterate)
+import qualified Data.List.NonEmpty as NE
 import Safe (tailMay)
 
 -- | splits an even length list such as [1,2,3,4,5,6] -> ([1,2,3], [4,5,6])
@@ -1041,7 +1039,7 @@ remdups' = reverse . foldl' step [] where
   step acc x = x : acc 
 
 remdups'' :: (Eq a, Foldable f) => f a -> [a]
-remdups'' = toList >>> group >>> fmap head
+remdups'' = toList >>> NE.group >>> fmap NE.head
 
 -- The function inits returns the list of all initial segments of a list. Thus, inits
 -- "ate" = [[], "a", "at", "ate"]. Define inits using foldr .
@@ -1155,3 +1153,5 @@ reflexive :: Eq a => [(a, a)] -> Bool
 reflexive pairs = length cand == length ref where 
   cand = nub $ range pairs ++ domain pairs 
   ref = nub $ map fst $ filter (\(x,y) -> x == y) pairs
+
+

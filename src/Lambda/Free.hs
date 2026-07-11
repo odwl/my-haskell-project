@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-unused-top-binds -Wno-unused-imports -Wno-unused-matches -Wno-missing-signatures #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DeriveFunctor #-}
@@ -57,27 +58,26 @@ module Lambda.Free
     exampleCofree5
   ) where
 
-import Data.Kind (Type)
-import Control.Comonad (Comonad (..))
-import Data.Distributive (Distributive (..))
-import Data.Proxy (Proxy (..))
-import Data.Functor.Const (Const (..))
-import Data.Functor.Coyoneda (Coyoneda (..), liftCoyoneda, lowerCoyoneda)
-import Lambda.Functor (MyIdentity (..))
-import Data.Functor.Contravariant (Contravariant (..), Op (..))
 import Control.Category ((>>>))
-import Data.Set (Set, fromList)
-import qualified Data.Set as S
+import Control.Comonad (Comonad (..))
+import Data.Category.Adjunction (Adjunction, mkAdjunctionInit)
+import Data.Category.Functor ((:%), (%), (:.:)(..))
+import Data.Distributive (Distributive (..))
+import Data.Functor.Const (Const (..))
+import Data.Functor.Contravariant (Contravariant (..), Op (..))
+import Data.Functor.Coyoneda (Coyoneda (..), liftCoyoneda, lowerCoyoneda)
+import Data.Kind (Type)
 import Data.List.NonEmpty (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
+import Data.Maybe (fromMaybe)
+import Data.Proxy (Proxy (..))
 import Data.Semigroup (sconcat)
+import Data.Set (Set, fromList)
+import Data.Void (Void, absurd)
+import Lambda.Functor (MyIdentity (..))
 import qualified Data.Category as C
 import qualified Data.Category.Functor as F
-import Data.Category.Functor ((:%), (%), (:.:)(..))
-import Data.Category.Adjunction (Adjunction, mkAdjunctionInit)
 import qualified Data.Category.Monoidal as M
-import Data.Maybe (fromMaybe)
-import Data.Void (Void, absurd)
+import qualified Data.Set as S
 -- Free Semigroup.   NonEmpty -| U
 --------------------------------------------------------------------------------
 
@@ -271,6 +271,7 @@ lowerCoyonedaSet (Coyoneda f s) = S.map f s
 process :: Set Int -> Set Int 
 process = liftCoyoneda >>> lenShow >>> lowerCoyonedaSet
 
+result :: Set Int
 result = process intSet
 
 
@@ -402,7 +403,7 @@ instance Functor f => Functor (Cofree f) where
 
 instance Functor f => Comonad (Cofree f) where
   extract (x :< _) = x 
-  duplicate c@(x :< xs) = c :< fmap duplicate xs
+  duplicate c@(_ :< xs) = c :< fmap duplicate xs
 
 instance Distributive f => Distributive (Cofree f) where
   distribute :: Functor g => g (Cofree f a) -> Cofree f (g a)

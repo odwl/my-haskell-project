@@ -2,10 +2,10 @@ module Exercism.Parallel (frequency) where
 
 import Control.Parallel.Strategies (parList, rseq, using)
 import Data.Char (isAlpha, toLower)
-import qualified Data.List as List
 import Data.Map (Map)
-import qualified Data.Map as Map
 import Data.Text (Text, foldl')
+import qualified Data.List as List
+import qualified Data.Map as Map
 
 -- | Calculates the total frequency of each letter in a list of texts using parallel computation.
 -- Work is partitioned into 'nWorkers' batches, each evaluated in parallel across GHC sparks.
@@ -35,7 +35,7 @@ treeUnion ms = treeUnion (triples ms `using` parList rseq)
 -- | Scans a single 'Text' chunk to count character frequencies.
 -- Executes an in-place strict left fold, filtering for alphabetic characters and converting to lowercase.
 task :: Text -> Map Char Int 
-task txt = foldl' step Map.empty txt 
+task txt = Data.Text.foldl' step Map.empty txt 
   where step :: Map Char Int -> Char -> Map Char Int
         step m k 
           | isAlpha k = Map.insertWith (+) (toLower k) 1 m

@@ -2,11 +2,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Exercism.LuhnTest (luhnTests) where
 
+import Data.Char (isSpace, isDigit)
+import Exercism.Luhn (isValid, parseInput, parseInputIgnore, luhn)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 import Test.Tasty.QuickCheck (testProperty, (==>))
-import Data.Char (isSpace, isDigit)
-import Exercism.Luhn (isValid, parseInput, parseInputIgnore, luhn)
 
 luhnTests :: TestTree
 luhnTests = testGroup "Luhn"

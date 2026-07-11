@@ -11,8 +11,8 @@ where
 
 import Control.Monad.State (State, evalState, get, gets, modify, put)
 import Data.Map (Map)
-import qualified Data.Map as Map
 import Lambda.Functor (takeWhileM)
+import qualified Data.Map as Map
 import Test.QuickCheck (Gen, elements, infiniteListOf)
 
 -- ==========================================

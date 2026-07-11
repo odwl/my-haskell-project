@@ -1,4 +1,4 @@
-use rust::{greet, fib, fib_fold};
+use rust::{greet, fib_fold};
 
 fn main() {
     println!("{}", greet("world"));
@@ -15,6 +15,14 @@ fn main() {
     takes_i8(y);
     // takes_u32(y);
     time_it("fibFold(100)", || fib_fold(100));
+    let z = 13;
+    let x = {
+        let y = 10;
+        print_type("y", &y);
+        z - y
+    };
+    print_type("x", &x);
+    print_type("y", &y);
 }
 
 fn time_it<F, T: std::fmt::Display>(label: &str, mut f: F)
@@ -34,8 +42,17 @@ where
     println!("Average over {iters} runs: {avg_ns:.2} ns per calculation");
 }
 
-fn print_type<T: ?Sized>(name: &str, val: &T) {
-    println!("Type of {name}: {}", std::any::type_name_of_val(val));
+#[track_caller]
+fn print_type<T: std::fmt::Debug + ?Sized>(name: &str, val: &T) {
+    let loc = std::panic::Location::caller();
+    println!(
+        "[{}:{}:{}] {name} = {:?} (Type: {})",
+        loc.file(),
+        loc.line(),
+        loc.column(),
+        val,
+        std::any::type_name_of_val(val)
+    );
 }
 
 fn interproduct(a: i32, b: i32, c: i32) -> i32 {

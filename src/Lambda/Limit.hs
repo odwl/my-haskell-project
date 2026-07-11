@@ -8,9 +8,9 @@
 
 module Lambda.Limit where
 
-import Prelude hiding (id, (.))
 import Control.Category
 import Data.Kind (Type)
+import Prelude hiding (id, (.))
 
 
 
@@ -69,7 +69,7 @@ deltaE :: (a -> b) -> (a -> b, a -> b)
 deltaE f = (f, f)
 
 equalizerE :: (a -> a') -> (b -> b') -> a -> a'
-equalizerE alpha _ = alpha 
+equalizerE fnE _ = fnE 
 
 monadE :: (a -> b) -> a -> b 
 monadE = id
@@ -222,7 +222,7 @@ instance Monad EqualizerOb where
 
 -- | Equalize a double arrow
 equalize :: Eq b => DoubleArrow a b -> Equalizer a b
-equalize (DoubleArrow f g) = Equalizer
+equalize (DoubleArrow _ _) = Equalizer
   { inclusion = runEqualizerOb
   , factorise = \h -> Just (\x -> EqualizerOb (h x))
   }

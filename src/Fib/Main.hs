@@ -1,12 +1,12 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 
+import Control.Exception
+import Data.WideWord.Word128 (Word128)
+import Data.Word (Word32)
+import Fib.Algo (fibFold, fibLog, fibLogCPS, fibLogFold)
 import System.CPUTime
 import Text.Printf
-import Control.Exception
-import Fib.Algo (fibFold, fibLog, fibLogFold)
-import Data.Word (Word32)
-import Data.WideWord.Word128 (Word128)
 
 import System.Environment (getArgs)
 
@@ -65,12 +65,14 @@ main = do
         ["--fibLog"]   -> do
             timeFuncMemoized "fibLog(1,000,000) [O(log N)] (Memoized)" fibLog n
             timeFuncUncached "fibLog(1,000,000) [O(log N)] (Uncached Recursive)" fibLog n
+            timeFuncUncached "fibLogCPS(1,000,000) [O(log N)] (Uncached CPS)" fibLogCPS n
             timeFuncUncached "fibLogFold(1,000,000) [O(log N)] (Uncached Fold)" fibLogFold n
         _ -> do
             putStrLn "--- Haskell Fibonacci Timing (-O2 across 10,000 runs) ---"
             timeFuncMemoized "fibFold(1,000,000) [O(N)] (Memoized)" fibFold n
             timeFuncUncached "fibFold(1,000,000) [O(N)] (Uncached)" fibFold n
             timeFuncUncached "fibLog(1,000,000) [O(log N)] (Uncached Recursive)" fibLog n
+            timeFuncUncached "fibLogCPS(1,000,000) [O(log N)] (Uncached CPS)" fibLogCPS n
             timeFuncUncached "fibLogFold(1,000,000) [O(log N)] (Uncached Fold)" fibLogFold n
 
 

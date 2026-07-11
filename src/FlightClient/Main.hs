@@ -7,9 +7,9 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.List (minimumBy, sortBy)
 import Data.Maybe (catMaybes, fromMaybe, listToMaybe, mapMaybe)
 import Data.Ord (comparing)
-import qualified Data.Text as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
+import qualified Data.Text as T
 -- Import the API module
 
 import Mock

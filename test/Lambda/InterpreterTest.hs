@@ -3,9 +3,9 @@
 module Lambda.InterpreterTest (interpreterTests) where
 
 import Control.Monad.State (evalState, execState)
-import qualified Data.Map as Map
 import Lambda.Interpreter
 import Lambda.Parser
+import qualified Data.Map as Map
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck

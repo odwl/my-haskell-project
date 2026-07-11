@@ -1,7 +1,7 @@
 module Lambda.RandomWalkTest where
 
-import qualified Data.Map as Map
 import Lambda.RandomWalk (Action (..), RandomWalk (..), applyAction, applyReflectingBounds, genInfiniteActions, pathSnapshots)
+import qualified Data.Map as Map
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck

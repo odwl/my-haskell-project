@@ -1,10 +1,12 @@
 module LambdaTest (lambdaSuite) where
 
 import Lambda
+import Lambda.FreeTest (freeTests)
 import Lambda.FunctorTest (functorTests)
 import Lambda.HoverDamTest (hoverDamTests)
 import Lambda.InterpreterTest (interpreterTests)
 import Lambda.LensTest (lensTests)
+import Lambda.LimitTest (limitTests)
 import Lambda.ListAverageTest (listAverageTests)
 import Lambda.MonadTest (monadTests)
 import Lambda.ParserTest (parserTests)
@@ -12,8 +14,6 @@ import Lambda.RandomWalkTest (randomWalkTests)
 import Lambda.SandBoxTest (sandBoxSuite)
 import Lambda.StateTest (stateTests)
 import Lambda.SubdistTest (subdistTests)
-import Lambda.FreeTest (freeTests)
-import Lambda.LimitTest (limitTests)
 
 import Test.Tasty
 import Test.Tasty.HUnit
