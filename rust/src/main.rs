@@ -1,3 +1,7 @@
+use rust::greet;
+
 fn main() {
-    println!("Hello, world!");
+    println!("{}", greet("world"));
 }
+
+

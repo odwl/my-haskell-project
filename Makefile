@@ -1,11 +1,11 @@
-.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit
+.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-rust build-rust check-rust test-rust watch-rust watch-rust-test
 
 # Load local environment variables
 -include .env
 
 # Haskell Toolchain Setup
 GHCUP_BIN := $(HOME)/.ghcup/bin
-export PATH := $(HOME)/.elan/bin:$(GHCUP_BIN):$(HOME)/.cabal/bin:$(PATH)
+export PATH := $(HOME)/.cargo/bin:$(HOME)/.elan/bin:$(GHCUP_BIN):$(HOME)/.cabal/bin:$(PATH)
 export LIBRARY_PATH := $(CURDIR)/.local-lib:$(LIBRARY_PATH)
 
 
@@ -13,9 +13,10 @@ export LIBRARY_PATH := $(CURDIR)/.local-lib:$(LIBRARY_PATH)
 build:
 	cabal build
 
-# Run all tests
-test:
+# Run all tests (Haskell and Rust)
+test: test-rust
 	cabal test
+
 
 # Run Lean Hello World
 run-lean:
@@ -35,6 +36,53 @@ watch-lean:
 		fi; \
 		sleep 1; \
 	done
+
+# Run Rust project
+run-rust:
+	cargo run --manifest-path rust/Cargo.toml
+
+# Check Rust project for errors without building binary
+check-rust:
+	cargo check --manifest-path rust/Cargo.toml
+
+# Run Rust project tests
+test-rust:
+	cargo test --manifest-path rust/Cargo.toml
+
+# Build Rust project
+build-rust:
+	cargo build --manifest-path rust/Cargo.toml
+
+# Watch Rust project for changes and re-run
+watch-rust:
+	@echo "Watching rust/src for changes..."
+	@LAST_MOD=""; \
+	while true; do \
+		MOD=$$(find rust/src -type f -exec stat -c %Y {} + 2>/dev/null | sort -nr | head -n1); \
+		if [ "$$MOD" != "$$LAST_MOD" ]; then \
+			clear; \
+			echo "rust/src changed. Re-running..."; \
+			$(MAKE) run-rust; \
+			LAST_MOD=$$MOD; \
+		fi; \
+		sleep 1; \
+	done
+
+# Watch Rust project for changes and re-run tests
+watch-rust-test:
+	@echo "Watching rust/src and rust/tests for changes..."
+	@LAST_MOD=""; \
+	while true; do \
+		MOD=$$(find rust/src rust/tests -type f -exec stat -c %Y {} + 2>/dev/null | sort -nr | head -n1); \
+		if [ "$$MOD" != "$$LAST_MOD" ]; then \
+			clear; \
+			echo "Rust files changed. Running tests..."; \
+			$(MAKE) test-rust; \
+			LAST_MOD=$$MOD; \
+		fi; \
+		sleep 1; \
+	done
+
 
 # Run hlint on source and test directories
 lint hlint:
@@ -93,6 +141,7 @@ watch-zipper:
 # Clean build artifacts
 clean:
 	cabal clean
+	cargo clean --manifest-path rust/Cargo.toml
 	rm -f docs/*.aux docs/*.log docs/*.out docs/*.toc docs/*.synctex.gz
 
 # Build documentation

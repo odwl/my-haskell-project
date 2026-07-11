@@ -1,0 +1,26 @@
+# Thread: Re: URGENT: Admin access and shared code
+**Thread ID:** 19ed6f40507cedfa
+**Total Messages:** 1
+
+================================================================================
+
+### MESSAGE 1
+- **From:** "de🐺 Olivier de Wolf" <odwl@google.com>
+- **Date:** Fri, 19 Jun 2026 11:07:50 -0700
+- **Subject:** Access request for travel-qpx-staff.prod
+
+----------------------------------------
+
+Hi QPX team,
+
+I am looking to run some exploratory Stubby queries against QPX
+(gslb-blade:ita-customer-shared-prod) from my workstation to verify
+API schemas for general testing and integration exploration.
+
+Since the group is restricted, could an owner please add odwl to
+%travel-qpx-staff.prod or sponsor the request?
+
+Thanks!
+Olivier
+
+================================================================================

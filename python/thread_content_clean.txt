@@ -1,0 +1,558 @@
+# Email Thread: Re: URGENT: Admin access and shared code
+**Thread ID:** `19ed6f40507cedfa` | **Total Messages:** 11
+
+________________________________________________________________________________
+
+## Email 1 of 11
+- **From:** Reto Strobl <reto@google.com>
+- **Date:** Wed, 17 Jun 2026 20:59:22 +0200
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+- most, just tech folks
+
+can you help me understand what's going on? I'm also not aware of the code
+not working for everyone that has access to the googleads account, but
+depending on a particular role.
+
+reto
+
+================================================================================
+
+## Email 2 of 11
+- **From:** "de🐺 Olivier de Wolf" <odwl@google.com>
+- **Date:** Wed, 17 Jun 2026 12:34:03 -0700
+- **Subject:** Fwd: URGENT: Admin access and shared code
+
+________________________________________
+
+Do you understand all this?
+
+================================================================================
+
+## Email 3 of 11
+- **From:** Greg Haines <greghaines@google.com>
+- **Date:** Wed, 17 Jun 2026 14:46:20 -0600
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+All product linking activity, including all video & channel linking, is
+limited to users with the Admin role.
+
+Note that this has always been the case and is clearly called out in the UI
+for new users <https://screenshot.googleplex.com/C9PU4SbYgsnihiN> and the Ads
+Help Center article for video links
+<https://support.google.com/google-ads/answer/3063482?_gl=1*p6j0bm*_gcl_au*MTcwMjUwNzM3My4xNzgxNzI4OTg5*_ga*Mjc0NzQyNjgyLjE3ODE3Mjg5ODk.#beforeyoubegin>
+.
+
+================================================================================
+
+## Email 4 of 11
+- **From:** Greg Haines <greghaines@google.com>
+- **Date:** Wed, 17 Jun 2026 14:46:55 -0600
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
++Manveen Kaur <manveen@google.com> FYI
+
+================================================================================
+
+## Email 5 of 11
+- **From:** Manveen Kaur <manveen@google.com>
+- **Date:** Wed, 17 Jun 2026 15:43:17 -0700
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+Google Ads treats "product linking" as a high-stakes administrative action
+because it fundamentally alters the account's capabilities and data access.
+Linking services like YouTube to Google Ads has significant consequences:
+
+1. Data Sharing: It permits the flow of potentially sensitive data between
+platforms (e.g., YouTube analytics to Ads).
+2. Permissions & Control: It grants Google Ads specific rights to access
+and use features or data from the linked service (e.g., using video view
+data to build remarketing audiences).
+3. Advertising Impact: Linked data directly powers critical advertising
+functions such as audience targeting, ad creative selection, and conversion
+measurement.
+
+These actions affect data privacy, ad performance, and budget utilization.
+Requiring "Admin" access ensures that only users with full authority and
+accountability can make these crucial decisions, safeguarding the account.
+
+Therefore, while CPH shared codes make initiating a video link much
+smoother by using a creator-generated code, they do not solve the
+fundamental problem: the user finalizing the link within the Google Ads
+interface still needs Admin permissions on the Google Ads account. The
+shared code simplifies the request, but the acceptance and establishment of
+the link remain an Admin-level function.
+
+================================================================================
+
+## Email 6 of 11
+- **From:** Reto Strobl <reto@google.com>
+- **Date:** Thu, 18 Jun 2026 08:01:25 +0200
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+Is this the same for regular in-product account or video linking?
+
+reto
+
+================================================================================
+
+## Email 7 of 11
+- **From:** Manveen Kaur <manveen@google.com>
+- **Date:** Wed, 17 Jun 2026 23:33:05 -0700
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+Yes, the fundamental requirement
+<https://screenshot.googleplex.com/3R3sTxPZYs3Xwp9> for Admin access on the
+Google Ads account is the same for both. The system doesn't differentiate
+the permission level needed based on how the link was proposed (manual
+in-UI vs. shared code), but rather on the action of creating the link
+itself.
+
+================================================================================
+
+## Email 8 of 11
+- **From:** Ali Nasserzadeh <lagily@google.com>
+- **Date:** Fri, 19 Jun 2026 13:33:45 +0200
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+Thanks Manveen, for my understanding, is campaign creation also only
+available behind Admin access?
+
+I am wondering whether the BIL is really that critical.
+
+================================================================================
+
+## Email 9 of 11
+- **From:** "de🐺 Olivier de Wolf" <odwl@google.com>
+- **Date:** Fri, 19 Jun 2026 04:44:15 -0700
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+For my understanding. Does someone have an exhaustive list of tasks that
+are admin only? As far as i remember, it was only ACL management, MCC
+controls, Account Cancellation, that type of stuff.
+So we can compare why the video linking requires such special permissions?
+
+Olivier
+
+================================================================================
+
+## Email 10 of 11
+- **From:** "de🐺 Olivier de Wolf" <odwl@google.com>
+- **Date:** Fri, 19 Jun 2026 06:34:02 -0700
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+Hi Reto,
+
+I know you are already familiar with most of the background here, but I
+wanted to share a detailed breakdown of the exact risk dynamics today vs.
+tomorrow:
+
+TL;DR: The creator can block specific campaigns from a linked CID (versus
+globally blocking all ads). They can already identify advertisers from
+YouTube paid views analytics (if only one CID is boosting the video), and
+tomorrow they will have access to full performance stats (earned views,
+subscribers, etc.) once the transparency and boost tab features launch.
+This helps clarify why keeping the Admin permission requirement is
+important to manage this level of exposure.
+
+Here is the detailed risk breakdown today vs. tomorrow:
+1. The Risks Today
+
+   - View Exposure & Loss of Anonymity: Even without a link, YouTube
+   analytics shows creators the total paid views on their videos (though not
+   segmented by CID). If only a single CID is running ads, they effectively
+   see all traffic from that specific CID. Establishing a link fully reveals
+   the advertiser's exact CID and name.
+   - Audience List Leakage: If the Ads account is in an open Manager
+   Account (MCC) with list sharing enabled, remarketing lists built from the
+   video views could leak to other accounts in the MCC.
+   - Unilateral Campaign Blocks: Without a link, the creator can use Video
+   Ad Control (VidAc) in YouTube Studio to forbid Google Ads usage globally
+   across all CIDs. Linking acts as a targeted whitelist entry to bypass this
+   block. If the creator breaks the link, the whitelist is revoked, which
+   immediately halts campaigns and freezes remarketing audiences.
+
+2. The Risks Tomorrow (Parallel Initiatives)
+
+We are currently building two parallel projects that will change these
+dynamics:
+
+   1. The Boost Hub (specifically the Brand Boost tab): A new YouTube
+   Studio dashboard surfacing active brand-led campaigns and aggregate
+   performance metrics directly to creators.
+   2. Creator Ad Controls 2.0 (Ads Performance Transparency workstream): A
+   permissions redesign that will let creators allow/block specific CIDs, set
+   contract-aware link expirations, and decouple metric sharing from ad reuse
+   (boosting) rights.
+
+Added Risks:
+
+   - These features will expose advertiser-side performance metrics (like
+   earned views, conversions, and follow-on subscribers) of unlinked
+   advertisers, and establishing a link will act as explicit consent for this
+   exposure.
+
+Based on this, I now fully understand why requiring Admin access is
+important for YouTube linking.
+
+Do you agree?
+
+Olivier
+
+On Fri, Jun 19, 2026 at 4:44 AM de🐺 Olivier de Wolf <odwl@google.com>
+wrote:
+
+> For my understanding. Does someone have an exhaustive list of tasks that
+> are admin only? As far as i remember, it was only ACL management, MCC
+> controls, Account Cancellation, that type of stuff.
+> So we can compare why the video linking requires such special permissions?
+>
+> Olivier
+>
+>
+> On Fri, Jun 19, 2026 at 4:33 AM Ali Nasserzadeh <lagily@google.com> wrote:
+>
+>> Thanks Manveen, for my understanding, is campaign creation also only
+>> available behind Admin access?
+>>
+>> I am wondering whether the BIL is really that critical.
+>>
+>> On Thu, Jun 18, 2026, 08:33 Manveen Kaur <manveen@google.com> wrote:
+>>
+>>> Yes, the fundamental requirement
+>>> <https://screenshot.googleplex.com/3R3sTxPZYs3Xwp9> for Admin access on
+>>> the Google Ads account is the same for both. The system doesn't
+>>> differentiate the permission level needed based on how the link was
+>>> proposed (manual in-UI vs. shared code), but rather on the action of
+>>> creating the link itself.
+>>>
+>>>
+>>> On Wed, Jun 17, 2026 at 11:01 PM Reto Strobl <reto@google.com> wrote:
+>>>
+>>>> Is this the same for regular in-product account or video linking?
+>>>>
+>>>> reto
+>>>>
+>>>> On Thu, Jun 18, 2026 at 12:43 AM Manveen Kaur <manveen@google.com>
+>>>> wrote:
+>>>>
+>>>>> Google Ads treats "product linking" as a high-stakes administrative
+>>>>> action because it fundamentally alters the account's capabilities and data
+>>>>> access. Linking services like YouTube to Google Ads has significant
+>>>>> consequences:
+>>>>>
+>>>>> 1. Data Sharing: It permits the flow of potentially sensitive data
+>>>>> between platforms (e.g., YouTube analytics to Ads).
+>>>>> 2. Permissions & Control: It grants Google Ads specific rights to
+>>>>> access and use features or data from the linked service (e.g., using video
+>>>>> view data to build remarketing audiences).
+>>>>> 3. Advertising Impact: Linked data directly powers critical
+>>>>> advertising functions such as audience targeting, ad creative selection,
+>>>>> and conversion measurement.
+>>>>>
+>>>>> These actions affect data privacy, ad performance, and budget
+>>>>> utilization. Requiring "Admin" access ensures that only users with full
+>>>>> authority and accountability can make these crucial decisions, safeguarding
+>>>>> the account.
+>>>>>
+>>>>> Therefore, while CPH shared codes make initiating a video link much
+>>>>> smoother by using a creator-generated code, they do not solve the
+>>>>> fundamental problem: the user finalizing the link within the Google Ads
+>>>>> interface still needs Admin permissions on the Google Ads account. The
+>>>>> shared code simplifies the request, but the acceptance and establishment of
+>>>>> the link remain an Admin-level function.
+>>>>>
+>>>>>
+>>>>> On Wed, Jun 17, 2026 at 1:47 PM Greg Haines <greghaines@google.com>
+>>>>> wrote:
+>>>>>
+>>>>>> +Manveen Kaur <manveen@google.com> FYI
+>>>>>>
+>>>>>> On Wed, Jun 17, 2026 at 2:46 PM Greg Haines <greghaines@google.com>
+>>>>>> wrote:
+>>>>>>
+>>>>>>> All product linking activity, including all video & channel linking,
+>>>>>>> is limited to users with the Admin role.
+>>>>>>>
+>>>>>>> Note that this has always been the case and is clearly called out in
+>>>>>>> the UI for new users
+>>>>>>> <https://screenshot.googleplex.com/C9PU4SbYgsnihiN> and the Ads
+>>>>>>> Help Center article for video links
+>>>>>>> <https://support.google.com/google-ads/answer/3063482?_gl=1*p6j0bm*_gcl_au*MTcwMjUwNzM3My4xNzgxNzI4OTg5*_ga*Mjc0NzQyNjgyLjE3ODE3Mjg5ODk.#beforeyoubegin>
+>>>>>>> .
+>>>>>>>
+>>>>>>> On Wed, Jun 17, 2026 at 12:59 PM Reto Strobl <reto@google.com>
+>>>>>>> wrote:
+>>>>>>>
+>>>>>>>> - most, just tech folks
+>>>>>>>>
+>>>>>>>> can you help me understand what's going on? I'm also not aware of
+>>>>>>>> the code not working for everyone that has access to the googleads account,
+>>>>>>>> but depending on a particular role.
+>>>>>>>>
+>>>>>>>> reto
+>>>>>>>>
+>>>>>>>> On Wed, Jun 17, 2026 at 8:56 PM Toby Maurer <tmaurer@google.com>
+>>>>>>>> wrote:
+>>>>>>>>
+>>>>>>>>> Hi Melissa and Reto,
+>>>>>>>>>
+>>>>>>>>> GBO flagged that shared code being available to admin users only
+>>>>>>>>> is a huge blocker (whote from Rae below). I wasn't aware that there are
+>>>>>>>>> separate levels of access in Google ads and that this also applies to BIL
+>>>>>>>>> today. Can you help track this down and help me understand if this is an
+>>>>>>>>> issue or not and what it would take to address? If how much is this
+>>>>>>>>> lowering BIL today?
+>>>>>>>>>
+>>>>>>>>> +1, the Admin only is a massive blocker. For context, most
+>>>>>>>>>> advertisers do not give their paid media agencies Admin access to their
+>>>>>>>>>> accounts (to protect payment info), only granting Standard access. This
+>>>>>>>>>> limitation means a notable chunk of Google Ads users will not be able to
+>>>>>>>>>> add codes they receive. This limitation is also a source of escalation for
+>>>>>>>>>> BIL today.
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>> Thanks,
+>>>>>>>>>
+>>>>>>>>> Toby
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>> --
+>>>>>>>>>
+>>>>>>>>> Toby Maurer | GPM BrandConnect | tmaurer@google.com
+>>>>>>>>>
+>>>>>>>>> If you received this communication by mistake, please don't
+>>>>>>>>> forward it to anyone else (it may contain confidential or privileged
+>>>>>>>>> information), please erase all copies of it, including all attachments, and
+>>>>>>>>> let the sender know it went to the wrong person.
+>>>>>>>>>
+>>>>>>>>
+
+================================================================================
+
+## Email 11 of 11
+- **From:** "de🐺 Olivier de Wolf" <odwl@google.com>
+- **Date:** Fri, 19 Jun 2026 08:02:00 -0700
+- **Subject:** Re: URGENT: Admin access and shared code
+
+________________________________________
+
+Alternatively, we could spin up a larger project to add checkboxes and
+update Linking Table that let advertisers choose whether or not to accept
+data sharing. However, that sounds like a significant amount of work and is
+likely not a small lift at all.
+
+Olivier
+
+
+On Fri, Jun 19, 2026 at 6:34 AM de🐺 Olivier de Wolf <odwl@google.com>
+wrote:
+
+> Hi Reto,
+>
+> I know you are already familiar with most of the background here, but I
+> wanted to share a detailed breakdown of the exact risk dynamics today vs.
+> tomorrow:
+>
+> TL;DR: The creator can block specific campaigns from a linked CID (versus
+> globally blocking all ads). They can already identify advertisers from
+> YouTube paid views analytics (if only one CID is boosting the video), and
+> tomorrow they will have access to full performance stats (earned views,
+> subscribers, etc.) once the transparency and boost tab features launch.
+> This helps clarify why keeping the Admin permission requirement is
+> important to manage this level of exposure.
+>
+> Here is the detailed risk breakdown today vs. tomorrow:
+> 1. The Risks Today
+>
+>    - View Exposure & Loss of Anonymity: Even without a link, YouTube
+>    analytics shows creators the total paid views on their videos (though not
+>    segmented by CID). If only a single CID is running ads, they effectively
+>    see all traffic from that specific CID. Establishing a link fully reveals
+>    the advertiser's exact CID and name.
+>    - Audience List Leakage: If the Ads account is in an open Manager
+>    Account (MCC) with list sharing enabled, remarketing lists built from the
+>    video views could leak to other accounts in the MCC.
+>    - Unilateral Campaign Blocks: Without a link, the creator can use
+>    Video Ad Control (VidAc) in YouTube Studio to forbid Google Ads usage
+>    globally across all CIDs. Linking acts as a targeted whitelist entry to
+>    bypass this block. If the creator breaks the link, the whitelist is
+>    revoked, which immediately halts campaigns and freezes remarketing
+>    audiences.
+>
+> 2. The Risks Tomorrow (Parallel Initiatives)
+>
+> We are currently building two parallel projects that will change these
+> dynamics:
+>
+>    1. The Boost Hub (specifically the Brand Boost tab): A new YouTube
+>    Studio dashboard surfacing active brand-led campaigns and aggregate
+>    performance metrics directly to creators.
+>    2. Creator Ad Controls 2.0 (Ads Performance Transparency workstream): A
+>    permissions redesign that will let creators allow/block specific CIDs, set
+>    contract-aware link expirations, and decouple metric sharing from ad reuse
+>    (boosting) rights.
+>
+> Added Risks:
+>
+>    - These features will expose advertiser-side performance metrics (like
+>    earned views, conversions, and follow-on subscribers) of unlinked
+>    advertisers, and establishing a link will act as explicit consent for this
+>    exposure.
+>
+> Based on this, I now fully understand why requiring Admin access is
+> important for YouTube linking.
+>
+> Do you agree?
+>
+> Olivier
+>
+> On Fri, Jun 19, 2026 at 4:44 AM de🐺 Olivier de Wolf <odwl@google.com>
+> wrote:
+>
+>> For my understanding. Does someone have an exhaustive list of tasks that
+>> are admin only? As far as i remember, it was only ACL management, MCC
+>> controls, Account Cancellation, that type of stuff.
+>> So we can compare why the video linking requires such special permissions?
+>>
+>> Olivier
+>>
+>>
+>> On Fri, Jun 19, 2026 at 4:33 AM Ali Nasserzadeh <lagily@google.com>
+>> wrote:
+>>
+>>> Thanks Manveen, for my understanding, is campaign creation also only
+>>> available behind Admin access?
+>>>
+>>> I am wondering whether the BIL is really that critical.
+>>>
+>>> On Thu, Jun 18, 2026, 08:33 Manveen Kaur <manveen@google.com> wrote:
+>>>
+>>>> Yes, the fundamental requirement
+>>>> <https://screenshot.googleplex.com/3R3sTxPZYs3Xwp9> for Admin access
+>>>> on the Google Ads account is the same for both. The system doesn't
+>>>> differentiate the permission level needed based on how the link was
+>>>> proposed (manual in-UI vs. shared code), but rather on the action of
+>>>> creating the link itself.
+>>>>
+>>>>
+>>>> On Wed, Jun 17, 2026 at 11:01 PM Reto Strobl <reto@google.com> wrote:
+>>>>
+>>>>> Is this the same for regular in-product account or video linking?
+>>>>>
+>>>>> reto
+>>>>>
+>>>>> On Thu, Jun 18, 2026 at 12:43 AM Manveen Kaur <manveen@google.com>
+>>>>> wrote:
+>>>>>
+>>>>>> Google Ads treats "product linking" as a high-stakes administrative
+>>>>>> action because it fundamentally alters the account's capabilities and data
+>>>>>> access. Linking services like YouTube to Google Ads has significant
+>>>>>> consequences:
+>>>>>>
+>>>>>> 1. Data Sharing: It permits the flow of potentially sensitive data
+>>>>>> between platforms (e.g., YouTube analytics to Ads).
+>>>>>> 2. Permissions & Control: It grants Google Ads specific rights to
+>>>>>> access and use features or data from the linked service (e.g., using video
+>>>>>> view data to build remarketing audiences).
+>>>>>> 3. Advertising Impact: Linked data directly powers critical
+>>>>>> advertising functions such as audience targeting, ad creative selection,
+>>>>>> and conversion measurement.
+>>>>>>
+>>>>>> These actions affect data privacy, ad performance, and budget
+>>>>>> utilization. Requiring "Admin" access ensures that only users with full
+>>>>>> authority and accountability can make these crucial decisions, safeguarding
+>>>>>> the account.
+>>>>>>
+>>>>>> Therefore, while CPH shared codes make initiating a video link much
+>>>>>> smoother by using a creator-generated code, they do not solve the
+>>>>>> fundamental problem: the user finalizing the link within the Google Ads
+>>>>>> interface still needs Admin permissions on the Google Ads account. The
+>>>>>> shared code simplifies the request, but the acceptance and establishment of
+>>>>>> the link remain an Admin-level function.
+>>>>>>
+>>>>>>
+>>>>>> On Wed, Jun 17, 2026 at 1:47 PM Greg Haines <greghaines@google.com>
+>>>>>> wrote:
+>>>>>>
+>>>>>>> +Manveen Kaur <manveen@google.com> FYI
+>>>>>>>
+>>>>>>> On Wed, Jun 17, 2026 at 2:46 PM Greg Haines <greghaines@google.com>
+>>>>>>> wrote:
+>>>>>>>
+>>>>>>>> All product linking activity, including all video & channel
+>>>>>>>> linking, is limited to users with the Admin role.
+>>>>>>>>
+>>>>>>>> Note that this has always been the case and is clearly called out
+>>>>>>>> in the UI for new users
+>>>>>>>> <https://screenshot.googleplex.com/C9PU4SbYgsnihiN> and the Ads
+>>>>>>>> Help Center article for video links
+>>>>>>>> <https://support.google.com/google-ads/answer/3063482?_gl=1*p6j0bm*_gcl_au*MTcwMjUwNzM3My4xNzgxNzI4OTg5*_ga*Mjc0NzQyNjgyLjE3ODE3Mjg5ODk.#beforeyoubegin>
+>>>>>>>> .
+>>>>>>>>
+>>>>>>>> On Wed, Jun 17, 2026 at 12:59 PM Reto Strobl <reto@google.com>
+>>>>>>>> wrote:
+>>>>>>>>
+>>>>>>>>> - most, just tech folks
+>>>>>>>>>
+>>>>>>>>> can you help me understand what's going on? I'm also not aware of
+>>>>>>>>> the code not working for everyone that has access to the googleads account,
+>>>>>>>>> but depending on a particular role.
+>>>>>>>>>
+>>>>>>>>> reto
+>>>>>>>>>
+>>>>>>>>> On Wed, Jun 17, 2026 at 8:56 PM Toby Maurer <tmaurer@google.com>
+>>>>>>>>> wrote:
+>>>>>>>>>
+>>>>>>>>>> Hi Melissa and Reto,
+>>>>>>>>>>
+>>>>>>>>>> GBO flagged that shared code being available to admin users only
+>>>>>>>>>> is a huge blocker (whote from Rae below). I wasn't aware that there are
+>>>>>>>>>> separate levels of access in Google ads and that this also applies to BIL
+>>>>>>>>>> today. Can you help track this down and help me understand if this is an
+>>>>>>>>>> issue or not and what it would take to address? If how much is this
+>>>>>>>>>> lowering BIL today?
+>>>>>>>>>>
+>>>>>>>>>> +1, the Admin only is a massive blocker. For context, most
+>>>>>>>>>>> advertisers do not give their paid media agencies Admin access to their
+>>>>>>>>>>> accounts (to protect payment info), only granting Standard access. This
+>>>>>>>>>>> limitation means a notable chunk of Google Ads users will not be able to
+>>>>>>>>>>> add codes they receive. This limitation is also a source of escalation for
+>>>>>>>>>>> BIL today.
+>>>>>>>>>>
+>>>>>>>>>>
+>>>>>>>>>> Thanks,
+>>>>>>>>>>
+>>>>>>>>>> Toby
+>>>>>>>>>>
+>>>>>>>>>>
+>>>>>>>>>> --
+>>>>>>>>>>
+>>>>>>>>>> Toby Maurer | GPM BrandConnect | tmaurer@google.com
+>>>>>>>>>>
+>>>>>>>>>> If you received this communication by mistake, please don't
+>>>>>>>>>> forward it to anyone else (it may contain confidential or privileged
+>>>>>>>>>> information), please erase all copies of it, including all attachments, and
+>>>>>>>>>> let the sender know it went to the wrong person.
+>>>>>>>>>>
+>>>>>>>>>
+
+================================================================================
