@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
@@ -8,6 +9,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE InstanceSigs #-}
 
 -- | A hands-on, progressive crash course in 'DataKinds' and GHC 9.10 'ListTuplePuns'.
 --
@@ -18,6 +20,8 @@
 -- directly inside GHC's type checker!
 module Lambda.DataKinds where
 
+import Control.Arrow ((>>>))
+import Data.Functor.Identity (Identity (..), runIdentity)
 import Data.Kind (Type)
 
 -- ========================================================================= --
@@ -51,20 +55,24 @@ deriving instance Eq (Door s)
 closeDoor :: Door 'Opened -> Door 'Closed
 closeDoor (MkDoor material) = MkDoor material
 
--- | Safely open a closed door.
 openDoor :: Door 'Closed -> Door 'Opened
 openDoor (MkDoor material) = MkDoor material
 
--- | A phantom type representing permission levels in a secure system.
+-- -- | A phantom type representing permission levels in a secure system.
 data Permission = ReadOnly | ReadWrite
   deriving (Show, Eq)
 
 data FileHandle (p :: Permission) = FileHandle FilePath
   deriving (Show, Eq)
 
--- | EXERCISE 1b: Only handles with 'ReadWrite permission can write to a file!
+-- -- | EXERCISE 1b: Only handles with 'ReadWrite permission can write to a file!
+-- -- Try passing a FileHandle 'ReadOnly to this in tests and observe GHC reject it at compile time.
 writeFileSafe :: FileHandle 'ReadWrite -> String -> IO ()
 writeFileSafe (FileHandle path) content = writeFile path content
+
+readFileSafe :: FileHandle 'ReadOnly -> IO String
+readFileSafe (FileHandle path) = readFile path
+
 
 -- ========================================================================= --
 -- LEVEL 2: PROMOTED PEANO NUMBERS & FIXED-LENGTH VECTORS (VEC)              --
@@ -76,11 +84,58 @@ writeFileSafe (FileHandle path) content = writeFile path content
 data Nat = Z | S Nat
   deriving (Show, Eq)
 
+one :: Nat
+one = S Z
+
+two :: Nat
+two = S (S Z)
+
+three :: Nat
+three = S two
+
 -- | A type-safe length-indexed list (Vector).
 -- The kind of the index 'n' is precisely our promoted 'Nat'!
 data Vec (n :: Nat) a where
   VNil  :: Vec 'Z a
   VCons :: a -> Vec n a -> Vec ('S n) a
+
+vec0 :: Vec 'Z Int 
+vec0 = VNil 
+
+type One = 'S 'Z 
+vec1 :: Vec One String
+vec1 = VCons "hello" VNil 
+
+type Two = 'S One
+
+vec2 :: Vec Two String
+vec2 = VCons "hello" (VCons "world" VNil)
+
+type Three = One + Two
+vec3 :: Vec Three String 
+vec3 = vappend vec1 vec2 
+
+instance Functor (Vec n) where 
+  fmap = fmap'
+  -- fmap _ VNil = VNil 
+  -- fmap f (VCons x xs) = VCons (f x) $ f <$> xs
+
+instance Foldable (Vec n) where
+  foldMap :: Monoid m => (a -> m) -> Vec n a -> m
+  -- foldMap g vec = 
+  foldMap _ VNil = mempty
+  foldMap f (VCons x xs) = f x <> foldMap f xs
+
+instance Traversable (Vec n) where 
+  traverse :: Applicative f => (a -> f b) -> Vec n a -> f (Vec n b) 
+  traverse _ VNil = pure VNil
+  traverse g (VCons x xs) = do
+    y  <- g x
+    ys <- traverse g xs
+    pure (VCons y ys)
+
+fmap' :: (a -> b) -> (Vec n a) -> (Vec n b)
+fmap' = (Identity .) >>> traverse >>> fmap runIdentity
 
 deriving instance Show a => Show (Vec n a)
 deriving instance Eq a => Eq (Vec n a)

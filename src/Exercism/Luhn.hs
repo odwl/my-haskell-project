@@ -1,7 +1,7 @@
 module Exercism.Luhn (isValid, parseInput, parseInputIgnore, luhn) where
 
 import Control.Arrow ((>>>))
-import Data.Char (isSpace, digitToInt)
+import Data.Char (isSpace)
 import Data.Maybe (mapMaybe)
 import Text.Read (readMaybe)
 
