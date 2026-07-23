@@ -1,5 +1,5 @@
 {-# LANGUAGE GADTs #-}
-module CountDown (Op(..), allOps, apply, valid, Positive, mkPositive, unPositive, (.+), (.*), Expr(Val), mkApp, one, values, eval, choices, solution, split, combine, exprs) where
+module CountDown (Op(..), allOps, apply, valid, Positive, mkPositive, unPositive, (.+), (.*), Expr(Val), mkApp, one, values, eval, choices, split, combine, exprs, solve, solutions, main) where
 
 import Data.List (subsequences, permutations, (\\))
 import Data.Bifunctor (first)
@@ -105,10 +105,7 @@ eval (Val n) = n
 eval (App _ _ _ val) = val
 
 
--- `solution` verifies if an expression evaluates to the target
--- and uses only a valid subset of the provided numbers.
-solution :: Expr -> [Positive] -> Positive -> Bool
-solution expr nums target = eval expr == target && (values expr \\ nums) == []
+
 
 --------------------------------------------------------------------------------
 -- Brute Force Search
@@ -144,4 +141,19 @@ exprs ns = do
   r <- exprs rs
   combine l r
 
+solve :: [Positive] -> Positive -> [Expr]
+solve ns target = do 
+  choice <- choices ns 
+  e <- exprs choice 
+  guard (eval e == target)
+  pure e
 
+-- `solutions` is a friendly wrapper taking standard Int inputs and returning all valid Exprs.
+solutions :: [Int] -> Int -> [Expr]
+solutions ns target =
+  case (mapM mkPositive ns, mkPositive target) of
+    (Just ps, Just t) -> solve ps t
+    _                 -> []
+
+main :: IO ()
+main = print (solutions [1, 3, 7, 10, 25, 50] 765)

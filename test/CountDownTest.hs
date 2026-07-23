@@ -87,13 +87,17 @@ countDownTests = testGroup "CountDown Tests"
       , testCase "exprs [3, 2]" $
           exprs [p 3, p 2] @?= [app Sub v3 v2]
 
-      -- Test solution checking
-      , testCase "solution valid" $ 
-          solution nestedExpr [p 2, p 3, p 4, p 5] (p 20) @?= True
-      , testCase "solution invalid (missing number from source)" $ 
-          solution nestedExpr [p 2, p 3, p 5] (p 20) @?= False
-      , testCase "solution invalid (wrong target value)" $ 
-          solution nestedExpr [p 2, p 3, p 4, p 5] (p 25) @?= False
+
+
+      -- Test solve
+      , testCase "solve [2, 3] for target 5" $
+          solve [p 2, p 3] (p 5) @?= [app Add v2 v3]
+      , testCase "solve [2, 3] for target 6" $
+          solve [p 2, p 3] (p 6) @?= [app Mul v2 v3]
+      , testCase "solve [2, 3] for impossible target 4" $
+          solve [p 2, p 3] (p 4) @?= []
+      , testCase "solve Countdown benchmark [1, 3, 7, 10, 25, 50] for target 765 is non-empty" $
+          not (null (solve [p 1, p 3, p 7, p 10, p 25, p 50] (p 765))) @?= True
       ]
   , testGroup "QuickCheck Properties"
       [ testProperty "Add is valid iff x <= y" prop_addValid
@@ -106,6 +110,7 @@ countDownTests = testGroup "CountDown Tests"
       , testProperty "exprs preserves exact sequence of input values" prop_exprsPreservesValues
       , testProperty "exprs never produces duplicate trees" prop_exprsUnique
       , testProperty "exprs length never exceeds Catalan upper bound" prop_exprsWithinBound
+      , testProperty "every solution returned by solve evaluates to target" prop_solveMatchesTarget
       ]
   ]
   where
@@ -137,6 +142,9 @@ countDownTests = testGroup "CountDown Tests"
       where
         k = length ns
         maxTrees = if k == 0 then 0 else catalan (k - 1) * (4 ^ (k - 1))
+
+    prop_solveMatchesTarget (ns :: [Positive]) (target :: Positive) =
+      all (\e -> eval e == target) (solve ns target)
 
 --------------------------------------------------------------------------------
 -- Mathematical Helpers

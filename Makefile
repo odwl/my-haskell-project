@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-haskell-fib run-haskell-fib-llvm compare-fib run-rust run-rust-release build-rust build-rust-release check-rust test-rust watch-rust watch-rust-test
+.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-haskell-fib run-storable run-haskell-fib-llvm compare-fib run-rust run-rust-release build-rust build-rust-release check-rust test-rust watch-rust watch-rust-test watch-countdown run-countdown
 
 # Load local environment variables
 -include .env
@@ -25,6 +25,10 @@ run-lean:
 # Run Haskell Fibonacci benchmark executable with GHC Native Code Generator (-O2)
 run-haskell-fib:
 	cabal run -O2 fib-main
+
+# Run RequiredTypeArguments & Storable demonstration
+run-storable:
+	cabal run storable-main
 
 # Run Haskell Fibonacci benchmark executable with GHC LLVM Backend (-O2 -fllvm)
 run-haskell-fib-llvm:
@@ -171,6 +175,14 @@ watch-free:
 # Run tests on file change but isolate only "Limit and Colimit Tests"
 watch-limit:
 	TASTY_PATTERN="Limit and Colimit Tests" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+
+# Run tests on file change but isolate only "CountDown Tests"
+watch-countdown:
+	TASTY_PATTERN="CountDown" ghcid --command="cabal repl all-tests" --test=':main' --restart=src --reload=test
+
+# Run CountDown main solver
+run-countdown:
+	cabal exec -- ghc -isrc -e "CountDown.main" src/CountDown.hs
 
 
 # Run tests on file change but isolate only "Exercism" tests
