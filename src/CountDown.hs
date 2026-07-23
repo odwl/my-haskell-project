@@ -1,10 +1,11 @@
 {-# LANGUAGE GADTs #-}
-module CountDown (Op(..), allOps, apply, valid, Positive, mkPositive, unPositive, (.+), (.*), Expr(Val), mkApp, one, values, eval, choices, solution, split, combine) where
+module CountDown (Op(..), allOps, apply, valid, Positive, mkPositive, unPositive, (.+), (.*), Expr(Val), mkApp, one, values, eval, choices, solution, split, combine, exprs) where
 
 import Data.List (subsequences, permutations, (\\))
 import Data.Bifunctor (first)
 import Data.Maybe (maybeToList)
 import Control.Monad (guard)
+
 
 --------------------------------------------------------------------------------
 -- Positive Numbers & Domain Logic
@@ -103,19 +104,20 @@ eval :: Expr -> Positive
 eval (Val n) = n
 eval (App _ _ _ val) = val
 
-choices :: [a] -> [[a]] 
-choices = concatMap permutations . subsequences
 
--- `solution` verifies if a given expression evaluates to the target value
+-- `solution` verifies if an expression evaluates to the target
 -- and uses only a valid subset of the provided numbers.
--- Note: When generating expressions using `choices`, the numbers check is mathematically
--- guaranteed, so only the `eval expr == target` check will strictly be necessary.
 solution :: Expr -> [Positive] -> Positive -> Bool
 solution expr nums target = eval expr == target && (values expr \\ nums) == []
 
 --------------------------------------------------------------------------------
 -- Brute Force Search
 --------------------------------------------------------------------------------
+
+-- `choices` returns all possible permutations of all possible sub-lists of a given list.
+-- This represents picking any subset of numbers in any possible order.
+choices :: [a] -> [[a]]
+choices = concatMap permutations . subsequences
 
 -- `split` generates all possible ways to divide a list into two non-empty halves 
 -- without changing the order of the elements.
@@ -133,6 +135,13 @@ combine l r = do
 
 -- `exprs` generates every perfectly valid mathematical tree that can be 
 -- formed from a given list of numbers.
--- exprs :: [Positive] -> [Expr]
+exprs :: [Positive] -> [Expr]
+exprs [] = []
+exprs [n] = [Val n]
+exprs ns = do 
+  (ls, rs) <- split ns 
+  l <- exprs ls
+  r <- exprs rs
+  combine l r
 
 

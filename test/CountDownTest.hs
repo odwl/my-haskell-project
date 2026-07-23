@@ -7,7 +7,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck hiding (Positive)
 import CountDown
-import Data.List (sort)
+import Data.List (sort, nub)
 import Data.Maybe (fromJust)
 import Control.Arrow ((***), (>>>))
 
@@ -77,6 +77,16 @@ countDownTests = testGroup "CountDown Tests"
       , testCase "combine 6 and 2 (Sub and Div valid)" $
           combine v6 v2 @?= [app Sub v6 v2, app Div v6 v2]
 
+      -- Test exprs
+      , testCase "exprs empty list" $
+          exprs [] @?= []
+      , testCase "exprs singleton [2]" $
+          exprs [p 2] @?= [v2]
+      , testCase "exprs [2, 3]" $
+          exprs [p 2, p 3] @?= [app Add v2 v3, app Mul v2 v3]
+      , testCase "exprs [3, 2]" $
+          exprs [p 3, p 2] @?= [app Sub v3 v2]
+
       -- Test solution checking
       , testCase "solution valid" $ 
           solution nestedExpr [p 2, p 3, p 4, p 5] (p 20) @?= True
@@ -93,6 +103,9 @@ countDownTests = testGroup "CountDown Tests"
       , testProperty "invalid Div when x is not a multiple of y" prop_divInvalid
       , testProperty "split halves always concatenate to original list (correct length)" prop_splitPreserves
       , testProperty "split halves are never empty" prop_splitNonEmpty
+      , testProperty "exprs preserves exact sequence of input values" prop_exprsPreservesValues
+      , testProperty "exprs never produces duplicate trees" prop_exprsUnique
+      , testProperty "exprs length never exceeds Catalan upper bound" prop_exprsWithinBound
       ]
   ]
   where
@@ -110,3 +123,28 @@ countDownTests = testGroup "CountDown Tests"
       
     prop_splitNonEmpty (xs :: [Int]) = 
       all (null *** null >>> (== (False, False))) $ split xs
+
+    prop_exprsPreservesValues (ns :: [Positive]) =
+      map values (exprs ns) === replicate (length (exprs ns)) ns
+
+    prop_exprsUnique (ns :: [Positive]) =
+      length es === length (nub es)
+      where
+        es = exprs ns
+
+    prop_exprsWithinBound (ns :: [Positive]) =
+      length (exprs ns) <= maxTrees
+      where
+        k = length ns
+        maxTrees = if k == 0 then 0 else catalan (k - 1) * (4 ^ (k - 1))
+
+--------------------------------------------------------------------------------
+-- Mathematical Helpers
+--------------------------------------------------------------------------------
+
+-- Memoized infinite list of Catalan numbers: [1, 1, 2, 5, 14, 42, 132, ...]
+catalans :: [Int]
+catalans = 1 : [sum (zipWith (*) catalans (reverse (take n catalans))) | n <- [1..]]
+
+catalan :: Int -> Int
+catalan n = catalans !! n
