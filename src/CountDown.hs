@@ -1,18 +1,28 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DerivingStrategies #-}
 module CountDown (Op(..), allOps, apply, valid, Positive, mkPositive, unPositive, (.+), (.*), Expr(Val), mkApp, one, values, eval, choices, split, combine, exprs, solve, solutions, main) where
 
-import Data.List (subsequences, permutations, (\\))
+import Data.List (subsequences, permutations)
 import Data.Bifunctor (first)
 import Data.Maybe (maybeToList)
 import Control.Monad (guard)
+import Control.Category ((>>>))
+import Data.Time.Clock (getCurrentTime, diffUTCTime)
+import Data.MonoTraversable (olength, onull, headEx, Element, otoList)
+import Data.Sequences (IsSequence, splitAt, Index, fromList)
+import qualified Data.Vector as V
+import qualified Data.Vector.Unboxed as U
 
 
 --------------------------------------------------------------------------------
 -- Positive Numbers & Domain Logic
 --------------------------------------------------------------------------------
 
-data Positive where
-  Positive :: { unPositive :: Int } -> Positive
+newtype Positive = Positive { unPositive :: Int }
   deriving (Eq, Ord)
 
 instance Show Positive where
@@ -49,7 +59,7 @@ data Op where
   deriving (Eq, Enum, Bounded)
 
 allOps :: [Op]
-allOps = [minBound .. maxBound]
+allOps = [Add, Sub, Mul, Div]
 
 instance Show Op where
   show Add = "+"
@@ -65,14 +75,11 @@ valid Sub x y = x > y
 valid Mul x y = x <= y && x /= one
 valid Div x y = isMultipleOf x y && y /= one
 
-toFun :: Op -> (Int -> Int -> Int)
-toFun Add = (+)
-toFun Sub = (-)
-toFun Mul = (*)
-toFun Div = div
-
 apply :: Op -> Positive -> Positive -> Positive
-apply op (Positive x) (Positive y) = Positive (toFun op x y)
+apply Add (Positive x) (Positive y) = Positive (x + y)
+apply Sub (Positive x) (Positive y) = Positive (x - y)
+apply Mul (Positive x) (Positive y) = Positive (x * y)
+apply Div (Positive x) (Positive y) = Positive (x `div` y)
 
 --------------------------------------------------------------------------------
 -- Expressions & Evaluation
@@ -104,24 +111,24 @@ eval :: Expr -> Positive
 eval (Val n) = n
 eval (App _ _ _ val) = val
 
-
-
-
 --------------------------------------------------------------------------------
 -- Brute Force Search
 --------------------------------------------------------------------------------
 
--- `choices` returns all possible permutations of all possible sub-lists of a given list.
+-- `choices` returns all possible permutations of all possible sub-sequences of a given sequence.
 -- This represents picking any subset of numbers in any possible order.
-choices :: [a] -> [[a]]
-choices = concatMap permutations . subsequences
+choices :: IsSequence seq => seq -> [seq]
+choices = otoList
+      >>> subsequences
+      >>> concatMap permutations
+      >>> map fromList
 
--- `split` generates all possible ways to divide a list into two non-empty halves 
--- without changing the order of the elements.
-split :: [a] -> [([a], [a])]
-split [] = []
-split [_] = []
-split (x:xs) = ([x], xs) : map (first (x:)) (split xs)
+-- `split` generates all possible ways to divide a sequence into two non-empty halves 
+-- without changing the order of the elements. Works generically over any IsSequence container!
+split :: (IsSequence seq, Index seq ~ Int) => seq -> [(seq, seq)]
+split xs = do
+  i <- [1 .. olength xs - 1]
+  pure (Data.Sequences.splitAt i xs)
 
 -- `combine` takes a left and right expression and attempts to join them 
 -- using every possible operator.
@@ -131,17 +138,18 @@ combine l r = do
   maybeToList (mkApp op l r)
 
 -- `exprs` generates every perfectly valid mathematical tree that can be 
--- formed from a given list of numbers.
-exprs :: [Positive] -> [Expr]
-exprs [] = []
-exprs [n] = [Val n]
-exprs ns = do 
-  (ls, rs) <- split ns 
-  l <- exprs ls
-  r <- exprs rs
-  combine l r
+-- formed from a given sequence of numbers.
+exprs :: (IsSequence seq, Index seq ~ Int, Element seq ~ Positive) => seq -> [Expr]
+exprs ns
+  | onull ns        = []
+  | olength ns == 1 = [Val (headEx ns)]
+  | otherwise        = do 
+      (ls, rs) <- split ns 
+      l <- exprs ls
+      r <- exprs rs
+      combine l r
 
-solve :: [Positive] -> Positive -> [Expr]
+solve :: (IsSequence seq, Index seq ~ Int, Element seq ~ Positive) => seq -> Positive -> [Expr]
 solve ns target = do 
   choice <- choices ns 
   e <- exprs choice 
@@ -155,5 +163,41 @@ solutions ns target =
     (Just ps, Just t) -> solve ps t
     _                 -> []
 
+--------------------------------------------------------------------------------
+-- Timing & Main Entry Point
+--------------------------------------------------------------------------------
+
+timeAction :: String -> IO a -> IO a
+timeAction label action = do
+  start <- getCurrentTime
+  result <- action
+  end <- getCurrentTime
+  putStrLn $ label ++ ": " ++ show (diffUTCTime end start)
+  pure result
+
 main :: IO ()
-main = print (solutions [1, 3, 7, 10, 25, 50] 765)
+main = do
+  let nums = [1, 3, 7, 10, 25, 50]
+  let Just ps = mapM mkPositive nums
+  let Just t = mkPositive 765
+
+  putStrLn "=== Target 765 (Standard List []) ==="
+  timeAction "First solution (List)" $ print (take 1 $ solve ps t)
+  timeAction "All solutions (List)" $ do
+    let sols = solve ps t
+    putStrLn $ "Total count: " ++ show (length sols)
+
+  putStrLn "\n=== Target 765 (Data.Vector Boxed) ==="
+  let vecPs = V.fromList ps
+  timeAction "First solution (Boxed Vector)" $ print (take 1 $ solve vecPs t)
+  timeAction "All solutions (Boxed Vector)" $ do
+    let sols = solve vecPs t
+    putStrLn $ "Total count: " ++ show (length sols)
+
+  putStrLn "\n=== Target 765 (Data.Vector.Unboxed Int) ==="
+  let uVecInt = U.fromList nums
+  let Just tInt = mkPositive 765
+  timeAction "First solution (Unboxed Vector)" $ print (take 1 $ solve (map Positive (U.toList uVecInt)) tInt)
+  timeAction "All solutions (Unboxed Vector)" $ do
+    let sols = solve (map Positive (U.toList uVecInt)) tInt
+    putStrLn $ "Total count: " ++ show (length sols)

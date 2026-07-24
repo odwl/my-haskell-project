@@ -180,9 +180,9 @@ watch-limit:
 watch-countdown:
 	TASTY_PATTERN="CountDown" ghcid --command="cabal repl all-tests" --test=':main' --restart=src --reload=test
 
-# Run CountDown main solver
+# Run CountDown main solver (compiled with -O2 for maximum speed)
 run-countdown:
-	cabal exec -- ghc -isrc -e "CountDown.main" src/CountDown.hs
+	cabal exec -- ghc -O2 -isrc -main-is CountDown.main src/CountDown.hs -o /tmp/countdown-opt && /tmp/countdown-opt
 
 
 # Run tests on file change but isolate only "Exercism" tests
