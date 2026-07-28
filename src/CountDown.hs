@@ -1,18 +1,16 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 module CountDown (Op(..), allOps, apply, valid, Positive, mkPositive, unPositive, (.+), (.*), Expr(Val), mkApp, one, values, eval, choices, split, combine, exprs, solve, solutions, main) where
 
 import Data.List (subsequences, permutations)
-import Data.Bifunctor (first)
 import Data.Maybe (maybeToList)
 import Control.Monad (guard)
 import Control.Category ((>>>))
 import Data.Time.Clock (getCurrentTime, diffUTCTime)
-import Data.MonoTraversable (olength, onull, headEx, Element, otoList)
+import Data.MonoTraversable (olength, onull, headEx, Element, otoList, oproduct)
 import Data.Sequences (IsSequence, splitAt, Index, fromList)
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
@@ -22,8 +20,12 @@ import qualified Data.Vector.Unboxed as U
 -- Positive Numbers & Domain Logic
 --------------------------------------------------------------------------------
 
+-- Note: Deriving Num is a pragmatic convenience for container functions like `oproduct`.
+-- Mathematically, Positive is a Semiring (elements > 0) and does not support total 
+-- subtraction or zero, but deriving Num allows built-in oproduct/sum utilities.
 newtype Positive = Positive { unPositive :: Int }
-  deriving (Eq, Ord)
+  deriving stock (Eq, Ord)
+  deriving newtype (Num)
 
 instance Show Positive where
   show (Positive x) = show x
@@ -104,12 +106,64 @@ instance Show Expr where
           brak expr = "(" ++ show expr ++ ")"
 
 values :: Expr -> [Positive]
-values (Val x) = [x]
-values (App _ l r _) = values l ++ values r
+values e = go e []
+  where
+    go (Val x) acc = x : acc
+    go (App _ l r _) acc = go l (go r acc)
 
 eval :: Expr -> Positive
 eval (Val n) = n
 eval (App _ _ _ val) = val
+
+
+--------------------------------------------------------------------------------
+-- Sequence Abstraction
+--------------------------------------------------------------------------------
+
+class Sequence seq where 
+  sfromList :: [Positive] -> seq
+  sToList   :: seq -> [Positive]
+  sproduct  :: seq -> Positive
+  snull     :: seq -> Bool
+  slength   :: seq -> Int
+  shead     :: seq -> Positive
+  ssplitAt  :: Int -> seq -> (seq, seq)
+
+-- Explicit fast-path instance for standard lists [Positive]
+instance {-# OVERLAPPING #-} Sequence [Positive] where
+  sfromList = id
+  sToList   = id
+  sproduct  = product
+  snull     = null
+  slength   = length
+  shead (x:_) = x
+  shead []    = error "Sequence.shead: empty list (invariant violation: guarded by slength == 1)"
+  ssplitAt  = Prelude.splitAt
+  {-# INLINE sfromList #-}
+  {-# INLINE sToList #-}
+  {-# INLINE sproduct #-}
+  {-# INLINE snull #-}
+  {-# INLINE slength #-}
+  {-# INLINE shead #-}
+  {-# INLINE ssplitAt #-}
+
+-- IsSequence to Sequence adapter for all other containers.
+-- Note: This instance requires UndecidableInstances due to the type-level constraints on seq
+instance {-# OVERLAPPABLE #-} (IsSequence seq, Element seq ~ Positive, Index seq ~ Int) => Sequence seq where 
+  sfromList = Data.Sequences.fromList
+  sToList   = otoList
+  sproduct  = oproduct
+  snull     = onull
+  slength   = olength
+  shead     = headEx
+  ssplitAt  = Data.Sequences.splitAt
+  {-# INLINE sfromList #-}
+  {-# INLINE sToList #-}
+  {-# INLINE sproduct #-}
+  {-# INLINE snull #-}
+  {-# INLINE slength #-}
+  {-# INLINE shead #-}
+  {-# INLINE ssplitAt #-}
 
 --------------------------------------------------------------------------------
 -- Brute Force Search
@@ -117,18 +171,18 @@ eval (App _ _ _ val) = val
 
 -- `choices` returns all possible permutations of all possible sub-sequences of a given sequence.
 -- This represents picking any subset of numbers in any possible order.
-choices :: IsSequence seq => seq -> [seq]
-choices = otoList
+choices :: Sequence seq => seq -> [seq]
+choices = sToList
       >>> subsequences
       >>> concatMap permutations
-      >>> map fromList
+      >>> map sfromList
 
 -- `split` generates all possible ways to divide a sequence into two non-empty halves 
--- without changing the order of the elements. Works generically over any IsSequence container!
-split :: (IsSequence seq, Index seq ~ Int) => seq -> [(seq, seq)]
+-- without changing the order of the elements.
+split :: Sequence seq => seq -> [(seq, seq)]
 split xs = do
-  i <- [1 .. olength xs - 1]
-  pure (Data.Sequences.splitAt i xs)
+  i <- [1 .. slength xs - 1]
+  pure (ssplitAt i xs)
 
 -- `combine` takes a left and right expression and attempts to join them 
 -- using every possible operator.
@@ -139,23 +193,24 @@ combine l r = do
 
 -- `exprs` generates every perfectly valid mathematical tree that can be 
 -- formed from a given sequence of numbers.
-exprs :: (IsSequence seq, Index seq ~ Int, Element seq ~ Positive) => seq -> [Expr]
+exprs :: Sequence seq => seq -> [Expr]
 exprs ns
-  | onull ns        = []
-  | olength ns == 1 = [Val (headEx ns)]
+  | snull ns        = []
+  | slength ns == 1 = [Val (shead ns)]
   | otherwise        = do 
       (ls, rs) <- split ns 
       l <- exprs ls
       r <- exprs rs
       combine l r
 
-solve :: (IsSequence seq, Index seq ~ Int, Element seq ~ Positive) => seq -> Positive -> [Expr]
+solve :: Sequence seq => seq -> Positive -> [Expr]
 solve ns target = do 
   choice <- choices ns 
+  guard (sproduct choice >= target)
   e <- exprs choice 
   guard (eval e == target)
   pure e
-
+ 
 -- `solutions` is a friendly wrapper taking standard Int inputs and returning all valid Exprs.
 solutions :: [Int] -> Int -> [Expr]
 solutions ns target =
@@ -179,25 +234,47 @@ main :: IO ()
 main = do
   let nums = [1, 3, 7, 10, 25, 50]
   let Just ps = mapM mkPositive nums
-  let Just t = mkPositive 765
+  let Just t765 = mkPositive 765
+  let Just t831 = mkPositive 831
+  let Just t25  = mkPositive 25
 
-  putStrLn "=== Target 765 (Standard List []) ==="
-  timeAction "First solution (List)" $ print (take 1 $ solve ps t)
-  timeAction "All solutions (List)" $ do
-    let sols = solve ps t
-    putStrLn $ "Total count: " ++ show (length sols)
+  putStrLn "=== Target 25 (Check 1 Direct Single-Number Match) ==="
+  timeAction "List (Direct Match 25)" $ print (take 1 $ solve ps t25)
+  timeAction "Unboxed Vector (Direct Match 25)" $ do
+    let uVecInt = U.fromList nums
+    print (take 1 $ solve (map Positive (U.toList uVecInt)) t25)
 
-  putStrLn "\n=== Target 765 (Data.Vector Boxed) ==="
+  putStrLn "\n=== Target 765 (49 Solutions) ==="
+  timeAction "List (First)" $ print (take 1 $ solve ps t765)
+  timeAction "List (All 49)" $ print (length $ solve ps t765)
   let vecPs = V.fromList ps
-  timeAction "First solution (Boxed Vector)" $ print (take 1 $ solve vecPs t)
-  timeAction "All solutions (Boxed Vector)" $ do
-    let sols = solve vecPs t
-    putStrLn $ "Total count: " ++ show (length sols)
-
-  putStrLn "\n=== Target 765 (Data.Vector.Unboxed Int) ==="
+  timeAction "Boxed Vector (First)" $ print (take 1 $ solve vecPs t765)
+  timeAction "Boxed Vector (All 49)" $ print (length $ solve vecPs t765)
   let uVecInt = U.fromList nums
-  let Just tInt = mkPositive 765
-  timeAction "First solution (Unboxed Vector)" $ print (take 1 $ solve (map Positive (U.toList uVecInt)) tInt)
-  timeAction "All solutions (Unboxed Vector)" $ do
-    let sols = solve (map Positive (U.toList uVecInt)) tInt
-    putStrLn $ "Total count: " ++ show (length sols)
+  timeAction "Unboxed Vector (First)" $ print (take 1 $ solve (map Positive (U.toList uVecInt)) t765)
+  timeAction "Unboxed Vector (All 49)" $ print (length $ solve (map Positive (U.toList uVecInt)) t765)
+
+  putStrLn "\n=== Target 831 (No Solutions / Impossible) ==="
+  timeAction "List (Impossible 831)" $ print (length $ solve ps t831)
+  timeAction "Boxed Vector (Impossible 831)" $ print (length $ solve vecPs t831)
+  timeAction "Unboxed Vector (Impossible 831)" $ print (length $ solve (map Positive (U.toList uVecInt)) t831)
+
+  let nums7 = [1, 3, 7, 10, 25, 50, 100]
+  let Just ps7 = mapM mkPositive nums7
+  let Just t952 = mkPositive 952
+  let uVec7 = U.fromList nums7
+
+  putStrLn "\n=== Target 952 with 7 Numbers (Large Search Space) ==="
+  timeAction "List (First 952)" $ print (take 1 $ solve ps7 t952)
+  timeAction "List (All 952)" $ print (length $ solve ps7 t952)
+  timeAction "Unboxed Vector (All 952)" $ print (length $ solve (map Positive (U.toList uVec7)) t952)
+
+  let nums10 = [1, 2, 3, 5, 7, 10, 15, 20, 25, 50]
+  let Just ps10 = mapM mkPositive nums10
+  let uVec10 = U.fromList nums10
+
+  putStrLn "\n=== Target 952 with 10 Numbers (Huge Search Space) ==="
+  timeAction "List (First 1 952)" $ print (take 1 $ solve ps10 t952)
+  timeAction "Unboxed Vector (First 1 952)" $ print (take 1 $ solve (map Positive (U.toList uVec10)) t952)
+  timeAction "List (First 10 952)" $ print (length $ take 10 $ solve ps10 t952)
+  timeAction "Unboxed Vector (First 10 952)" $ print (length $ take 10 $ solve (map Positive (U.toList uVec10)) t952)

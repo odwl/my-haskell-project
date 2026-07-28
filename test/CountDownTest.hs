@@ -55,19 +55,19 @@ countDownTests = testGroup "CountDown Tests"
           
       -- Test choices (generation of subsets and permutations)
       , testCase "choices of empty list" $ 
-          choices ([] :: [Int]) @?= [[]]
+          choices ([] :: [Positive]) @?= [[]]
       , testCase "choices of [1, 2]" $ 
-          sort (choices ([1, 2] :: [Int])) @?= sort [[], [1], [2], [1, 2], [2, 1]]
+          sort (choices ([p 1, p 2] :: [Positive])) @?= sort [[], [p 1], [p 2], [p 1, p 2], [p 2, p 1]]
           
       -- Test split
       , testCase "split empty list" $
-          split ([] :: [Int]) @?= []
+          split ([] :: [Positive]) @?= []
       , testCase "split singleton list" $
-          split ([1] :: [Int]) @?= []
+          split ([p 1] :: [Positive]) @?= []
       , testCase "split [1, 2]" $
-          split ([1, 2] :: [Int]) @?= [([1], [2])]
+          split ([p 1, p 2] :: [Positive]) @?= [([p 1], [p 2])]
       , testCase "split [1, 2, 3]" $
-          split ([1, 2, 3] :: [Int]) @?= [([1], [2, 3]), ([1, 2], [3])]
+          split ([p 1, p 2, p 3] :: [Positive]) @?= [([p 1], [p 2, p 3]), ([p 1, p 2], [p 3])]
 
       -- Test combine
       , testCase "combine 2 and 3 (only Add and Mul valid due to symmetry pruning)" $
@@ -123,10 +123,10 @@ countDownTests = testGroup "CountDown Tests"
           dividend = k .* divisor .+ r
        in valid Div dividend divisor === False
 
-    prop_splitPreserves (xs :: [Int]) = 
+    prop_splitPreserves (xs :: [Positive]) = 
       fmap (uncurry (++)) (split xs) === replicate (max 0 (length xs - 1)) xs
       
-    prop_splitNonEmpty (xs :: [Int]) = 
+    prop_splitNonEmpty (xs :: [Positive]) = 
       all (null *** null >>> (== (False, False))) $ split xs
 
     prop_exprsPreservesValues (ns :: [Positive]) =
