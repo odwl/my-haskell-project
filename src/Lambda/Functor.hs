@@ -112,6 +112,8 @@ mySum a b = Just (a + b)
 myMult :: (Integral a) => a -> a -> Maybe a
 myMult a b = Just (a * b)
 
+-- | Divides both (l / r) and (r / l) using 'myDiv', then returns their sum via 'mySum'.
+-- Returns 'Nothing' if either division fails or produces 3.
 calc2 :: (Integral a) => a -> a -> Maybe a
 calc2 l r = do
   x <- myDiv l r
