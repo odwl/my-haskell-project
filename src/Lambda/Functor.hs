@@ -1,4 +1,7 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Lambda.Functor
@@ -39,34 +42,41 @@ import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.Writer (Writer, writer)
 import Data.Bifunctor (Bifunctor (..))
 import Data.Functor.Const (Const (..))
+import Data.Functor.Identity (Identity (..))
 import Data.Maybe (fromMaybe)
+import Data.Proxy (Proxy (..))
 import Lambda.Subdist (Subdist, certainly, makeSubdist)
 import Prelude
 
 ---------------------------
--- Functor from Scratch ---
+-- Functor and Applicative from Scratch ---
 ---------------------------
 
-data MyProxy a = MyProxy deriving (Eq, Show)
+newtype MyProxy a = MyProxy (Proxy a)
+  deriving (Eq, Show)
+  deriving (Functor, Applicative) via Proxy
 
-instance Functor MyProxy where
-  fmap _ MyProxy = MyProxy
 
-newtype MyIdentity a = Id a deriving (Eq, Show)
+newtype MyIdentity a = Id a
+  deriving (Eq, Show, Functor)
+  deriving (Applicative) via Identity
 
-instance Functor MyIdentity where
-  fmap f (Id x) = Id (f x)
+newtype MyConst a b = MyConst a 
+  deriving (Eq, Show)
+  deriving (Functor) via Const a
 
-newtype MyConst a b = MyConst a deriving (Eq, Show)
+deriving via (Const a) instance Monoid a => Applicative (MyConst a)
 
-instance Functor (MyConst a) where
-  fmap _ (MyConst cons) = MyConst cons
+data MyEither a b where
+  MyLeft  :: a -> MyEither a b
+  MyRight :: b -> MyEither a b
+  deriving (Eq, Show, Functor)
 
-data MyEither a b = MyLeft a | MyRight b deriving (Eq, Show)
-
-instance Functor (MyEither a) where
-  fmap _ (MyLeft a) = MyLeft a
-  fmap f (MyRight b) = MyRight (f b)
+instance Applicative (MyEither e) where
+  pure = MyRight
+  MyLeft e <*> _ = MyLeft e
+  MyRight _ <*> MyLeft e = MyLeft e
+  MyRight f <*> MyRight x = MyRight (f x)
 
 instance Bifunctor MyEither where
   first f (MyLeft a) = MyLeft (f a)
@@ -80,11 +90,10 @@ newtype MyMaybe2 a = MyMaybe2 (MyEither (MyProxy a) (MyIdentity a)) deriving (Eq
 instance Functor MyMaybe2 where
   fmap f (MyMaybe2 inner) = MyMaybe2 (bimap (fmap f) (fmap f) inner)
 
-data MyMaybe a = MyNothing | MyJust a deriving (Show, Eq)
-
-instance Functor MyMaybe where
-  fmap _ MyNothing = MyNothing
-  fmap f (MyJust x) = MyJust (f x)
+data MyMaybe a where
+  MyNothing :: MyMaybe a
+  MyJust    :: a -> MyMaybe a
+  deriving (Eq, Show, Functor)
 
 ---------------------------
 -- A little exercise on the Maybe Monad ---
@@ -92,10 +101,8 @@ instance Functor MyMaybe where
 
 -- | A function for dividing numbers. The catch is that if the result is 3, it returns Nothing.
 myDiv :: (Integral a) => a -> a -> Maybe a
-myDiv a b = do
-  let result = div a b
-  guard (b /= 0 && result /= 3)
-  return result
+myDiv _ 0 = Nothing
+myDiv a b = let res = div a b in res <$ guard (res /= 3)
 
 -- | A function for adding numbers.
 mySum :: (Integral a) => a -> a -> Maybe a

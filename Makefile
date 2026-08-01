@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch docs watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-haskell-fib run-storable run-haskell-fib-llvm compare-fib run-rust run-rust-release build-rust build-rust-release check-rust test-rust watch-rust watch-rust-test watch-countdown run-countdown
+.PHONY: all build test lint format check watch docs watch-functor watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-haskell-fib run-storable run-haskell-fib-llvm compare-fib run-rust run-rust-release build-rust build-rust-release check-rust test-rust watch-rust watch-rust-test watch-countdown run-countdown
 
 # Load local environment variables
 -include .env
@@ -167,6 +167,10 @@ watch-lens:
 # Run tests on file change but isolate only "SandBox Tests"
 watch-sandbox:
 	TASTY_PATTERN="SandBox" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+
+# Run tests on file change but isolate only "Functor" tests
+watch-functor:
+	TASTY_PATTERN="Functor" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
 
 # Run tests on file change but isolate only "Free, Cofree and Coyoneda Tests"
 watch-free:

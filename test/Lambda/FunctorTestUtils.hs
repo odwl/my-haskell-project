@@ -5,6 +5,7 @@
 module Lambda.FunctorTestUtils where
 
 import Control.Monad.Reader
+import Data.Proxy (Proxy (..))
 import Lambda.Functor
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
@@ -24,7 +25,7 @@ instance (Eq a) => EqProp (MyMaybe a) where
   (=-=) = eq
 
 instance Arbitrary (MyProxy a) where
-  arbitrary = pure MyProxy
+  arbitrary = pure (MyProxy Proxy)
 
 instance EqProp (MyProxy a) where
   (=-=) = eq

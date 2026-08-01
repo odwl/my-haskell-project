@@ -1,7 +1,4 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
@@ -15,49 +12,38 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE EmptyCase #-}
-{-# LANGUAGE EmptyDataDeriving #-}
-{-# LANGUAGE BangPatterns #-}
-
 
 
 module Lambda.SandBox where
 
-import Control.Applicative (Alternative (..), Const (..))
-import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (..), Kleisli (..), (>>>), (>>^), (^>>))
+import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowPlus (..), ArrowZero (..), Kleisli (..), (>>>), (^>>), (>>^))
 import Control.Category (Category, (.), id)
-import Control.Comonad (Comonad (..))
-import Control.Monad (MonadPlus (..), (>=>))
-import Control.Monad.Reader (Reader, runReader)
-import Control.Monad.Writer (MonadWriter, runWriter, tell)
+import Prelude hiding (id, (.))
+import Control.Applicative (Alternative (..), Const (..))
 import Control.Natural (type (:~>) (..), type (~>))
-import Data.Coerce (coerce)
-import Data.Default (Default (..))
-import Data.Distributive (Distributive (..))
-import Data.Functor.Adjunction (Adjunction (..))
-import Data.Functor.Alt (Alt (..))
-import Data.Functor.Compose (Compose (..))
-import Data.Functor.Contravariant (Op (..))
-import Data.Functor.Extend (Extend (..))
-import Data.Functor.Identity (Identity (..))
-import Data.Functor.Plus (Plus (..))
-import Data.Functor.Rep (Representable (..))
+import Control.Monad (MonadPlus (..), (>=>))
 import Data.Functor.Yoneda (liftYoneda, runYoneda)
-import Data.Key (Key, Keyed (..), Lookup (..))
-import Data.List (isPrefixOf, nub, sortOn, tails)
-import Data.Maybe (fromMaybe)
-import Data.Monoid (Endo (..), Sum (..))
 import Data.Profunctor (Profunctor (..), Strong (..))
+import Data.Functor.Identity (Identity(..))
+import Data.List (isPrefixOf, sortOn, tails)
+import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
-import Data.Void (Void, absurd)
-import qualified Data.Set as Set
-
-import Data.Foldable (Foldable(..), fold)
-import Data.List.NonEmpty (NonEmpty(..))
 import Lambda (safeHead)
-import Prelude hiding (id, (.), filter, reverse, iterate)
-import qualified Data.List.NonEmpty as NE
 import Safe (tailMay)
+import Data.Default (Default (..))
+import Control.Monad.Reader (Reader, runReader)
+import Control.Monad.Writer (tell, MonadWriter, runWriter)
+import Data.Monoid (Endo (..), Sum (..))
+import Data.Void (Void, absurd)
+import Data.Functor.Adjunction (Adjunction (..))
+import Data.Distributive (Distributive (..))
+import Data.Functor.Rep (Representable (..))
+import Data.Functor.Contravariant (Op (..))
+import Data.Key (type Key, Keyed(..), Lookup(..))
+import Data.Functor.Alt (Alt(..))
+import Data.Functor.Plus (Plus(..))
+import Control.Comonad (Comonad(..))
+import Data.Functor.Extend (Extend(..))
 
 -- | splits an even length list such as [1,2,3,4,5,6] -> ([1,2,3], [4,5,6])
 halve :: [a] -> Maybe ([a], [a])
@@ -647,7 +633,9 @@ curryAdjunction (env, _) g = g env
 -- 1. ! Functor
 -- ========================================================================= --
 
-data Zero a = Zero Void deriving (Show, Eq, Functor)
+data Zero a = Zero Void deriving (Show, Eq)
+instance Functor Zero where -- Cannot be Applicative.
+  fmap _ (Zero v) = absurd v
 type instance Key Zero = Void
 instance Keyed Zero where
   mapWithKey :: (Key Zero -> a -> b) -> Zero a -> Zero b
@@ -665,21 +653,11 @@ instance Comonad Zero where
 instance Extend Zero where 
   duplicated :: Zero a -> Zero (Zero a)
   duplicated (Zero v) = absurd v
-instance Semigroup (Zero a) where 
-  Zero x <> _  = absurd x
--- instance Monoid (Zero a) where 
---   mempty = Zero undefined
-
-data MyV1 a deriving (Show, Eq, Ord, Read, Functor)
-instance Semigroup (MyV1 a) where 
-  z <> _ = case z of {}
-
--- instance Alt (MyV1 a) where 
---   x <!> y = 
-
 
 -- The Terminal Bang Functor (!) - equivalalent to Const ().
-data MyProxy a = MyProxy deriving (Show, Eq, Ord, Read, Functor) -- cannot be a semigroup
+data MyProxy a = MyProxy deriving (Show, Eq)
+instance Functor MyProxy where -- cannot be a comonad
+  fmap _ _ = MyProxy
 instance Alt MyProxy where
   _ <!> _ = MyProxy
 instance Plus MyProxy where 
@@ -688,10 +666,8 @@ instance Extend MyProxy where
   duplicated :: MyProxy a -> MyProxy (MyProxy a)
   duplicated _ = MyProxy
 instance Applicative MyProxy where
-  pure = const MyProxy
+  pure _ = MyProxy
   _ <*> _ = MyProxy
-instance Monad MyProxy where 
-  _ >>= _ = MyProxy 
 type instance Key MyProxy = Void
 instance Keyed MyProxy where
   mapWithKey :: (Key MyProxy -> a -> b) -> MyProxy a -> MyProxy b
@@ -707,7 +683,9 @@ instance Representable MyProxy where
   tabulate _ = MyProxy
   index MyProxy = absurd
 
-newtype MyIdentity a = MyIdentity a deriving (Show, Eq, Semigroup, Monoid, Functor)
+newtype MyIdentity a = MyIdentity a deriving (Show, Eq)
+instance Functor MyIdentity where
+  fmap f (MyIdentity a) = MyIdentity (f a)
 instance Alt MyIdentity where -- cannot be Plus 
   idX <!> _ = idX
 instance Extend MyIdentity where 
@@ -739,12 +717,10 @@ instance Representable MyIdentity where
   tabulate f = MyIdentity (f ()) 
   index :: MyIdentity a -> () -> a
   index (MyIdentity a) () = a
-instance Monad MyIdentity where 
-  (>>=) :: MyIdentity a -> (a -> MyIdentity b) -> MyIdentity b
-  -- MyIdentity a >>= f = f a
-  (>>=) = flip ($) . extract
 
-data MyReader r a = MyReader { runMyReader :: r -> a } deriving (Functor)
+data MyReader r a = MyReader { runMyReader :: r -> a }
+instance Functor (MyReader r) where
+  fmap f (MyReader g) = MyReader $ g >>> f
 instance Alt (MyReader r) where
   ra <!> _ = ra
 -- instance Plus (MyReader r) where 
@@ -771,78 +747,31 @@ instance Representable (MyReader r) where
   index :: MyReader r a -> r -> a
   index = runMyReader
 
-
-
 readerToProxy :: MyReader Void ~> MyProxy
 readerToProxy _ = MyProxy
 
 proxyToReader :: MyProxy ~> MyReader Void
 proxyToReader _ = MyReader absurd
 
--- Easiest Adjunction in Haskell Zero -| MyProxy
--- it's really V1 -| U1
-instance Adjunction Zero MyProxy where 
-  unit :: a -> MyProxy (Zero a)
-  unit _ = MyProxy 
-  counit :: Zero (MyProxy a) -> a 
-  counit (Zero v) = absurd v
-  leftAdjunct :: (Zero a -> b) -> a -> MyProxy b
-  leftAdjunct _ _ = MyProxy 
-  rightAdjunct :: (a -> MyProxy b) -> Zero a -> b
-  rightAdjunct _ (Zero v) = absurd v
+newtype RAProxy a =  RAProxy (Void, a) deriving (Show, Eq)
+instance Functor RAProxy where
+  fmap f (RAProxy pair) = RAProxy $ f <$> pair
 
--- Instance already defined in Data.Functor.Adjunction
--- instance Adjunction V1 U1 where 
---   unit :: a -> U1 (V1 a)
---   unit _ = U1
---   counit :: V1 (U1 a) -> a 
---   counit v = case v of {}
---   leftAdjunct :: (V1 a -> b) -> a -> U1 b
---   leftAdjunct _ _ = U1
---   rightAdjunct :: (a -> U1 b) -> V1 a -> b
---   rightAdjunct _ v = case v of {}
+instance Adjunction RAProxy MyProxy where 
+  unit :: a -> MyProxy (RAProxy a)
+  unit _ = MyProxy
+  counit :: RAProxy (MyProxy a) -> a
+  counit (RAProxy (v, _)) = absurd v
+  leftAdjunct :: (RAProxy a -> b) -> a -> MyProxy b
+  leftAdjunct _ _ = MyProxy
+  rightAdjunct :: (a -> MyProxy b) -> RAProxy a -> b
+  rightAdjunct _ (RAProxy (v, _)) = absurd v
 
--- Using tuple section ((,) ()) directly
+readerToId :: ((->) ()) ~> Identity 
+readerToId ff = Identity (ff ())
 
--- Adjunction between ((,) ()) and MyIdentity
--- It's really MyIdentity -| MyIdentity 
--- instance Adjunction ((,) ()) MyIdentity where 
---   unit :: a -> MyIdentity ((), a)
---   unit x = MyIdentity ((), x)
---   counit :: ((), MyIdentity a) -> a
---   counit ((), MyIdentity x) = x
---   leftAdjunct :: (((), a) -> b) -> a -> MyIdentity b
---   leftAdjunct f x = MyIdentity $ f ((), x)
---   rightAdjunct :: (a -> MyIdentity b) -> ((), a) -> b
---   rightAdjunct f = fmap f >>> snd >>> extract
-
-instance Adjunction MyIdentity MyIdentity where 
-  unit :: a -> MyIdentity (MyIdentity a)
-  unit = MyIdentity >>> MyIdentity 
-  counit :: MyIdentity (MyIdentity a) -> a
-  counit = extract >>> extract 
-  leftAdjunct :: (MyIdentity a -> b) -> a -> MyIdentity b
-  leftAdjunct f = MyIdentity >>> f >>> MyIdentity 
-  rightAdjunct :: (a -> MyIdentity b) -> MyIdentity a -> b
-  rightAdjunct f = extract >>> f >>> extract 
-
-newtype MyWriter r a = MyWriter (r, a) deriving (Show, Eq, Functor)
-
-instance Adjunction (MyWriter r) (MyReader r) where 
-  unit :: a -> MyReader r (MyWriter r a)
-  unit a = MyReader (MyWriter . (, a))
-  counit :: MyWriter r (MyReader r a) -> a
-  counit (MyWriter (r, MyReader f)) = f r 
-  leftAdjunct :: (MyWriter r a -> b) -> a -> MyReader r b
-  leftAdjunct f a = MyReader (\r -> f (MyWriter (r, a)))
-  rightAdjunct :: (a -> MyReader r b) -> MyWriter r a -> b
-  rightAdjunct f (MyWriter (r, a)) = runMyReader (f a) r
-
-readerToId :: ((->) ()) ~> MyIdentity 
-readerToId ff = MyIdentity (ff ())
-
-idToReader :: MyIdentity ~> ((->) ())
-idToReader (MyIdentity a) = const a  
+idToReader :: Identity ~> ((->) ())
+idToReader (Identity a) = const a  
 
 -- The Universal Initial/Terminal Adjunction
 -- instance Adjunction Zero MyProxy where
@@ -854,37 +783,15 @@ idToReader (MyIdentity a) = const a
 sampleMyProxy :: MyProxy Int 
 sampleMyProxy = MyProxy
 -- 
-newtype DeltaF a = DeltaF (a, a) deriving (Show, Eq, Functor)
-instance Extend DeltaF where
-  duplicated :: DeltaF a -> DeltaF (DeltaF a)
-  duplicated (DeltaF (x, y)) = DeltaF (DeltaF (x, y), DeltaF (y, y))
-instance Comonad DeltaF where
-  extract :: DeltaF a -> a
-  extract (DeltaF (x, _)) = x
-  duplicate :: DeltaF a -> DeltaF (DeltaF a)
-  duplicate = duplicated
-type instance Key DeltaF = Bool
-instance Keyed DeltaF where
-  mapWithKey f (DeltaF (x, y)) = DeltaF (f True x, f False y)
-instance Lookup DeltaF where
-  lookup True (DeltaF (x, _)) = Just x
-  lookup False (DeltaF (_, y)) = Just y
-instance Distributive DeltaF where
-  distribute :: Functor f => f (DeltaF a) -> DeltaF (f a)
-  distribute = (fmap (\(DeltaF (x, _)) -> x) &&& fmap (\(DeltaF (_, y)) -> y)) >>> DeltaF
-
-instance Representable DeltaF where
-  type Rep DeltaF = Bool
-  tabulate f = DeltaF (f True, f False)
-  index (DeltaF (x, _)) True = x
-  index (DeltaF (_, y)) False = y
-
-instance Applicative DeltaF where
-  pure = (id &&& id) >>> DeltaF
-  DeltaF (f, g) <*> DeltaF (x, y) = DeltaF (f x, g y)
+newtype DeltaF a = DeltaF (a, a) deriving (Show, Eq)
+instance Functor DeltaF where 
+  fmap f (DeltaF (x, y)) = DeltaF (f x, f y)
 
 sampleDeltaF :: DeltaF Int 
 sampleDeltaF = DeltaF (1, 2)
+
+
+
 
 
 -- The True Adjunction for DeltaF!
@@ -901,257 +808,18 @@ sampleDeltaF = DeltaF (1, 2)
 -- instance Functor U1 where
 --   fmap _ U1 = U1
 
-data UnitF a = UnitF () deriving (Show, Eq, Functor)
-
-newtype DoubleIdentity a = DoubleIdentity (Compose MyIdentity MyIdentity a)
-  deriving stock (Show, Eq)
-  deriving newtype Functor
-
--- Prove that DoubleIdentity and MyIdentity are equivalent Functors. 
-doubleToSingle :: DoubleIdentity ~> MyIdentity
-doubleToSingle = coerce 
-
-foldr' :: Foldable f => (a -> b -> b) -> b -> f a -> b 
--- foldr' g b as =  appEndo (foldMap (g >>> Endo) as) b
-foldr' g =  flip (foldMap (g >>> Endo) >>> appEndo) 
-
-
-data Tree a = Empty | Leaf a | Node (Tree a) a (Tree a) deriving (Show, Functor)
-
-instance Foldable Tree where 
-  fold Empty = mempty 
-  fold (Leaf a) = a 
-  fold (Node l a r) = fold l <> a <> fold r 
-  foldMap f = fmap f >>> fold
-  
-
-newtype Parser a = Parser {runParser :: String -> Maybe (String, a)} deriving (Functor)
-instance Applicative Parser where 
-  pure :: a -> Parser a  
-  pure x = Parser (\s -> Just (s, x))
-  (<*>) :: Parser (a -> b) -> Parser a -> Parser b 
-  (<*>) (Parser f) (Parser g) = Parser (\s -> do 
-    (s', f')  <- f s
-    (s'', x)  <- g s'
-    return (s'', f' x))
-
-instance Alternative Parser where 
-  empty = Parser (\_ -> Nothing)
-  (<|>) :: Parser a -> Parser a -> Parser a 
-  (<|>) (Parser f) (Parser g) = Parser (\s -> f s <|> g s) 
-
-char :: Char -> Parser Char 
-char c = Parser (\s -> case s of 
-  (y:ys) | y == c -> Just (ys, c)
-  _ -> Nothing)
-
-string :: String -> Parser String 
-string [] = pure ""
-string (x:xs) = liftA2 (:) (char x) (string xs)
-
-string' :: String -> Parser String 
-string' = foldr fn (pure "") where 
-  fn c p = liftA2 (:) (char c) p 
-
-string'' :: String -> Parser String 
-string'' = traverse char 
-
-seq :: Applicative f => Maybe (f a) -> f (Maybe a)
-seq Nothing = pure Nothing
-seq (Just fa) = Just <$> fa
-
--- foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m 
--- foldMap f container = foldr (\a b -> f a <> b) mempty container
--- foldMap' f  = foldr (\a b -> f a <> b) mempty 
--- foldMap'' f = foldr (\a -> (f a <>)) mempty 
--- foldMap''' f = foldr ((<>) . f) mempty
-
--- foldr f acc container = appEndo (foldMap (\a -> Endo (f a)) container) acc
--- foldr' f = flip $ appEndo . foldMap (Endo . f)
-
-sumsq :: Int -> Int 
--- sumsq n = sum $ map (^2)[1..n]
--- sumsq n = foldr (\x acc -> acc + x * x) 0 [1..n]
-sumsq n = foldr (\x acc -> x * x + acc) 0 [1..n]
-
--- Define length, which returns the number of elements in a list, 
--- using foldr . Redefine it using foldl.
-
-lengthFoldr :: [a] -> Int 
-lengthFoldr list = foldr (\_ acc -> acc + 1) 0 list 
-
-lengthFoldl :: [a] -> Int 
-lengthFoldl list = foldl' (\acc _ -> acc + 1) 0 list 
-
--- Define minlist, which returns the smallest integer in a non-empty list of integers,
--- using foldr1 . Redefine it using foldl1 .
-
-minList :: NonEmpty Int -> Int 
-minList = foldr1 min
-
-minList' :: [Int] -> Int
-minList' = foldl1 min
-
--- (4) Define reverse, which reverses a list, using foldr.
-reverse :: [a] -> [a]
-reverse = foldr (\x acc -> acc ++ [x]) [] 
-reverse' :: [a] -> [a]
-reverse' list = foldr (\x acc -> acc . (x:)) id list []
-
-reverse'' :: [a] -> [a]
--- reverse'' list = foldr (\x acc -> (x:`) >>> acc) id list []
--- reverse'' list = foldr (\x -> ((x:) >>>)) id list []
-reverse'' list = foldr ((>>>) . (:)) id list []
-
--- (5) Using foldr , define a function remove which takes two strings as its arguments
--- and removes every letter from the second list that occurs in the first list. For
--- example, remove "first" "second" = "econd".
-
-remove :: String -> String -> String
-remove xs ys = let s = Set.fromList xs in 
-    foldr (\y -> if Set.notMember y s then (y:) else id) [] ys
-
-remove' :: String -> String -> String
-remove' xs ys = let s = Set.fromList xs in [y | y <- ys, Set.notMember y s]
-    -- foldr (\y -> if Set.notMember y s then (y:) else id) [] ys
-
-
-    -- (6) Define filter using foldr . Define filter again using foldl.
-
-filter :: Foldable f => (a -> Bool) -> f a -> [a]
-filter p = foldr (\x -> if p x then (x:) else id) [] 
-
-filter' :: Foldable f => (a -> Bool) -> f a -> [a]
-filter' p = reverse . foldl' (\acc x -> if p x then (x:acc) else acc) []
-
--- The function remdups removes adjacent duplicates from a list. For example,
--- remdups [1, 2, 2, 3, 3, 3, 1, 1] = [1, 2, 3, 1].
--- Define remdups using foldr . Give another definition using foldl.
-
-remdups :: (Eq a, Foldable f) => f a -> [a] 
-remdups = foldr step [] where 
-  step x acc@(a:_) | x == a = acc 
-  step x acc = x : acc
-
-remdups' :: (Eq a, Foldable f) => f a -> [a]
-remdups' = reverse . foldl' step [] where 
-  step acc@(a:_) x | x == a = acc 
-  step acc x = x : acc 
-
-remdups'' :: (Eq a, Foldable f) => f a -> [a]
-remdups'' = toList >>> NE.group >>> fmap NE.head
-
--- The function inits returns the list of all initial segments of a list. Thus, inits
--- "ate" = [[], "a", "at", "ate"]. Define inits using foldr .
-
-inits :: [a] -> [[a]]
-inits = foldr step [[]]  where 
-  step x = map (x:) >>> ([]:)
-
-inits' :: [a] -> [[a]]
-inits' [] = [[]]
-inits' (x:xs) = [] : map (x:) (inits' xs)
-
--- sing foldl define approxe n such that
--- approxe n =
--- X
--- i=n
--- i=0
--- 1
--- i!
-
-approxe :: Fractional a => Int -> a 
-approxe n = foldr step 1 [1..n] where 
-  step x acc = 1 + (acc / fromIntegral x)
-
-approximationsOfE :: [Double]
-approximationsOfE = scanl1 (+) ratios where
-  facts :: [Integer]
-  facts  = 1 : zipWith (*) [1..] facts
-  ratios = map ((1 /) . fromIntegral) facts
-
-approxeFoldl :: Int -> Double
-approxeFoldl n = fst $ foldl' step (1.0, 1.0) [1..n] 
-  where 
-    -- acc is (currentSum, currentFactorial)
-    -- x is the current number from 1 to n
-    step (s, f) x = 
-      let nextFact = f * fromIntegral x
-      in (s + (1 / nextFact), nextFact)
-
-sae :: Int -> [Double]
-sae n = fmap fst $ scanl step (1.0, 1.0) [1..n] where 
-    step (s, f) x = let nextFact = f * fromIntegral x 
-      in (s + (1 / nextFact), nextFact)
-
-iterate :: (a -> a) -> a -> [a]
-iterate f x = scanl step x (repeat ()) where 
-  step = f >>> const     
-
-shift :: [a] -> [a]
-shift [] = []
-shift (x:xs) = xs ++ [x]
-
-rotate :: [a] -> [[a]]
-rotate list = take (length list) (scanl step list (repeat ()))  where
-  step = shift >>> const 
-
-rotate' :: [a] -> [[a]]
-rotate' list = take (length list) $ iterate shift list 
-
--- https://www.cantab.net/users/antoni.diller/haskell/
-
-succe :: Num a => a -> a
-succe i = i + 1
-
-prede :: Num a => a -> a
-prede i = i - 1
-
-add :: (Num a, Num b, Eq b) => a -> b -> a
-add i 0 = i
-add i j = succe (add i (prede j))
-
-mult :: (Num a, Num b, Eq a, Eq b) => a -> b -> a
-mult _ 0 = 0
-mult i j = add i $ mult i (prede j)
-
-expe :: (Num a, Num b, Eq a, Eq b) => a -> b -> a
-expe _ 0 = 1
-expe i j = mult i $ expe i (prede j)
-
-foldi :: (a -> a) -> a -> Int -> a
-foldi _ q 0 = q
-foldi f q i = f (foldi f q (pred i))
-
-add' :: Num a => a -> Int -> a
-add' a b = foldi succe a b 
-
-mult' :: (Eq a, Num a) => a -> Int -> a
-mult' a b = foldi (add a) 0 b
-
-expe' :: (Num a, Eq a) => a -> Int -> a
-expe' i j = foldi (mult i) 1 j 
-
-fact :: Int -> Int
-fact n = snd (foldi step (1, 1) n)
-  where
-    step (idx, prod) = (idx + 1, prod * idx)
-
-domain :: Eq a => [(a, b)] -> [a]
-domain  = map fst >>> nub
-
-range :: Eq b => [(a, b)] -> [b]
-range = map snd >>> nub
-  
-compose :: Eq b => [(a, b)] -> [(b, c)] -> [(a, c)]
-compose pairs1 pairs2 = [(a, c) | (a, b) <- pairs1, (b', c) <- pairs2, b == b']
-
-inverse :: [(a, b)] -> [(b, a)]
-inverse = map swap
-
-reflexive :: Eq a => [(a, a)] -> Bool
-reflexive pairs = length cand == length ref where 
-  cand = nub $ range pairs ++ domain pairs 
-  ref = nub $ map fst $ filter (\(x,y) -> x == y) pairs
-
-
+data UnitF a = UnitF () deriving (Show, Eq)
+instance Functor UnitF where
+  fmap _ (UnitF ()) = UnitF ()
+
+-- pure :: a -> fa 
+-- fmap1 :: (a -> b) -> f a -> f b
+-- (<*>) :: f (a -> b) -> f a -> f b
+
+-- fmap2 :: (a -> b -> c) -> f a -> f b -> f c
+-- fmap2 f fa fb = f <$> fa <*> fb 
+-- fmap2 f fa fb = pure f <*> fa <*> fb 
+
+-- fmap3 :: (a -> b -> c -> d) -> f a -> f b -> f c -> f d
+-- fmap3 f fa fb fc = f <$> fa <*> fb <*> fc
+-- fmap3 f fa fb fc = pure f <*> fa <*> fb <*> fc 
