@@ -126,6 +126,24 @@ infixl 7 ●
 (●) :: Multivector -> Multivector -> Multivector
 (●) = fatDot
 
+-- | Left Contraction: A ⌋ B
+--   Defined via Grade Difference (s - r):
+--   <A_r ⌋ B_s> = < A_r * B_s >_(s - r)  (for r <= s)
+--   <A_r ⌋ B_s> = 0                      (for r > s)
+leftContract :: Multivector -> Multivector -> Multivector
+leftContract a b = 
+  grade 0 (sa * sb + va * vb + ba * bb) +
+  grade 1 (sa * vb + va * bb) +
+  grade 2 (sa * bb)
+  where
+    (sa, va, ba) = grades a
+    (sb, vb, bb) = grades b
+
+-- | Infix Left Contraction: u ⨼ v (U+2A3C Interior Product / Left Contraction)
+infixl 7 ⨼
+(⨼) :: Multivector -> Multivector -> Multivector
+(⨼) = leftContract
+
 rotateVector :: Multivector -> Double -> Multivector
 rotateVector v theta = r * v * reverseMV r
   where 

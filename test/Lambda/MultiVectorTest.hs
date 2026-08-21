@@ -255,5 +255,30 @@ multiVectorTests =
           testProperty "Bilinear Distributivity: a ● (b + c) == (a ● b) + (a ● c)" $
             \a b c ->
               approxEq (a ● (b + c)) ((a ● b) + (a ● c))
+        ],
+      testGroup
+        "Left Contraction (⨼) Laws"
+        [ testCase "3 ⨼ e1 = 3 * e1 (scalar scales vector)" $
+            (toScalar 3 ⨼ e1v) @?= vec 3 0,
+          testCase "e1 ⨼ e12 = e2 (extracts e1 from plane)" $
+            (e1v ⨼ e12v) @?= e2v,
+          testCase "e2 ⨼ e12 = -e1 (extracts e2 from plane)" $
+            (e2v ⨼ e12v) @?= negate e1v,
+          testCase "e12 ⨼ e1 = 0 (cannot contract higher grade 2 out of lower grade 1)" $
+            (e12v ⨼ e1v) @?= MV 0 0 0 0,
+          testCase "e12 ⨼ e12 = -1 (bivector contraction)" $
+            (e12v ⨼ e12v) @?= toScalar (-1),
+          testProperty "Agreement on 1-vectors with Dot Product: u ⨼ v == u · v" $
+            \(PV u) (PV v) ->
+              (u ⨼ v) == (u · v),
+          testProperty "Grade annihilation when r > s: (biv b) ⨼ v == 0" $
+            \b (PV v) ->
+              (biv b ⨼ v) == 0,
+          testProperty "Contraction Adjoint Duality to Wedge: <(a ∧ b) * c>₀ == <a * (b ⨼ c)>₀" $
+            \a b c ->
+              approxEq (grade 0 ((a ∧ b) * c)) (grade 0 (a * (b ⨼ c))),
+          testProperty "Bilinear Distributivity: a ⨼ (b + c) == (a ⨼ b) + (a ⨼ c)" $
+            \a b c ->
+              approxEq (a ⨼ (b + c)) ((a ⨼ b) + (a ⨼ c))
         ]
     ]
