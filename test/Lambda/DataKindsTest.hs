@@ -5,7 +5,7 @@
 
 module Lambda.DataKindsTest (dataKindsTests) where
 
-import Lambda.DataKinds (Door (..), DoorState (..), HList (..), Nat (..), Permission (..), Vec (..), closeDoor, openDoor, vappend, vhead)
+import Lambda.DataKinds (Door (..), DoorState (..), HList (..), Vec (..), closeDoor, openDoor, vappend, vhead)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 

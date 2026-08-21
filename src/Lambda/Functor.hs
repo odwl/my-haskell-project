@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
@@ -12,8 +13,9 @@ module Lambda.Functor
     MyMaybe2 (..),
     MyMaybe (..),
     MyReader (..),
-    runMyReader,
     MaybeList (..),
+    ListMaybe (..),
+    Tree (..),
     takeWhileM,
     myDiv,
     mySum,
@@ -37,10 +39,12 @@ module Lambda.Functor
   )
 where
 
-import Control.Monad (guard, join, (>=>))
+import Control.Category ((>>>))
+import Control.Monad (ap, guard, join, (>=>))
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.Writer (Writer, writer)
 import Data.Bifunctor (Bifunctor (..))
+import Data.Functor.Compose (Compose (..))
 import Data.Functor.Const (Const (..))
 import Data.Functor.Identity (Identity (..))
 import Data.Maybe (fromMaybe)
@@ -115,27 +119,40 @@ myMult a b = Just (a * b)
 -- | Divides both (l / r) and (r / l) using 'myDiv', then returns their sum via 'mySum'.
 -- Returns 'Nothing' if either division fails or produces 3.
 calc2 :: (Integral a) => a -> a -> Maybe a
-calc2 l r = do
-  x <- myDiv l r
-  y <- myDiv r l
-  mySum x y
+calc2 l r = (+) <$> myDiv l r <*> myDiv r l
 
 -- Note: The Functor, Applicative, and Monad laws implemented and tested for these
 -- structures are deeply aligned with the categorical foundations detailed in
 -- "Category Theory for Programmers" by Bartosz Milewski:
 -- https://ai.dmi.unibas.ch/research/reading_group/milewski-2023-01-30.pdf
 
-newtype MyReader a b = MyReader {unwrap :: a -> b}
+data MyReader a b where
+  MyReader :: {runMyReader :: a -> b} -> MyReader a b
+  deriving (Functor)
 
-instance Functor (MyReader c) where
-  fmap f (MyReader g) = MyReader (f . g)
+instance Applicative (MyReader a) where
+  pure x = MyReader (const x)
 
-runMyReader :: MyReader a b -> a -> b
-runMyReader = unwrap
+  (<*>) :: MyReader a (b -> c) -> MyReader a b -> MyReader a c
+  MyReader f <*> MyReader g = MyReader (f <*> g)
 
-newtype MaybeList a = MaybeList {getMaybeList :: [Maybe a]}
+instance Show (MyReader a b) where
+  show _ = "<MyReader>"
+
+newtype MaybeList a = MaybeList { getMaybeList :: [Maybe a] }
   deriving (Show, Eq)
   deriving (Functor, Applicative, Monad) via (MaybeT [])
+
+newtype ListMaybe a = ListMaybe { getListMaybe :: Maybe [a] }
+  deriving (Show, Eq)
+  deriving (Functor, Applicative) via (Compose Maybe [])
+
+instance Monad ListMaybe where
+  (>>=) :: ListMaybe a -> (a -> ListMaybe b) -> ListMaybe b
+  ListMaybe m >>= f = ListMaybe $ do
+    xs <- m
+    bss <- traverse (f >>> getListMaybe) xs
+    pure (concat bss)
 
 ------------------------
 -- MyList ---
@@ -340,3 +357,25 @@ checkOverflow :: DamState -> Subdist DamState
 checkOverflow state = pure $ case state of
   OK current | current > capacity -> Overflowed
   _ -> state
+
+--------------------------------------------------------------------------------
+-- Exercises: Programming in Haskell (2nd Edition) by Graham Hutton
+-- Chapter 12: Monads and more (Section 12.5 Exercises)
+-- Book Resources: https://www.cs.nott.ac.uk/~pszgmh/book.html
+--------------------------------------------------------------------------------
+
+-- Exercise 12.5.1: Define a Functor instance for a binary tree
+data Tree a = Leaf | Node (Tree a) a (Tree a)
+    deriving (Show, Eq)
+
+instance Functor Tree where 
+  fmap _ Leaf = Leaf
+  fmap f (Node ltree val rtree) = Node (fmap f ltree) (f val) (fmap f rtree)
+
+instance Applicative Tree where 
+  pure x = Node Leaf x Leaf 
+  Leaf <*> _ = Leaf 
+  _ <*> Leaf = Leaf
+  Node ffl fval frfl <*> Node ltree val rtree = Node (ffl <*> ltree) (fval val) (frfl <*> rtree)
+
+instance Monad Tree where 

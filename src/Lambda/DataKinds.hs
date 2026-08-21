@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
@@ -5,6 +6,7 @@
 {-# LANGUAGE ListTuplePuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -23,6 +25,8 @@ module Lambda.DataKinds where
 import Control.Arrow ((>>>))
 import Data.Functor.Identity (Identity (..), runIdentity)
 import Data.Kind (Type)
+import Foreign.Ptr (Ptr, castPtr, plusPtr)
+import Foreign.Storable (Storable (..))
 
 -- ========================================================================= --
 -- LEVEL 1: PROMOTED ALGEBRAIC DATA TYPES & TYPE-SAFE STATE MACHINES         --
@@ -98,6 +102,47 @@ three = S two
 data Vec (n :: Nat) a where
   VNil  :: Vec 'Z a
   VCons :: a -> Vec n a -> Vec ('S n) a
+
+-- | A typeclass to convert a promoted 'Nat' into a runtime 'Int'.
+class KnownNat (n :: Nat) where
+  natVal :: Int
+
+instance KnownNat 'Z where
+  natVal = 0
+
+instance KnownNat n => KnownNat ('S n) where
+  natVal = 1 + natVal @n
+
+-- | Helper class to recursively read ('peek') and write ('poke') a fixed-length 'Vec n a' across unmanaged C memory.
+class KnownNat n => StorableVec (n :: Nat) where
+  peekVec :: forall a. Storable a => Ptr (Vec n a) -> IO (Vec n a)
+  pokeVec :: forall a. Storable a => Ptr (Vec n a) -> Vec n a -> IO ()
+
+instance StorableVec 'Z where
+  peekVec _ = pure VNil
+  pokeVec _ VNil = pure ()
+
+instance StorableVec n => StorableVec ('S n) where
+  peekVec :: forall a. Storable a => Ptr (Vec ('S n) a) -> IO (Vec ('S n) a)
+  peekVec ptr = do
+    x  <- peek (castPtr ptr)
+    xs <- peekVec @n (castPtr (ptr `plusPtr` sizeOf @a undefined))
+    pure (VCons x xs)
+
+  pokeVec :: forall a. Storable a => Ptr (Vec ('S n) a) -> Vec ('S n) a -> IO ()
+  pokeVec ptr (VCons x xs) = do
+    poke (castPtr ptr) x
+    pokeVec @n (castPtr (ptr `plusPtr` sizeOf @a undefined)) xs
+
+-- | The Storable instance for our length-indexed Vec!
+-- Because the length 'n' is statically known at compile time via 'KnownNat n',
+-- and 'a' has a static byte footprint via 'Storable a', 'Vec n a' serializes
+-- directly to and from contiguous unboxed C pointer memory (`n * sizeOf a` bytes)!
+instance (StorableVec n, Storable a) => Storable (Vec n a) where
+  sizeOf _    = natVal @n * sizeOf @a undefined
+  alignment _ = alignment @a undefined
+  peek ptr    = peekVec @n ptr
+  poke ptr xs = pokeVec @n ptr xs
 
 vec0 :: Vec 'Z Int 
 vec0 = VNil 

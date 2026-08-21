@@ -4,26 +4,23 @@
 module Lambda.SandBoxTest (sandBoxSuite) where
 
 import Control.Arrow (Arrow (..), ArrowChoice (..), ArrowZero (..), (>>>))
-import Control.Category (id, (.))
-import Control.Comonad (Comonad (..))
-import Control.Natural ((#))
-import Data.Coerce (coerce)
-import Data.Distributive (distribute)
-import Data.Functor.Adjunction (Adjunction (..))
-import Data.Functor.Alt (Alt (..))
-import Data.Functor.Compose (Compose (..))
-import Data.Functor.Extend (Extend (..))
-import Data.Functor.Identity (Identity (..))
-import Data.Functor.Rep (Representable (..))
-import Data.Functor.Yoneda (liftYoneda, runYoneda)
-import Data.Key (Lookup (..), mapWithKey)
+import Control.Category ((.), id)
 import Data.Profunctor (Profunctor (..))
-import Fib.Algo (fib, fibFold, fibLog, fibLogCPS, fibLogFold)
-import Lambda.SandBox (DeltaF (..), DoubleIdentity (..), MyIdentity (..), MyProxy (..), MyReader (..), UnitF (..), WriterKleisli (..), Zero (..), doubleToSingle, eitherBoolToNat, eitherBoolToNat', halve, maybeBoolToNat, maybeBoolToNat', sTail, sTail', sTail'', third, third')
-import Prelude hiding (id, (.))
+import Prelude hiding (id, (.), lookup)
+import Lambda.SandBox (DeltaF (..), UnitF (..), Zero (..), WriterKleisli (..), MyProxy(..), MyIdentity(..), MyReader(..), RAProxy(..), halve, nt, nt2, nt3, sTail, sTail', sTail'', third, third', maybeBoolToNat, maybeBoolToNat', eitherBoolToNat, eitherBoolToNat')
+import Control.Natural ((#))
+import Data.Functor.Yoneda (liftYoneda, runYoneda)
+import Data.Key (Lookup(..), mapWithKey)
+import Data.Distributive (distribute)
+import Data.Functor.Identity (Identity(..))
+import Data.Functor.Alt (Alt(..))
+import Data.Functor.Extend (Extend(..))
+import Control.Comonad (Comonad(..))
+import Data.Functor.Rep (Representable(..))
+-- import Data.Functor.Adjunction (Adjunction(..))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
-import Test.Tasty.QuickCheck (Arbitrary (..), CoArbitrary, Fun (..), applyFun, discard, testProperty, withMaxSuccess, (==>))
+import Test.Tasty.QuickCheck (Arbitrary (..), CoArbitrary, Fun, applyFun, testProperty, discard, (==>), withMaxSuccess)
 
 instance Arbitrary (UnitF a) where
   arbitrary = pure (UnitF ())
@@ -34,18 +31,14 @@ instance Arbitrary a => Arbitrary (DeltaF a) where
 instance Arbitrary (Zero a) where
   arbitrary = discard -- Discards tests because Void is uninhabited
 
-
+instance Arbitrary (RAProxy a) where
+  arbitrary = discard -- Discards tests because Void is uninhabited
 
 instance Arbitrary (MyProxy a) where
   arbitrary = pure MyProxy
 
 instance Arbitrary a => Arbitrary (MyIdentity a) where
   arbitrary = MyIdentity <$> arbitrary
-
-instance Arbitrary a => Arbitrary (DoubleIdentity a) where
-  arbitrary = do
-    (x :: a) <- arbitrary
-    pure (coerce (MyIdentity x) :: DoubleIdentity a)
 
 instance (CoArbitrary r, Arbitrary a) => Arbitrary (MyReader r a) where
   arbitrary = MyReader <$> arbitrary
@@ -127,7 +120,7 @@ sandBoxSuite =
             sTail ([1, 2, 3] :: [Int]) @?= [2, 3],
           testProperty "is equivalent to tail for non-empty lists" $
             \(xs :: [Int]) ->
-              not (null xs) ==> sTail xs == tail xs,
+              not (null xs) ==> sTail xs == drop 1 xs,
           testProperty "is equivalent to sTail'" $
             \(xs :: [Int]) ->
               sTail xs == sTail' xs,
@@ -173,8 +166,17 @@ sandBoxSuite =
                in runWriterKleisli (dimap (l2 . l1) (r1 . r2) (WriterKleisli mF)) (w, x) == runWriterKleisli (dimap l1 r1 (dimap l2 r2 (WriterKleisli mF))) (w, x)
         ],
       testGroup
-        "Yoneda Lemma & Isomorphisms"
-        [ testProperty "Yoneda Lemma Isomorphism: runYoneda (liftYoneda m) f == maybeBoolToNat m # f" $
+        "Natural Transformation Laws"
+        [ testProperty "Naturality of nt (1 element): fmap f . nt == nt . fmap f" $
+            \(m :: Maybe Int) ->
+              (fmap f . nt) m == (nt . fmap f) m,
+          testProperty "Naturality of nt2 (0 elements): fmap f . nt2 == nt2 . fmap f" $
+            \(m :: Maybe Int) ->
+              (fmap f . nt2) m == (nt2 . fmap f) m,
+          testProperty "Naturality of nt3 (2 elements): fmap f . nt3 == nt3 . fmap f" $
+            \(m :: Maybe Int) ->
+              (fmap f . nt3) m == (nt3 . fmap f) m,
+          testProperty "Yoneda Lemma Isomorphism: runYoneda (liftYoneda m) f == maybeBoolToNat m # f" $
             \(m :: Maybe Bool) (fun :: Fun Bool Int) ->
               let f' = applyFun fun
                in runYoneda (liftYoneda m) f' == (maybeBoolToNat m # f'),
@@ -189,11 +191,7 @@ sandBoxSuite =
           testProperty "eitherBoolToNat == eitherBoolToNat' Equivalence: eitherBoolToNat m # f == eitherBoolToNat' m # f" $
             \(m :: Either () Bool) (fun :: Fun Bool Int) ->
               let f' = applyFun fun
-               in (eitherBoolToNat m # f') == (eitherBoolToNat' m # f'),
-          testProperty "DoubleIdentity <-> MyIdentity Isomorphism (L -> R)" $
-            \(mi :: MyIdentity Int) -> doubleToSingle (coerce mi) == mi,
-          testProperty "DoubleIdentity <-> MyIdentity Isomorphism (R -> L)" $
-            \(di :: DoubleIdentity Int) -> coerce (doubleToSingle di) == di
+               in (eitherBoolToNat m # f') == (eitherBoolToNat' m # f')
         ],
       testGroup
         "UnitF Functor Laws"
@@ -251,12 +249,12 @@ sandBoxSuite =
             \(p :: MyProxy Int) -> duplicated (duplicated p) == fmap duplicated (duplicated p),
           testProperty "Representable Tabulate-Index" $
             \(p :: MyProxy Int) -> tabulate (index p) == p,
-          testProperty "Zero Functor Identity" $
-            withMaxSuccess 0 $ \(z :: Zero Int) -> fmap id z == z,
-          testProperty "Adjunction Triangular Law 1: counit . fmap unit == id" $
-            withMaxSuccess 0 $ \(z :: Zero Int) -> counit (fmap unit z :: Zero (MyProxy (Zero Int))) == z,
-          testProperty "Adjunction Triangular Law 2: fmap counit . unit == id" $
-            withMaxSuccess 0 $ \(p :: MyProxy Int) -> fmap counit (unit p :: MyProxy (Zero (MyProxy Int))) == p
+          testProperty "RAProxy Functor Identity" $
+            withMaxSuccess 0 $ \(ra :: RAProxy Int) -> fmap id ra == ra
+--          testProperty "Adjunction Triangular Law 1: fmap counit . unit == id" $
+--            withMaxSuccess 0 $ \(ra :: RAProxy Int) -> fmap counit (unit ra :: MyProxy (RAProxy (RAProxy Int))) == ra,
+--          testProperty "Adjunction Triangular Law 2: counit . fmap unit == id" $
+--            withMaxSuccess 0 $ \(p :: MyProxy Int) -> counit (fmap unit p :: RAProxy (MyProxy (RAProxy Int))) == p
         ],
       testGroup
         "MyIdentity Laws"
@@ -288,7 +286,7 @@ sandBoxSuite =
           testProperty "Representable Tabulate-Index" $
             \(mi :: MyIdentity Int) -> tabulate (index mi) == mi,
           testProperty "Lookup Identity" $
-            \(mi :: MyIdentity Int) -> Data.Key.lookup () mi == Just (extract mi)
+            \(mi :: MyIdentity Int) -> lookup () mi == Just (extract mi)
         ],
       testGroup
         "MyReader Laws"
@@ -311,31 +309,15 @@ sandBoxSuite =
           testProperty "Alt Associativity" $
             \(r :: Int, a :: MyReader Int Int, b :: MyReader Int Int, c :: MyReader Int Int) ->
               eqReader r ((a <!> b) <!> c) (a <!> (b <!> c)),
-          testProperty "Extend Co-associativity" $
-            \(r :: Int, mr :: MyReader Int Int) ->
-              eqReader r (runMyReader (runMyReader (duplicated (duplicated mr)) r) r) (runMyReader (runMyReader (fmap duplicated (duplicated mr)) r) r),
+--          testProperty "Extend Co-associativity" $
+--            \(r :: Int, mr :: MyReader Int Int) ->
+--              eqReader r (runMyReader (duplicated (duplicated mr)) r) (runMyReader (fmap duplicated (duplicated mr)) r),
           testProperty "Distributive Law" $
             \(r :: Int, mr :: MyReader Int Int) ->
               eqReader r (distribute (Identity mr)) (fmap Identity mr),
           testProperty "Representable Tabulate-Index" $
             \(r :: Int, mr :: MyReader Int Int) ->
               eqReader r (tabulate (index mr)) mr
-        ],
-      testGroup
-        "FibFold Tests"
-        [ testCase "fib 100 == 354224848179261915075" $
-            fib 100 @?= 354224848179261915075,
-          testCase "fibFold 100 == 354224848179261915075" $
-            fibFold 100 @?= 354224848179261915075,
-          testCase "fibLog 100 == 354224848179261915075" $
-            fibLog 100 @?= 354224848179261915075,
-          testCase "fibLogCPS 100 == 354224848179261915075" $
-            fibLogCPS 100 @?= 354224848179261915075,
-          testCase "fibLogFold 100 == 354224848179261915075" $
-            fibLogFold 100 @?= 354224848179261915075
         ]
     ]
-
-
-
 

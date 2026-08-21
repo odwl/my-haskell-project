@@ -79,7 +79,7 @@ lensTests =
             res1 @?= Just "Hi"
             let res2 = preview (_1 . folded) (["Hi", "Ho"], ["He", "Hu"])
             res2 @?= Just "Hi"
-            let res3 = view (_1 . to head) (["Hi", "Ho"], ["He", "Hu"]) -- bad
+            let res3 = view (_1 . to (\xs -> case xs of { x:_ -> x; [] -> error "empty" })) (["Hi", "Ho"], ["He", "Hu"]) -- bad
             res3 @?= "Hi"
             let res4 = view (_1 . traversed . filtered (== "Hi")) (["Hi", "He"], ["He", "Hu"])
             res4 @?= "Hi"

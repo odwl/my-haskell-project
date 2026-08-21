@@ -71,6 +71,7 @@ library
     Lambda.Limit
     Lambda.DataKinds
     Lambda.RequiredTypeArguments
+    Lambda.MultiVector
     Fib.Algo
     CountDown
 
@@ -134,6 +135,7 @@ test-suite lambda-test
     Lambda.LimitTest
     Lambda.DataKindsTest
     Lambda.RequiredTypeArgumentsTest
+    Lambda.MultiVectorTest
 
 
   build-depends:
@@ -199,6 +201,7 @@ test-suite all-tests
     Lambda.LimitTest
     Lambda.DataKindsTest
     Lambda.RequiredTypeArgumentsTest
+    Lambda.MultiVectorTest
     CountDownTest
 
   build-depends:

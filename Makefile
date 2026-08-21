@@ -1,4 +1,4 @@
-.PHONY: all build test lint format check watch docs watch-functor watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-haskell-fib run-storable run-haskell-fib-llvm compare-fib run-rust run-rust-release build-rust build-rust-release check-rust test-rust watch-rust watch-rust-test watch-countdown run-countdown
+.PHONY: all build test lint format check watch docs watch-functor watch-sandbox watch-exercism watch-lambda watch-zipper watch-free run-lean watch-lean watch-limit run-haskell-fib run-storable run-haskell-fib-llvm compare-fib run-rust run-rust-release build-rust build-rust-release check-rust test-rust watch-rust watch-rust-test watch-countdown run-countdown watch-multivector
 
 # Load local environment variables
 -include .env
@@ -179,6 +179,10 @@ watch-free:
 # Run tests on file change but isolate only "Limit and Colimit Tests"
 watch-limit:
 	TASTY_PATTERN="Limit and Colimit Tests" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+
+# Run tests on file change but isolate only "MultiVector" tests
+watch-multivector:
+	TASTY_PATTERN="MultiVector" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
 
 # Run tests on file change but isolate only "CountDown Tests"
 watch-countdown:

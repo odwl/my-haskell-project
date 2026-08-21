@@ -1,0 +1,80 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Antigravity//Lena Exam Reminders//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Lena Exam Reminders
+
+BEGIN:VEVENT
+SUMMARY:Lena's Exam: Tragwerksentwurf (Congratulate Her!)
+DESCRIPTION:Congratulate Lena on completing her Tragwerksentwurf exam.
+DTSTART;TZID=Europe/Zurich:20260804T090000
+DTEND;TZID=Europe/Zurich:20260804T110000
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Congratulate Lena on her Tragwerksentwurf exam!
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+SUMMARY:Lena's Exam: Computational Design (Congratulate Her!)
+DESCRIPTION:Congratulate Lena on completing her Computational Design exam.
+DTSTART;TZID=Europe/Zurich:20260806T100000
+DTEND;TZID=Europe/Zurich:20260806T120000
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Congratulate Lena on her Computational Design exam!
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+SUMMARY:Lena's Exam: Urban Design (Congratulate Her!)
+DESCRIPTION:Congratulate Lena on completing her Urban Design exam.
+DTSTART;TZID=Europe/Zurich:20260810T143000
+DTEND;TZID=Europe/Zurich:20260810T163000
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Congratulate Lena on her Urban Design exam!
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+SUMMARY:Lena's Exam: Building Physics (Congratulate Her!)
+DESCRIPTION:Congratulate Lena on completing her Building Physics exam.
+DTSTART;TZID=Europe/Zurich:20260813T133000
+DTEND;TZID=Europe/Zurich:20260813T153000
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Congratulate Lena on her Building Physics exam!
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+SUMMARY:Lena's Exam: Architekturgeschichte (Congratulate Her!)
+DESCRIPTION:Congratulate Lena on completing her Architekturgeschichte exam.
+DTSTART;TZID=Europe/Zurich:20260817T083000
+DTEND;TZID=Europe/Zurich:20260817T103000
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Congratulate Lena on her Architekturgeschichte exam!
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+
+BEGIN:VEVENT
+SUMMARY:Lena's Exam: Global History (Congratulate Her!)
+DESCRIPTION:Congratulate Lena on completing her Global History exam.
+DTSTART;TZID=Europe/Zurich:20260820T100000
+DTEND;TZID=Europe/Zurich:20260820T120000
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Congratulate Lena on her Global History exam!
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+
+END:VCALENDAR

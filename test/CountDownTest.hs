@@ -79,7 +79,7 @@ countDownTests = testGroup "CountDown Tests"
 
       -- Test exprs
       , testCase "exprs empty list" $
-          exprs [] @?= []
+          exprs ([] :: [Positive]) @?= []
       , testCase "exprs singleton [2]" $
           exprs [p 2] @?= [v2]
       , testCase "exprs [2, 3]" $
