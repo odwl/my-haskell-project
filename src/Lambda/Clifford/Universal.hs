@@ -21,7 +21,6 @@ module Lambda.Clifford.Universal
   -- * Non-Zero Scalar Restriction
   , NonZero(..)
   , mkNonZero
-  , unNonZero
   , oneNZ
   -- * Constructors
   , scalar
@@ -53,6 +52,7 @@ module Lambda.Clifford.Universal
   , (•)
   ) where
 
+import Control.Arrow ((>>>))
 import Data.Bits (Bits(..), popCount, countTrailingZeros)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -143,10 +143,10 @@ basis :: forall (k :: Nat) p q r a.
 basis = bladeNZ (bit (kVal - 1)) oneNZ
   where
     kVal = fromIntegral (natVal (Proxy @k))
-    
+
 -- | Build a multivector from a list of (Blade, coefficient) pairs
 fromBladeList :: (Num a, Eq a) => [(Blade, a)] -> Clifford p q r a
-fromBladeList = Clifford . Map.mapMaybe mkNonZero . Map.fromListWith (+)
+fromBladeList = Map.fromListWith (+) >>> Map.mapMaybe mkNonZero >>> Clifford
 
 -- | Convert multivector to a sorted list of (Blade, coefficient) pairs
 toBladeList :: Clifford p q r a -> [(Blade, a)]
