@@ -180,9 +180,13 @@ watch-free:
 watch-limit:
 	TASTY_PATTERN="Limit and Colimit Tests" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
 
-# Run tests on file change but isolate only "MultiVector" tests
-watch-multivector:
-	TASTY_PATTERN="MultiVector" ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+# Run tests on file change for MultiVector and Universal Clifford Algebra
+watch-multivector watch-clifford:
+	TASTY_PATTERN='$$3 == "MultiVector Geometric Algebra Tests" || $$3 == "Universal Clifford Algebra Tests"' ghcid --command="cabal repl lambda-test" --test=':main' --restart=src --reload=test
+
+# Run all MultiVector and Universal Clifford tests once
+test-multivector test-clifford:
+	TASTY_PATTERN='$$3 == "MultiVector Geometric Algebra Tests" || $$3 == "Universal Clifford Algebra Tests"' cabal test lambda-test
 
 # Run tests on file change but isolate only "CountDown Tests"
 watch-countdown:
