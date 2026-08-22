@@ -1,0 +1,129 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
+
+module Lambda.Clifford.UniversalTest (universalCliffordTests) where
+
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
+import Data.Bits (shiftL)
+import Data.Proxy (Proxy(..))
+
+import Lambda.Clifford.Signature
+import Lambda.Clifford.Universal
+
+-- | QuickCheck Arbitrary generator for Clifford multivectors
+instance (KnownSignature p q r, Arbitrary a, Num a, Eq a) => Arbitrary (Clifford p q r a) where
+  arbitrary = do
+    let n = totalDim (Proxy :: Proxy (Signature p q r))
+        maxBlade = (1 `shiftL` n) - 1
+    coeffs <- vectorOf (fromIntegral (maxBlade + 1)) arbitrary
+    return $ fromBladeList (zip [0 .. maxBlade] coeffs)
+
+universalCliffordTests :: TestTree
+universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
+  [ testGroup "Signature & Basis Squares"
+      [ testCase "G² Cl(2,0) Euclidean basis squares" $ do
+          let e1 = basis 1 :: Clifford 2 0 0 Int
+              e2 = basis 2 :: Clifford 2 0 0 Int
+          e1 * e1 @?= 1
+          e2 * e2 @?= 1
+          e1 * e2 @?= blade 3 1
+          e2 * e1 @?= blade 3 (-1)
+          e1 * e2 + e2 * e1 @?= 0
+
+      , testCase "Quaternions Cl(0,2) basis squares i² = j² = k² = -1" $ do
+          let i = basis 1 :: Clifford 0 2 0 Int
+              j = basis 2 :: Clifford 0 2 0 Int
+              k = i * j
+          i * i @?= -1
+          j * j @?= -1
+          k * k @?= -1
+          i * j * k @?= -1
+
+      , testCase "Minkowski (1+1)D Cl(1,1) basis squares" $ do
+          let et = basis 1 :: Clifford 1 1 0 Int
+              ex = basis 2 :: Clifford 1 1 0 Int
+          et * et @?= 1
+          ex * ex @?= -1
+          et * ex + ex * et @?= 0
+
+      , testCase "Dirac STA Cl(1,3) basis squares" $ do
+          let gamma0 = basis 1 :: Clifford 1 3 0 Int
+              gamma1 = basis 2 :: Clifford 1 3 0 Int
+              gamma2 = basis 3 :: Clifford 1 3 0 Int
+              gamma3 = basis 4 :: Clifford 1 3 0 Int
+          gamma0 * gamma0 @?= 1
+          gamma1 * gamma1 @?= -1
+          gamma2 * gamma2 @?= -1
+          gamma3 * gamma3 @?= -1
+
+      , testCase "PGA Cl(3,0,1) degenerate blade e0² = 0" $ do
+          let e1 = basis 1 :: Clifford 3 0 1 Int
+              e2 = basis 2 :: Clifford 3 0 1 Int
+              e3 = basis 3 :: Clifford 3 0 1 Int
+              e0 = basis 4 :: Clifford 3 0 1 Int
+          e1 * e1 @?= 1
+          e2 * e2 @?= 1
+          e3 * e3 @?= 1
+          e0 * e0 @?= 0
+      ]
+
+  , testGroup "QuickCheck Ring & Algebra Axioms"
+      [ testProperty "Cl(2,0) Geometric Product Associativity: (A * B) * C = A * (B * C)" $
+          \(a :: Clifford 2 0 0 Int) b c -> (a * b) * c == a * (b * c)
+
+      , testProperty "Cl(3,0) Geometric Product Associativity: (A * B) * C = A * (B * C)" $
+          \(a :: Clifford 3 0 0 Int) b c -> (a * b) * c == a * (b * c)
+
+      , testProperty "Cl(1,3) STA Geometric Product Associativity: (A * B) * C = A * (B * C)" $
+          \(a :: Clifford 1 3 0 Int) b c -> (a * b) * c == a * (b * c)
+
+      , testProperty "Unital Identity: 1 * A = A and A * 1 = A" $
+          \(a :: Clifford 2 0 0 Int) -> 1 * a == a && a * 1 == a
+
+      , testProperty "Left Distributivity: A * (B + C) = A*B + A*C" $
+          \(a :: Clifford 2 0 0 Int) b c -> a * (b + c) == a * b + a * c
+
+      , testProperty "Right Distributivity: (A + B) * C = A*C + B*C" $
+          \(a :: Clifford 2 0 0 Int) b c -> (a + b) * c == a * c + b * c
+      ]
+
+  , testGroup "Products & Duality Laws"
+      [ testProperty "Wedge Anticommutativity on Vectors: u ∧ v = -(v ∧ u)" $
+          \(x1 :: Int) y1 x2 y2 ->
+            let u = blade 1 x1 + blade 2 y1 :: Clifford 2 0 0 Int
+                v = blade 1 x2 + blade 2 y2 :: Clifford 2 0 0 Int
+            in (u ∧ v) == negate (v ∧ u)
+
+      , testProperty "Geometric Product Decomposition on Vectors: u * v = (u · v) + (u ∧ v)" $
+          \(x1 :: Int) y1 x2 y2 ->
+            let u = blade 1 x1 + blade 2 y1 :: Clifford 2 0 0 Int
+                v = blade 1 x2 + blade 2 y2 :: Clifford 2 0 0 Int
+            in u * v == (u · v) + (u ∧ v)
+
+      , testProperty "Left Contraction Adjoint Duality: ⟨(A ∧ B) * C⟩₀ = ⟨A * (B ⨼ C)⟩₀" $
+          \(a :: Clifford 2 0 0 Int) b c ->
+            scalarProd (a ∧ b) c == scalarProd a (b ⨼ c)
+
+      , testProperty "Reversion Antiautomorphism: ~(A * B) = ~B * ~A" $
+          \(a :: Clifford 2 0 0 Int) b ->
+            reverseCl (a * b) == reverseCl b * reverseCl a
+      ]
+
+  , testGroup "Universal Property Homomorphism"
+      [ testCase "Evaluates multivector in a custom algebra" $ do
+          -- In Cl(2,0), test universal fold with scalar evaluation
+          let mv = scalar 5 + basis 1 * 2 + basis 2 * 3 + (basis 1 * basis 2) * 4 :: Clifford 2 0 0 Int
+              -- Evaluate basis vectors as integers e1 -> 10, e2 -> 100
+              evalBasis 1 = 10
+              evalBasis 2 = 100
+              evalBasis _ = 0
+              res = universalFold evalBasis id mv
+          -- 5 + 2*10 + 3*100 + 4*(10*100) = 5 + 20 + 300 + 4000 = 4325
+          res @?= 4325
+      ]
+  ]

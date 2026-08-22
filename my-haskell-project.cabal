@@ -72,6 +72,8 @@ library
     Lambda.DataKinds
     Lambda.RequiredTypeArguments
     Lambda.MultiVector
+    Lambda.Clifford.Signature
+    Lambda.Clifford.Universal
     Fib.Algo
     CountDown
 
@@ -202,6 +204,7 @@ test-suite all-tests
     Lambda.DataKindsTest
     Lambda.RequiredTypeArgumentsTest
     Lambda.MultiVectorTest
+    Lambda.Clifford.UniversalTest
     CountDownTest
 
   build-depends:
