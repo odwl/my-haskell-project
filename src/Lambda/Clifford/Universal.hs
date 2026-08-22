@@ -71,11 +71,16 @@ toSubscript '9' = '₉'; toSubscript c   = c
 -- | Extract list of active basis vector indices (1-indexed)
 bitIndices :: Blade -> [Int]
 bitIndices 0 = []
-bitIndices m = (i + 1) : bitIndices (m .&. (m - 1))
-  where
-    i = countTrailingZeros m
+bitIndices m = ((countTrailingZeros m) + 1) : bitIndices (m .&. (m - 1))
 
--- | Human-readable string representation of a basis blade: 0 -> "1", 3 -> "e₁₂", 7 -> "e₁₂₃"
+-- | Human-readable Unicode string representation of a basis blade:
+--   * 0 (0b00)   -> "1"     (Grade 0: Scalar unit)
+--   * 1 (0b01)   -> "e₁"    (Grade 1: Vector)
+--   * 2 (0b10)   -> "e₂"    (Grade 1: Vector)
+--   * 3 (0b11)   -> "e₁₂"   (Grade 2: Bivector e₁e₂)
+--   * 5 (0b101)  -> "e₁₃"   (Grade 2: Bivector e₁e₃)
+--   * 7 (0b111)  -> "e₁₂₃"  (Grade 3: Trivector e₁e₂e₃)
+--   * 512 (2⁹)   -> "e₁₀"   (Grade 1: Multi-digit vector index)
 basisBladeName :: Blade -> String
 basisBladeName 0 = "1"
 basisBladeName b = "e" ++ map toSubscript (concatMap show (bitIndices b))
