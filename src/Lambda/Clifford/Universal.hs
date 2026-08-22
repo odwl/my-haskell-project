@@ -9,6 +9,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Lambda.Clifford.Universal
   ( -- * Core Universal Multivector Type 
@@ -16,6 +18,10 @@ module Lambda.Clifford.Universal
   , Blade
   , bladeGrade
   , basisBladeName
+  -- * Non-Zero Scalar Restriction
+  , NonZero(..)
+  , mkNonZero
+  , unNonZero
   -- * Constructors
   , scalar
   , basis
@@ -81,6 +87,20 @@ bitIndices m = ((countTrailingZeros m) + 1) : bitIndices (m .&. (m - 1))
 basisBladeName :: Blade -> String
 basisBladeName 0 = "1"
 basisBladeName b = "e" ++ map toSubscript (concatMap show (bitIndices b))
+
+-- | A scalar coefficient guaranteed to NEVER be zero.
+-- The constructor 'NonZeroUnsafe' is NOT exported to external users.
+newtype NonZero a = NonZeroUnsafe { unNonZero :: a }
+  deriving (Eq, Ord, Show, Read)
+-- | Smart Constructor: Returns 'Nothing' if the value is zero.
+mkNonZero :: (Num a, Eq a) => a -> Maybe (NonZero a)
+mkNonZero 0 = Nothing
+mkNonZero x = Just (NonZeroUnsafe x)
+-- | Idiomatic Pattern Synonym (Read-Only View Pattern):
+-- Allows clean pattern matching `case nz of NonZero x -> ...`
+-- while preventing raw construction of `NonZero 0`!
+pattern NonZero :: a -> NonZero a
+pattern NonZero x <- NonZeroUnsafe x
 
 -- | Universal Multivector parameterized by signature Cl(p, q, r) and scalar type a
 newtype Clifford (p :: Nat) (q :: Nat) (r :: Nat) a = Clifford
