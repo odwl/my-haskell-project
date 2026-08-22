@@ -3,6 +3,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Lambda.Clifford.UniversalTest (universalCliffordTests) where
 
@@ -27,8 +29,8 @@ universalCliffordTests :: TestTree
 universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
   [ testGroup "Signature & Basis Squares"
       [ testCase "G² Cl(2,0) Euclidean basis squares" $ do
-          let e1 = basis 1 :: Clifford 2 0 0 Int
-              e2 = basis 2 :: Clifford 2 0 0 Int
+          let e1 = basis @1 :: Clifford 2 0 0 Int
+              e2 = basis @2 :: Clifford 2 0 0 Int
           e1 * e1 @?= 1
           e2 * e2 @?= 1
           e1 * e2 @?= blade 3 1
@@ -36,8 +38,8 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
           e1 * e2 + e2 * e1 @?= 0
 
       , testCase "Quaternions Cl(0,2) basis squares i² = j² = k² = -1" $ do
-          let i = basis 1 :: Clifford 0 2 0 Int
-              j = basis 2 :: Clifford 0 2 0 Int
+          let i = basis @1 :: Clifford 0 2 0 Int
+              j = basis @2 :: Clifford 0 2 0 Int
               k = i * j
           i * i @?= -1
           j * j @?= -1
@@ -45,27 +47,27 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
           i * j * k @?= -1
 
       , testCase "Minkowski (1+1)D Cl(1,1) basis squares" $ do
-          let et = basis 1 :: Clifford 1 1 0 Int
-              ex = basis 2 :: Clifford 1 1 0 Int
+          let et = basis @1 :: Clifford 1 1 0 Int
+              ex = basis @2 :: Clifford 1 1 0 Int
           et * et @?= 1
           ex * ex @?= -1
           et * ex + ex * et @?= 0
 
       , testCase "Dirac STA Cl(1,3) basis squares" $ do
-          let gamma0 = basis 1 :: Clifford 1 3 0 Int
-              gamma1 = basis 2 :: Clifford 1 3 0 Int
-              gamma2 = basis 3 :: Clifford 1 3 0 Int
-              gamma3 = basis 4 :: Clifford 1 3 0 Int
+          let gamma0 = basis @1 :: Clifford 1 3 0 Int
+              gamma1 = basis @2 :: Clifford 1 3 0 Int
+              gamma2 = basis @3 :: Clifford 1 3 0 Int
+              gamma3 = basis @4 :: Clifford 1 3 0 Int
           gamma0 * gamma0 @?= 1
           gamma1 * gamma1 @?= -1
           gamma2 * gamma2 @?= -1
           gamma3 * gamma3 @?= -1
 
       , testCase "PGA Cl(3,0,1) degenerate blade e0² = 0" $ do
-          let e1 = basis 1 :: Clifford 3 0 1 Int
-              e2 = basis 2 :: Clifford 3 0 1 Int
-              e3 = basis 3 :: Clifford 3 0 1 Int
-              e0 = basis 4 :: Clifford 3 0 1 Int
+          let e1 = basis @1 :: Clifford 3 0 1 Int
+              e2 = basis @2 :: Clifford 3 0 1 Int
+              e3 = basis @3 :: Clifford 3 0 1 Int
+              e0 = basis @4 :: Clifford 3 0 1 Int
           e1 * e1 @?= 1
           e2 * e2 @?= 1
           e3 * e3 @?= 1
@@ -117,7 +119,7 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
   , testGroup "Universal Property Homomorphism"
       [ testCase "Evaluates multivector in a custom algebra" $ do
           -- In Cl(2,0), test universal fold with scalar evaluation
-          let mv = scalar 5 + basis 1 * 2 + basis 2 * 3 + (basis 1 * basis 2) * 4 :: Clifford 2 0 0 Int
+          let mv = scalar 5 + basis @1 * 2 + basis @2 * 3 + (basis @1 * basis @2) * 4 :: Clifford 2 0 0 Int
               -- Evaluate basis vectors as integers e1 -> 10, e2 -> 100
               evalBasis 1 = 10
               evalBasis 2 = 100

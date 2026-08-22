@@ -6,9 +6,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Lambda.Clifford.Universal
-  ( -- * Core Universal Multivector Type
+  ( -- * Core Universal Multivector Type 
     Clifford(..)
   , Blade
   , bladeGrade
@@ -16,6 +19,7 @@ module Lambda.Clifford.Universal
   -- * Constructors
   , scalar
   , basis
+  , basisIndex
   , blade
   , fromBladeList
   , toBladeList
@@ -46,7 +50,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy(..))
 import Data.List (intercalate)
-import GHC.TypeLits (Nat)
+import GHC.TypeLits (Nat, KnownNat, natVal, type (<=), type (+))
 
 import Lambda.Clifford.Signature
 
@@ -58,7 +62,7 @@ import Lambda.Clifford.Signature
 type Blade = Word
 
 -- | Grade of a blade is the number of 1-bits (popCount)
-bladeGrade :: Blade -> Int
+bladeGrade :: Blade -> Int 
 bladeGrade = popCount
 
 -- | Convert digit char to Unicode subscript: '1' -> '₁', '2' -> '₂'
@@ -73,14 +77,7 @@ bitIndices :: Blade -> [Int]
 bitIndices 0 = []
 bitIndices m = ((countTrailingZeros m) + 1) : bitIndices (m .&. (m - 1))
 
--- | Human-readable Unicode string representation of a basis blade:
---   * 0 (0b00)   -> "1"     (Grade 0: Scalar unit)
---   * 1 (0b01)   -> "e₁"    (Grade 1: Vector)
---   * 2 (0b10)   -> "e₂"    (Grade 1: Vector)
---   * 3 (0b11)   -> "e₁₂"   (Grade 2: Bivector e₁e₂)
---   * 5 (0b101)  -> "e₁₃"   (Grade 2: Bivector e₁e₃)
---   * 7 (0b111)  -> "e₁₂₃"  (Grade 3: Trivector e₁e₂e₃)
---   * 512 (2⁹)   -> "e₁₀"   (Grade 1: Multi-digit vector index)
+-- | Human-readable string representation of a basis blade: 0 -> "1", 3 -> "e₁₂", 7 -> "e₁₂₃"
 basisBladeName :: Blade -> String
 basisBladeName 0 = "1"
 basisBladeName b = "e" ++ map toSubscript (concatMap show (bitIndices b))
@@ -95,13 +92,25 @@ scalar :: forall p q r a. (Num a, Eq a) => a -> Clifford p q r a
 scalar 0 = Clifford Map.empty
 scalar s = Clifford (Map.singleton 0 s)
 
--- | Construct a 1-vector basis element e_k (1-indexed: 1 <= k <= n)
-basis :: forall p q r a. (KnownSignature p q r, Num a, Eq a) => Int -> Clifford p q r a
-basis k
+-- | Construct a 1-vector basis element e_k with compile-time index verification: 1 <= k <= (p + q + r)
+basis :: forall (k :: Nat) p q r a.
+         ( KnownNat k
+         , 1 <= k
+         , k <= (p + q + r)
+         , Num a
+         , Eq a
+         ) => Clifford p q r a
+basis = Clifford (Map.singleton (bit (kVal - 1)) 1)
+  where
+    kVal = fromIntegral (natVal (Proxy @k))
+
+-- | Construct a 1-vector basis element e_k from a dynamic runtime index (1 <= k <= n)
+basisIndex :: forall p q r a. (KnownSignature p q r, Num a, Eq a) => Int -> Clifford p q r a
+basisIndex k
   | k >= 1 && k <= totalDim (Proxy :: Proxy (Signature p q r)) =
       Clifford (Map.singleton (bit (k - 1)) 1)
-  | otherwise = error $ "basis: index " ++ show k ++ " out of range"
-
+  | otherwise = error $ "basisIndex: index " ++ show k ++ " out of range"
+ 
 -- | Construct a single blade term: c * e_(indices)
 blade :: (Num a, Eq a) => Blade -> a -> Clifford p q r a
 blade _ 0 = Clifford Map.empty

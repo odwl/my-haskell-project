@@ -138,6 +138,7 @@ test-suite lambda-test
     Lambda.DataKindsTest
     Lambda.RequiredTypeArgumentsTest
     Lambda.MultiVectorTest
+    Lambda.Clifford.UniversalTest
 
 
   build-depends:
