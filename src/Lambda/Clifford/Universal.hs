@@ -61,15 +61,24 @@ type Blade = Word
 bladeGrade :: Blade -> Int
 bladeGrade = popCount
 
--- | Human-readable string representation of a basis blade
+-- | Convert digit char to Unicode subscript: '1' -> '₁', '2' -> '₂'
+toSubscript :: Char -> Char
+toSubscript '0' = '₀'; toSubscript '1' = '₁'; toSubscript '2' = '₂'
+toSubscript '3' = '₃'; toSubscript '4' = '₄'; toSubscript '5' = '₅'
+toSubscript '6' = '₆'; toSubscript '7' = '₇'; toSubscript '8' = '₈'
+toSubscript '9' = '₉'; toSubscript c   = c
+
+-- | Extract list of active basis vector indices (1-indexed)
+bitIndices :: Blade -> [Int]
+bitIndices 0 = []
+bitIndices m = (i + 1) : bitIndices (m .&. (m - 1))
+  where
+    i = countTrailingZeros m
+
+-- | Human-readable string representation of a basis blade: 0 -> "1", 3 -> "e₁₂", 7 -> "e₁₂₃"
 basisBladeName :: Blade -> String
 basisBladeName 0 = "1"
-basisBladeName b = "e" ++ concatMap show (setBitIndices b)
-  where
-    setBitIndices 0 = []
-    setBitIndices m = 
-      let i = countTrailingZeros m
-      in (i + 1) : setBitIndices (m .&. (m - 1))
+basisBladeName b = "e" ++ map toSubscript (concatMap show (bitIndices b))
 
 -- | Universal Multivector parameterized by signature Cl(p, q, r) and scalar type a
 newtype Clifford (p :: Nat) (q :: Nat) (r :: Nat) a = Clifford
