@@ -98,7 +98,6 @@ basis :: forall (k :: Nat) p q r a.
          , 1 <= k
          , k <= (p + q + r)
          , Num a
-         , Eq a
          ) => Clifford p q r a
 basis = Clifford (Map.singleton (bit (kVal - 1)) 1)
   where
