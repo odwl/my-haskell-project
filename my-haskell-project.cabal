@@ -147,6 +147,20 @@ test-suite lambda-test
     mtl,
     my-haskell-project,
 
+test-suite clifford-test
+  import: share-tests-deps
+  type: exitcode-stdio-1.0
+  main-is: CliffordMain.hs
+  hs-source-dirs:
+    test
+  other-modules:
+    Lambda.MultiVectorTest
+    Lambda.Clifford.UniversalTest
+  build-depends:
+    QuickCheck,
+    containers,
+    my-haskell-project,
+
 test-suite exercism-test
   import: share-tests-deps
   type: exitcode-stdio-1.0
