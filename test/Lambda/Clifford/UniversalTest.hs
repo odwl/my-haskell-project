@@ -13,6 +13,7 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Data.Bits (shiftL)
 import Data.Proxy (Proxy(..))
+import qualified Data.Map.Strict as Map
 import GHC.TypeLits (KnownNat)
 
 import Lambda.Clifford.Signature
@@ -128,5 +129,29 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
               res = universalFold evalBasis id mv
           -- 5 + 2*10 + 3*100 + 4*(10*100) = 5 + 20 + 300 + 4000 = 4325
           res @?= 4325
+      ]
+
+  , testGroup "Canonical Zero-Suppression & Invalid Map Invariants"
+      [ testCase "Raw Clifford with explicit 0 entries breaks Eq against canonical 0" $ do
+          let canonicalZero     = scalar 0 :: Clifford 2 0 0 Int
+              invalidZeroScalar = Clifford (Map.singleton 0 0) :: Clifford 2 0 0 Int
+              invalidZeroVector = Clifford (Map.singleton 1 0) :: Clifford 2 0 0 Int
+              invalidZeroMulti  = Clifford (Map.fromList [(0, 0), (1, 0), (3, 0)]) :: Clifford 2 0 0 Int
+          -- Demonstrates why non-canonical maps with explicit 0 values fail equality:
+          (invalidZeroScalar == canonicalZero) @?= False
+          (invalidZeroVector == canonicalZero) @?= False
+          (invalidZeroMulti  == canonicalZero) @?= False
+
+      , testCase "fromBladeList always cleans up 0 entries into canonical Map.empty" $ do
+          let canonicalZero = scalar 0 :: Clifford 2 0 0 Int
+              cleaned = fromBladeList [(0, 0), (1, 0), (3, 0)] :: Clifford 2 0 0 Int
+          cleaned @?= canonicalZero
+          unClifford cleaned @?= Map.empty
+
+      , testCase "Cancellation via subtraction (a - a) produces canonical Map.empty" $ do
+          let v = (basis @1 * 5 + basis @2 * 3) :: Clifford 2 0 0 Int
+              diff = v - v
+          diff @?= scalar 0
+          unClifford diff @?= Map.empty
       ]
   ]
