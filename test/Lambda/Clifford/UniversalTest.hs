@@ -4,7 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeApplications #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# OPTIONS_GHC -Wno-orphans -Wno-simplifiable-class-constraints #-}
 
 module Lambda.Clifford.UniversalTest (universalCliffordTests) where
 
@@ -13,12 +13,13 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Data.Bits (shiftL)
 import Data.Proxy (Proxy(..))
+import GHC.TypeLits (KnownNat)
 
 import Lambda.Clifford.Signature
 import Lambda.Clifford.Universal
 
 -- | QuickCheck Arbitrary generator for Clifford multivectors
-instance (KnownSignature p q r, Arbitrary a, Num a, Eq a) => Arbitrary (Clifford p q r a) where
+instance (KnownNat p, KnownNat q, KnownNat r, Arbitrary a, Num a, Eq a) => Arbitrary (Clifford p q r a) where
   arbitrary = do
     let n = totalDim (Proxy :: Proxy (Signature p q r))
         maxBlade = (1 `shiftL` n) - 1
@@ -31,7 +32,7 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
       [ testCase "G² Cl(2,0) Euclidean basis squares" $ do
           let e1 = basis @1 :: Clifford 2 0 0 Int
               e2 = basis @2 :: Clifford 2 0 0 Int
-          e1 * e1 @?= 1
+          e1 * e1 @?= 1 
           e2 * e2 @?= 1
           e1 * e2 @?= blade 3 1
           e2 * e1 @?= blade 3 (-1)
