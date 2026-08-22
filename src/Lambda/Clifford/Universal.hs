@@ -22,11 +22,13 @@ module Lambda.Clifford.Universal
   , NonZero(..)
   , mkNonZero
   , unNonZero
+  , oneNZ
   -- * Constructors
   , scalar
   , basis
   , basisIndex
   , blade
+  , bladeNZ
   , fromBladeList
   , toBladeList
   -- * Geometric Operations
@@ -102,15 +104,34 @@ mkNonZero x = Just (NonZeroUnsafe x)
 pattern NonZero :: a -> NonZero a
 pattern NonZero x <- NonZeroUnsafe x
 
+-- | The multiplicative unit constant 1 (guaranteed non-zero)
+oneNZ :: Num a => NonZero a
+oneNZ = NonZeroUnsafe 1
+
 -- | Universal Multivector parameterized by signature Cl(p, q, r) and scalar type a
 newtype Clifford (p :: Nat) (q :: Nat) (r :: Nat) a = Clifford
-  { unClifford :: Map Blade a }
+  { unClifford :: Map Blade (NonZero a) }
   deriving (Eq)
+
+-- | Construct a 1-vector basis element e_k from a dynamic runtime index (1 <= k <= n)
+basisIndex :: forall p q r a. (KnownSignature p q r, Num a, Eq a) => Int -> Clifford p q r a
+basisIndex k
+  | k >= 1 && k <= totalDim (Proxy :: Proxy (Signature p q r)) =
+      bladeNZ (bit (k - 1)) oneNZ
+  | otherwise = error $ "basisIndex: index " ++ show k ++ " out of range"
+ 
+-- | Construct a single blade term: c * e_(indices)
+blade :: (Num a, Eq a) => Blade -> a -> Clifford p q r a
+blade b c = case mkNonZero c of 
+  Nothing -> Clifford Map.empty
+  Just nz -> bladeNZ b nz
+
+bladeNZ :: Blade -> NonZero a -> Clifford p q r a
+bladeNZ b nz = Clifford (Map.singleton b nz)
 
 -- | Construct a pure Grade-0 scalar multivector
 scalar :: forall p q r a. (Num a, Eq a) => a -> Clifford p q r a
-scalar 0 = Clifford Map.empty
-scalar s = Clifford (Map.singleton 0 s)
+scalar = blade 0
 
 -- | Construct a 1-vector basis element e_k with compile-time index verification: 1 <= k <= (p + q + r)
 basis :: forall (k :: Nat) p q r a.
@@ -119,35 +140,23 @@ basis :: forall (k :: Nat) p q r a.
          , k <= (p + q + r)
          , Num a
          ) => Clifford p q r a
-basis = Clifford (Map.singleton (bit (kVal - 1)) 1)
+basis = bladeNZ (bit (kVal - 1)) oneNZ
   where
     kVal = fromIntegral (natVal (Proxy @k))
-
--- | Construct a 1-vector basis element e_k from a dynamic runtime index (1 <= k <= n)
-basisIndex :: forall p q r a. (KnownSignature p q r, Num a, Eq a) => Int -> Clifford p q r a
-basisIndex k
-  | k >= 1 && k <= totalDim (Proxy :: Proxy (Signature p q r)) =
-      Clifford (Map.singleton (bit (k - 1)) 1)
-  | otherwise = error $ "basisIndex: index " ++ show k ++ " out of range"
- 
--- | Construct a single blade term: c * e_(indices)
-blade :: (Num a, Eq a) => Blade -> a -> Clifford p q r a
-blade _ 0 = Clifford Map.empty
-blade b c = Clifford (Map.singleton b c)
-
+    
 -- | Build a multivector from a list of (Blade, coefficient) pairs
 fromBladeList :: (Num a, Eq a) => [(Blade, a)] -> Clifford p q r a
-fromBladeList = Clifford . Map.filter (/= 0) . Map.fromListWith (+)
+fromBladeList = Clifford . Map.mapMaybe mkNonZero . Map.fromListWith (+)
 
 -- | Convert multivector to a sorted list of (Blade, coefficient) pairs
 toBladeList :: Clifford p q r a -> [(Blade, a)]
-toBladeList = Map.toAscList . unClifford
+toBladeList (Clifford m) = [(b, unNonZero nz) | (b, nz) <- Map.toAscList m]
 
 -- | Show instance formatting multivectors as linear combinations of basis blades
 instance (KnownSignature p q r, Show a, Num a, Eq a) => Show (Clifford p q r a) where
   show (Clifford m)
     | Map.null m = "0"
-    | otherwise  = intercalate " + " [ show coeff ++ (if b == 0 then "" else "·" ++ basisBladeName b)
+    | otherwise  = intercalate " + " [ show (unNonZero coeff) ++ (if b == 0 then "" else "·" ++ basisBladeName b)
                                      | (b, coeff) <- Map.toAscList m ]
 
 -- | Multiply two basis blades under metric signature Cl(p, q, r):
@@ -182,8 +191,8 @@ multiplyBlades proxy b1 b2
 geometricProduct :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
                  => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 geometricProduct (Clifford m1) (Clifford m2) =
-  Clifford $ Map.filter (/= 0) $ Map.fromListWith (+)
-    [ (resBlade, c1 * c2 * signVal)
+  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
+    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
     , let (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
@@ -202,7 +211,7 @@ grades mv = [ grade k mv | k <- [0 .. totalDim (Proxy :: Proxy (Signature p q r)
 --   For a homogeneous grade-k blade: ~⟨A⟩_k = (-1)^(k(k-1)/2) * ⟨A⟩_k
 reverseCl :: (Num a, Eq a) => Clifford p q r a -> Clifford p q r a
 reverseCl (Clifford m) =
-  Clifford $ Map.mapWithKey (\b c -> if even (gradeSignExp (bladeGrade b)) then c else negate c) m
+  Clifford $ Map.mapWithKey (\b (NonZero c) -> if even (gradeSignExp (bladeGrade b)) then NonZeroUnsafe c else NonZeroUnsafe (negate c)) m
   where
     gradeSignExp k = (k * (k - 1)) `div` 2
 
@@ -211,8 +220,8 @@ reverseCl (Clifford m) =
 wedge :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
       => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 wedge (Clifford m1) (Clifford m2) =
-  Clifford $ Map.filter (/= 0) $ Map.fromListWith (+)
-    [ (resBlade, c1 * c2 * signVal)
+  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
+    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
     -- Grade condition: bladeGrade(resBlade) == bladeGrade(b1) + bladeGrade(b2)
@@ -224,7 +233,7 @@ wedge (Clifford m1) (Clifford m2) =
 
 -- | Scalar Product (⟨A * B⟩₀): extracts Grade-0 scalar component of geometric product
 scalarProd :: (KnownSignature p q r, Num a, Eq a) => Clifford p q r a -> Clifford p q r a -> a
-scalarProd a b = Map.findWithDefault 0 0 (unClifford (geometricProduct a b))
+scalarProd a b = maybe 0 unNonZero (Map.lookup 0 (unClifford (geometricProduct a b)))
 
 -- | Clifford Scalar Product (⟨A * ~B⟩₀): strictly positive-definite Hilbert inner product
 cliffordScalar :: (KnownSignature p q r, Num a, Eq a) => Clifford p q r a -> Clifford p q r a -> a
@@ -236,8 +245,8 @@ cliffordScalar a b = scalarProd a (reverseCl b)
 leftContract :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
              => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 leftContract (Clifford m1) (Clifford m2) =
-  Clifford $ Map.filter (/= 0) $ Map.fromListWith (+)
-    [ (resBlade, c1 * c2 * signVal)
+  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
+    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
     , let r = bladeGrade b1
@@ -252,8 +261,8 @@ leftContract (Clifford m1) (Clifford m2) =
 fatDot :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
        => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 fatDot (Clifford m1) (Clifford m2) =
-  Clifford $ Map.filter (/= 0) $ Map.fromListWith (+)
-    [ (resBlade, c1 * c2 * signVal)
+  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
+    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
     , let diff = abs (bladeGrade b1 - bladeGrade b2)
@@ -266,8 +275,8 @@ fatDot (Clifford m1) (Clifford m2) =
 dotHestenes :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
             => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 dotHestenes (Clifford m1) (Clifford m2) =
-  Clifford $ Map.filter (/= 0) $ Map.fromListWith (+)
-    [ (resBlade, c1 * c2 * signVal)
+  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
+    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
     , let r = bladeGrade b1
@@ -285,7 +294,7 @@ dotHestenes (Clifford m1) (Clifford m2) =
 universalFold :: forall p q r a alg. (KnownSignature p q r, Num alg)
               => (Int -> alg) -> (a -> alg) -> Clifford p q r a -> alg
 universalFold evalBasis evalScalar (Clifford m) =
-  sum [ evalScalar c * evalBlade b | (b, c) <- Map.toList m ]
+  sum [ evalScalar (unNonZero c) * evalBlade b | (b, c) <- Map.toList m ]
   where
     evalBlade 0 = 1
     evalBlade b = product [ evalBasis (i + 1) | i <- setBitIndices b ]
@@ -297,9 +306,15 @@ universalFold evalBasis evalScalar (Clifford m) =
 
 -- | Num instance making Clifford an Associative Unital Ring
 instance (KnownSignature p q r, Num a, Eq a) => Num (Clifford p q r a) where
-  (Clifford m1) + (Clifford m2) = Clifford (Map.filter (/= 0) (Map.unionWith (+) m1 m2))
+  (Clifford m1) + (Clifford m2) = Clifford $
+    Map.mergeWithKey
+      (\_ (NonZero x) (NonZero y) -> mkNonZero (x + y))
+      id
+      id
+      m1
+      m2
   (*) = geometricProduct
-  negate (Clifford m) = Clifford (Map.map negate m)
+  negate (Clifford m) = Clifford (Map.map (\(NonZero x) -> NonZeroUnsafe (negate x)) m)
   abs _ = scalar 1 -- symbolic ring abs
   signum _ = scalar (fromInteger 1)
   fromInteger n = scalar (fromInteger n)

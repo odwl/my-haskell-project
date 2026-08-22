@@ -134,9 +134,9 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
   , testGroup "Canonical Zero-Suppression & Invalid Map Invariants"
       [ testCase "Raw Clifford with explicit 0 entries breaks Eq against canonical 0" $ do
           let canonicalZero     = scalar 0 :: Clifford 2 0 0 Int
-              invalidZeroScalar = Clifford (Map.singleton 0 0) :: Clifford 2 0 0 Int
-              invalidZeroVector = Clifford (Map.singleton 1 0) :: Clifford 2 0 0 Int
-              invalidZeroMulti  = Clifford (Map.fromList [(0, 0), (1, 0), (3, 0)]) :: Clifford 2 0 0 Int
+              invalidZeroScalar = Clifford (Map.singleton 0 (NonZeroUnsafe 0)) :: Clifford 2 0 0 Int
+              invalidZeroVector = Clifford (Map.singleton 1 (NonZeroUnsafe 0)) :: Clifford 2 0 0 Int
+              invalidZeroMulti  = Clifford (Map.fromList [(0, NonZeroUnsafe 0), (1, NonZeroUnsafe 0), (3, NonZeroUnsafe 0)]) :: Clifford 2 0 0 Int
           -- Demonstrates why non-canonical maps with explicit 0 values fail equality:
           (invalidZeroScalar == canonicalZero) @?= False
           (invalidZeroVector == canonicalZero) @?= False
