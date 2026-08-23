@@ -11,6 +11,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Lambda.Clifford.Universal
   ( -- * Core Universal Multivector Type 
@@ -154,7 +155,7 @@ toBladeList (Clifford m) = [(b, unNonZero nz) | (b, nz) <- Map.toAscList m]
 
 -- | Show instance formatting multivectors as linear combinations of basis blades
 instance Show a => Show (Clifford p q r a) where
-  show mv = case toBladeList mv of
+  show = toBladeList >>> \case
     []    -> "0"
     pairs -> intercalate " + " (map formatTerm pairs)
     where
