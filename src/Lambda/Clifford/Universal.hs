@@ -153,11 +153,13 @@ toBladeList :: Clifford p q r a -> [(Blade, a)]
 toBladeList (Clifford m) = [(b, unNonZero nz) | (b, nz) <- Map.toAscList m]
 
 -- | Show instance formatting multivectors as linear combinations of basis blades
-instance (KnownSignature p q r, Show a, Num a, Eq a) => Show (Clifford p q r a) where
-  show (Clifford m)
-    | Map.null m = "0"
-    | otherwise  = intercalate " + " [ show (unNonZero coeff) ++ (if b == 0 then "" else "·" ++ basisBladeName b)
-                                     | (b, coeff) <- Map.toAscList m ]
+instance Show a => Show (Clifford p q r a) where
+  show mv = case toBladeList mv of
+    []    -> "0"
+    pairs -> intercalate " + " $ do
+      (b, coeff) <- pairs
+      let name = if b == 0 then "" else "·" ++ basisBladeName b
+      pure (show coeff ++ name)
 
 -- | Multiply two basis blades under metric signature Cl(p, q, r):
 --   1. Combined blade = b1 `xor` b2

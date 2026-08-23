@@ -154,4 +154,23 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
           diff @?= scalar 0
           unClifford diff @?= Map.empty
       ]
+
+  , testGroup "Blade List Invariants & Round-Trip"
+      [ testProperty "Cl(2,0) Round-Trip: fromBladeList (toBladeList v) == v" $
+          \(v :: Clifford 2 0 0 Int) -> fromBladeList (toBladeList v) == v
+
+      , testProperty "Cl(3,0) Round-Trip: fromBladeList (toBladeList v) == v" $
+          \(v :: Clifford 3 0 0 Int) -> fromBladeList (toBladeList v) == v
+
+      , testProperty "Cl(1,3) STA Round-Trip: fromBladeList (toBladeList v) == v" $
+          \(v :: Clifford 1 3 0 Int) -> fromBladeList (toBladeList v) == v
+
+      , testProperty "Cl(3,0,1) PGA Round-Trip: fromBladeList (toBladeList v) == v" $
+          \(v :: Clifford 3 0 1 Int) -> fromBladeList (toBladeList v) == v
+
+      , testCase "Concrete Round-Trip on inhomogeneous multivector" $ do
+          let v = scalar 5 + basis @1 * 3 - basis @2 * 4 + (basis @1 * basis @2) * 7 :: Clifford 2 0 0 Int
+              bladeList = toBladeList v
+          fromBladeList bladeList @?= v
+      ]
   ]
