@@ -158,8 +158,9 @@ instance Show a => Show (Clifford p q r a) where
     []    -> "0"
     pairs -> intercalate " + " (map formatTerm pairs)
     where
-      formatTerm (0, c) = show c
-      formatTerm (b, c) = show c ++ "·" ++ basisBladeName b
+      formatTerm (b, c) = show c ++ bladeSuffix b
+      bladeSuffix 0 = ""
+      bladeSuffix b = "·" ++ basisBladeName b
 
 -- | Multiply two basis blades under metric signature Cl(p, q, r):
 --   1. Combined blade = b1 `xor` b2
