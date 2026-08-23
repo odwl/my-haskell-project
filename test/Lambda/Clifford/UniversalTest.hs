@@ -173,4 +173,28 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
               bladeList = toBladeList v
           fromBladeList bladeList @?= v
       ]
+
+  , testGroup "Show Formatting Tests"
+      [ testCase "Zero multivector shows as 0" $ do
+          let z = scalar 0 :: Clifford 2 0 0 Int
+          show z @?= "0"
+
+      , testCase "Pure scalar shows as number" $ do
+          let s = scalar 5 :: Clifford 2 0 0 Int
+          show s @?= "5"
+
+      , testCase "Pure basis vector shows with unicode subscript" $ do
+          let e1 = basis @1 :: Clifford 2 0 0 Int
+          show e1 @?= "1·e₁"
+          let e2 = basis @2 * 3 :: Clifford 2 0 0 Int
+          show e2 @?= "3·e₂"
+
+      , testCase "Inhomogeneous multivector shows with + and · separators" $ do
+          let v = scalar 5 + basis @1 * 3 - basis @2 * 4 + (basis @1 * basis @2) * 7 :: Clifford 2 0 0 Int
+          show v @?= "5 + 3·e₁ + -4·e₂ + 7·e₁₂"
+
+      , testCase "4D Spacetime STA multivector shows higher basis blades correctly" $ do
+          let sta = basis @1 * 2 + (basis @2 * basis @3 * basis @4) * 9 :: Clifford 1 3 0 Int
+          show sta @?= "2·e₁ + 9·e₂₃₄"
+      ]
   ]

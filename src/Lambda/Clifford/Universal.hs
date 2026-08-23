@@ -153,7 +153,14 @@ fromBladeList = Map.fromListWith (+) >>> Map.mapMaybe mkNonZero >>> Clifford
 toBladeList :: Clifford p q r a -> [(Blade, a)]
 toBladeList (Clifford m) = [(b, unNonZero nz) | (b, nz) <- Map.toAscList m]
 
--- | Show instance formatting multivectors as linear combinations of basis blades
+-- | Show instance formatting multivectors as linear combinations of basis blades:
+--
+-- >>> show (scalar 0 :: Clifford 2 0 0 Int)
+-- "0"
+-- >>> show (scalar 5 :: Clifford 2 0 0 Int)
+-- "5"
+-- >>> show (scalar 5 + basis @1 * 3 - basis @2 * 4 + (basis @1 * basis @2) * 7 :: Clifford 2 0 0 Int)
+-- "5 + 3·e₁ + -4·e₂ + 7·e₁₂"
 instance Show a => Show (Clifford p q r a) where
   show = toBladeList >>> \case
     []    -> "0"
