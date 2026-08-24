@@ -200,14 +200,14 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
 
       , testProperty "Invariant 2 (Self-Swaps Parity): isEvenSwaps b b == even (k * (k - 1) `div` 2)" $
           \(b :: Blade) ->
-            let k = bladeGrade b
+            let k = bladeGrade2 b
             in isEvenSwaps b b == even ((k * (k - 1)) `div` 2)
 
       , testProperty "Invariant 3 (Complementarity on Disjoint Blades): isEvenSwaps b1 b2 == (even (k1 * k2) == isEvenSwaps b2 b1)" $
           \(b1 :: Blade) (b2Raw :: Blade) ->
             let b2 = b2Raw .&. complement b1  -- ensure b1 and b2 are disjoint (b1 .&. b2 == 0)
-                k1 = bladeGrade b1
-                k2 = bladeGrade b2
+                k1 = bladeGrade2 b1
+                k2 = bladeGrade2 b2
             in isEvenSwaps b1 b2 == (even (k1 * k2) == isEvenSwaps b2 b1)
 
       , testProperty "Invariant 4 (List Inversion Parity Equivalence): isEvenSwaps matches even of list inversions" $
