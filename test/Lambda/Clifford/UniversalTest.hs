@@ -10,8 +10,8 @@ module Lambda.Clifford.UniversalTest (universalCliffordTests) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
-import Data.Bits (shiftL)
+import Test.Tasty.QuickCheck hiding ((.&.))
+import Data.Bits (shiftL, complement, (.&.))
 import Data.Proxy (Proxy(..))
 import qualified Data.Map.Strict as Map
 import Data.List (sort, nub)
@@ -192,6 +192,39 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
           indicesToBlade [1, 2, 3] @?= 7
           let b = 13 :: Blade -- 0b1101 = [1, 3, 4]
           indicesToBlade (bladeToIndices b) @?= b
+      ]
+
+  , testGroup "Blade Swap Parity (isEvenSwaps) Invariants"
+      [ testProperty "Invariant 1 (Empty Blade Identity): isEvenSwaps b 0 == True and isEvenSwaps 0 b == True" $
+          \(b :: Blade) -> isEvenSwaps b 0 && isEvenSwaps 0 b
+
+      , testProperty "Invariant 2 (Self-Swaps Parity): isEvenSwaps b b == even (k * (k - 1) `div` 2)" $
+          \(b :: Blade) ->
+            let k = bladeGrade b
+            in isEvenSwaps b b == even ((k * (k - 1)) `div` 2)
+
+      , testProperty "Invariant 3 (Complementarity on Disjoint Blades): isEvenSwaps b1 b2 == (even (k1 * k2) == isEvenSwaps b2 b1)" $
+          \(b1 :: Blade) (b2Raw :: Blade) ->
+            let b2 = b2Raw .&. complement b1  -- ensure b1 and b2 are disjoint (b1 .&. b2 == 0)
+                k1 = bladeGrade b1
+                k2 = bladeGrade b2
+            in isEvenSwaps b1 b2 == (even (k1 * k2) == isEvenSwaps b2 b1)
+
+      , testProperty "Invariant 4 (List Inversion Parity Equivalence): isEvenSwaps matches even of list inversions" $
+          \(b1 :: Blade) (b2 :: Blade) ->
+            let is = bladeToIndices b1
+                js = bladeToIndices b2
+                expectedEven = even (sum [ 1 | i <- is, j <- js, i > j ])
+            in isEvenSwaps b1 b2 == expectedEven
+
+      , testCase "Concrete isEvenSwaps unit tests" $ do
+          isEvenSwaps 0 0 @?= True   -- 0 swaps -> True
+          isEvenSwaps 1 2 @?= True   -- e₁ * e₂ (0 swaps -> True)
+          isEvenSwaps 2 1 @?= False  -- e₂ * e₁ (1 swap -> False)
+          isEvenSwaps 11 5 @?= False -- e₁₂₄ * e₁₃ (3 swaps -> False)
+          isEvenSwaps 7 7 @?= False  -- e₁₂₃ * e₁₂₃ (3 swaps -> False)
+          isEvenSwaps 3 3 @?= False  -- e₁₂ * e₁₂ (1 swap -> False)
+          isEvenSwaps 15 15 @?= True -- e₁₂₃₄ * e₁₂₃₄ (6 swaps -> True)
       ]
 
   , testGroup "Show Formatting Tests"

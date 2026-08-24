@@ -21,8 +21,11 @@ module Lambda.Clifford.Universal
   , bladeToIndices
   , indicesToBlade
   , basisBladeName
+  , isEvenSwaps
+  , multBlades
   -- * Non-Zero Scalar Restriction
   , NonZero(..)
+  , pattern NonZero
   , mkNonZero
   , oneNZ
   -- * Constructors
@@ -192,6 +195,30 @@ instance Show a => Show (Clifford p q r a) where
       formatTerm (b, c) = show c ++ bladeSuffix b
       bladeSuffix 0 = ""
       bladeSuffix b = "·" ++ basisBladeName b
+-- | Check whether the number of basis vector swaps required to sort b1 and b2 is even.
+--   Returns 'True' for positive sign (+1), 'False' for negative sign (-1).
+--
+-- Examples:
+-- >>> isEvenSwaps 1 2   -- e₁ * e₂ (0 swaps -> even)
+-- True
+-- >>> isEvenSwaps 2 1   -- e₂ * e₁ (1 swap -> odd)
+-- False
+-- >>> isEvenSwaps 11 5  -- e₁₂₄ * e₁₃ (3 swaps -> odd)
+-- False
+-- >>> isEvenSwaps 7 7   -- e₁₂₃ * e₁₂₃ (3 swaps -> odd)
+-- False
+isEvenSwaps :: Blade -> Blade -> Bool
+isEvenSwaps _ 0 = True
+isEvenSwaps 0 _ = True
+isEvenSwaps b1 b2 = swapsToAdd == isEvenSwaps b1 b2' 
+  where j = countTrailingZeros b2 
+        swapsToAdd = even $ popCount (shiftR b1 (j + 1))
+        b2' = clearBit b2 j 
+{-# INLINE isEvenSwaps #-}
+
+-- | Symmetric difference (combined blade) of two basis blades:
+multBlades :: Blade -> Blade -> Blade
+multBlades b1 b2 = b1 `xor` b2 -- need to add coef
 
 -- | Multiply two basis blades under metric signature Cl(p, q, r):
 --   1. Combined blade = b1 `xor` b2
@@ -203,15 +230,7 @@ multiplyBlades proxy b1 b2
   | metricFactor == 0 = (0, 0)
   | otherwise         = (b1 `xor` b2, fromIntegral (swapSign * metricFactor))
   where
-    -- Count inversions/swaps to sort interleaved basis vectors
-    swapCount = countSwaps b2 0
-    countSwaps 0 acc = acc
-    countSwaps m acc =
-      let j = countTrailingZeros m
-          higherBitsInB1 = popCount (b1 `shiftR` (j + 1))
-      in countSwaps (m .&. (m - 1)) (acc + higherBitsInB1)
-
-    swapSign = if even swapCount then 1 else -1
+    swapSign = if isEvenSwaps b1 b2 then 1 else -1
 
     -- Multiply quadratic form values for overlapping basis vectors (e_k²)
     metricFactor = computeMetric (b1 .&. b2) 1
@@ -220,6 +239,7 @@ multiplyBlades proxy b1 b2
       let k = countTrailingZeros m
           sq = basisSquare proxy (k + 1)
       in if sq == 0 then 0 else computeMetric (m .&. (m - 1)) (acc * sq)
+
 
 -- | The Universal Geometric Product (*) on arbitrary dimensions
 geometricProduct :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
