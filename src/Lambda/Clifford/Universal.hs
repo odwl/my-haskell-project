@@ -18,6 +18,8 @@ module Lambda.Clifford.Universal
     Clifford(..)
   , Blade
   , bladeGrade
+  , bladeToIndices
+  , indicesToBlade
   , basisBladeName
   -- * Non-Zero Scalar Restriction
   , NonZero(..)
@@ -81,15 +83,36 @@ toSubscript '3' = '₃'; toSubscript '4' = '₄'; toSubscript '5' = '₅'
 toSubscript '6' = '₆'; toSubscript '7' = '₇'; toSubscript '8' = '₈'
 toSubscript '9' = '₉'; toSubscript c   = c
 
--- | Extract list of active basis vector indices (1-indexed)
-bitIndices :: Blade -> [Int]
-bitIndices 0 = []
-bitIndices m = ((countTrailingZeros m) + 1) : bitIndices (m .&. (m - 1))
+-- | Extract list of active basis vector indices (1-indexed) in strictly ascending order.
+--
+-- Examples:
+-- >>> bladeToIndices 0   -- Scalar unit 1
+-- []
+-- >>> bladeToIndices 3   -- 0b0011 (e₁₂)
+-- [1,2]
+-- >>> bladeToIndices 13  -- 0b1101 (e₁₃₄)
+-- [1,3,4]
+bladeToIndices :: Blade -> [Int]
+bladeToIndices 0 = []
+bladeToIndices m = ((countTrailingZeros m) + 1) : bladeToIndices (m .&. (m - 1))
+
+-- | Convert strictly sorted [Int] to bitmask.
+--
+-- Examples:
+-- >>> indicesToBlade []         -- Scalar unit 1
+-- 0
+-- >>> indicesToBlade [1, 2]     -- e₁₂
+-- 3
+-- >>> indicesToBlade [1, 3, 4]  -- e₁₃₄
+-- 13
+indicesToBlade :: [Int] -> Blade
+indicesToBlade = foldr ff 0
+  where ff x acc = setBit acc (x - 1)
 
 -- | Human-readable string representation of a basis blade: 0 -> "1", 3 -> "e₁₂", 7 -> "e₁₂₃"
 basisBladeName :: Blade -> String
 basisBladeName 0 = "1"
-basisBladeName b = "e" ++ map toSubscript (concatMap show (bitIndices b))
+basisBladeName b = "e" ++ map toSubscript (concatMap show (bladeToIndices b))
 
 -- | A scalar coefficient guaranteed to NEVER be zero.
 -- The constructor 'NonZeroUnsafe' is NOT exported to external users.
@@ -222,7 +245,7 @@ grades mv = [ grade k mv | k <- [0 .. totalDim (Proxy :: Proxy (Signature p q r)
 --   For a homogeneous grade-k blade: ~⟨A⟩_k = (-1)^(k(k-1)/2) * ⟨A⟩_k
 reverseCl :: (Num a, Eq a) => Clifford p q r a -> Clifford p q r a
 reverseCl (Clifford m) =
-  Clifford $ Map.mapWithKey (\b (NonZero c) -> if even (gradeSignExp (bladeGrade b)) then NonZeroUnsafe c else NonZeroUnsafe (negate c)) m
+  Clifford $ Map.mapWithKey (\b nz -> if even (gradeSignExp (bladeGrade b)) then nz else NonZeroUnsafe (negate (unNonZero nz))) m
   where
     gradeSignExp k = (k * (k - 1)) `div` 2
 
@@ -319,13 +342,13 @@ universalFold evalBasis evalScalar (Clifford m) =
 instance (KnownSignature p q r, Num a, Eq a) => Num (Clifford p q r a) where
   (Clifford m1) + (Clifford m2) = Clifford $
     Map.mergeWithKey
-      (\_ (NonZero x) (NonZero y) -> mkNonZero (x + y))
+      (\_ nz1 nz2 -> mkNonZero (unNonZero nz1 + unNonZero nz2))
       id
       id
       m1
       m2
   (*) = geometricProduct
-  negate (Clifford m) = Clifford (Map.map (\(NonZero x) -> NonZeroUnsafe (negate x)) m)
+  negate (Clifford m) = Clifford (Map.map (\nz -> NonZeroUnsafe (negate (unNonZero nz))) m)
   abs _ = scalar 1 -- symbolic ring abs
   signum _ = scalar (fromInteger 1)
   fromInteger n = scalar (fromInteger n)

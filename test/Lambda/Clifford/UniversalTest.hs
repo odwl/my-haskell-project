@@ -14,8 +14,8 @@ import Test.Tasty.QuickCheck
 import Data.Bits (shiftL)
 import Data.Proxy (Proxy(..))
 import qualified Data.Map.Strict as Map
+import Data.List (sort, nub)
 import GHC.TypeLits (KnownNat)
-
 import Lambda.Clifford.Signature
 import Lambda.Clifford.Universal
 
@@ -172,6 +172,26 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
           let v = scalar 5 + basis @1 * 3 - basis @2 * 4 + (basis @1 * basis @2) * 7 :: Clifford 2 0 0 Int
               bladeList = toBladeList v
           fromBladeList bladeList @?= v
+
+      , testProperty "QuickCheck Isomorphism 1: indicesToBlade (bladeToIndices b) == b" $
+          \(b :: Blade) -> indicesToBlade (bladeToIndices b) == b
+
+      , testProperty "QuickCheck Isomorphism 2: bladeToIndices (indicesToBlade is) == is" $
+          \(isRaw :: [Positive Int]) ->
+            let is = nub (sort [ x | Positive x <- isRaw, x <= 64 ])
+            in bladeToIndices (indicesToBlade is) == is
+
+      , testCase "bladeToIndices and indicesToBlade isomorphism unit tests" $ do
+          bladeToIndices 0 @?= []
+          indicesToBlade [] @?= 0
+          bladeToIndices 1 @?= [1]
+          indicesToBlade [1] @?= 1
+          bladeToIndices 3 @?= [1, 2]
+          indicesToBlade [1, 2] @?= 3
+          bladeToIndices 7 @?= [1, 2, 3]
+          indicesToBlade [1, 2, 3] @?= 7
+          let b = 13 :: Blade -- 0b1101 = [1, 3, 4]
+          indicesToBlade (bladeToIndices b) @?= b
       ]
 
   , testGroup "Show Formatting Tests"
