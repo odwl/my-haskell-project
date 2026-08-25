@@ -17,12 +17,14 @@ module Lambda.Clifford.Universal
   ( -- * Core Universal Multivector Type 
     Clifford(..)
   , Blade
-  , bladeGrade2
+  , bladeGrade
   , bladeToIndices
   , indicesToBlade
   , basisBladeName
   , isEvenSwaps
   , multBlades
+  , overlappingBasisSquares
+  , bladeMetricFactor
   -- * Non-Zero Scalar Restriction
   , NonZero(..)
   , pattern NonZero
@@ -59,6 +61,7 @@ module Lambda.Clifford.Universal
   ) where
 
 import Control.Arrow ((>>>))
+import Data.Bool (bool)
 import Data.Bits (Bits(..), popCount, countTrailingZeros)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -76,8 +79,8 @@ import Lambda.Clifford.Signature
 type Blade = Word
 
 -- | Grade of a blade is the number of 1-bits (popCount)
-bladeGrade2 :: Blade -> Int 
-bladeGrade2 = popCount
+bladeGrade :: Blade -> Int 
+bladeGrade = popCount
 
 -- | Convert digit char to Unicode subscript: '1' -> '₁', '2' -> '₂'
 toSubscript :: Char -> Char
@@ -217,8 +220,34 @@ isEvenSwaps b1 b2 = swapsToAdd == isEvenSwaps b1 b2'
 {-# INLINE isEvenSwaps #-}
 
 -- | Symmetric difference (combined blade) of two basis blades:
-multBlades :: Blade -> Blade -> Blade
-multBlades b1 b2 = b1 `xor` b2 -- need to add coef
+multBlades :: (Num a, Eq a) => Blade -> Blade -> Clifford p q r a
+multBlades b1 b2 = blade (xor b1 b2) (bool (-1) 1 (isEvenSwaps b1 b2))
+
+-- | List individual (basisVectorIndex, e_k²) values for a blade (or overlapping blade b1 .&. b2):
+--   e.g. overlappingBasisSquares proxy (b1 .&. b2) = [(1, 1), (2, -1)]
+overlappingBasisSquares :: forall p q r. KnownSignature p q r
+                        => Proxy (Signature p q r) -> Blade -> [(Int, Int)]
+overlappingBasisSquares proxy b =
+  [ (k, basisSquare proxy k)
+  | k <- bladeToIndices b
+  ]
+
+-- | Fast O(1) product of all e_k² metric factors for overlapping basis vectors in b1 and b2:
+--   Evaluates to 1, -1, or 0 (if any e_k² == 0 in degenerate signature like PGA).
+bladeMetricFactor :: forall p q r. (KnownNat p, KnownNat q, KnownNat r)
+                  => Proxy (Signature p q r) -> Blade -> Blade -> Int
+bladeMetricFactor _ b1 b2
+  | (commonBits .&. nullMask) /= 0 = 0
+  | even (popCount (commonBits .&. negMask)) = 1
+  | otherwise = -1
+  where
+    commonBits = b1 .&. b2
+    pVal = fromIntegral (natVal (Proxy :: Proxy p)) :: Int
+    qVal = fromIntegral (natVal (Proxy :: Proxy q)) :: Int
+    rVal = fromIntegral (natVal (Proxy :: Proxy r)) :: Int
+
+    negMask  = ((1 `shiftL` qVal) - 1) `shiftL` pVal
+    nullMask = ((1 `shiftL` rVal) - 1) `shiftL` (pVal + qVal)
 
 -- | Multiply two basis blades under metric signature Cl(p, q, r):
 --   1. Combined blade = b1 `xor` b2
@@ -231,14 +260,7 @@ multiplyBlades proxy b1 b2
   | otherwise         = (b1 `xor` b2, fromIntegral (swapSign * metricFactor))
   where
     swapSign = if isEvenSwaps b1 b2 then 1 else -1
-
-    -- Multiply quadratic form values for overlapping basis vectors (e_k²)
-    metricFactor = computeMetric (b1 .&. b2) 1
-    computeMetric 0 acc = acc
-    computeMetric m acc =
-      let k = countTrailingZeros m
-          sq = basisSquare proxy (k + 1)
-      in if sq == 0 then 0 else computeMetric (m .&. (m - 1)) (acc * sq)
+    metricFactor = bladeMetricFactor proxy b1 b2
 
 
 -- | The Universal Geometric Product (*) on arbitrary dimensions
@@ -255,7 +277,7 @@ geometricProduct (Clifford m1) (Clifford m2) =
 
 -- | Grade projection: extract all blade terms of homogeneous grade k
 grade :: (Num a, Eq a) => Int -> Clifford p q r a -> Clifford p q r a
-grade k (Clifford m) = Clifford (Map.filterWithKey (\b _ -> bladeGrade2 b == k) m)
+grade k (Clifford m) = Clifford (Map.filterWithKey (\b _ -> bladeGrade b == k) m)
 
 -- | Decompose into a list of homogeneous grade components [Grade 0, Grade 1, ...]
 grades :: forall p q r a. (KnownSignature p q r, Num a, Eq a) => Clifford p q r a -> [Clifford p q r a]
@@ -265,7 +287,7 @@ grades mv = [ grade k mv | k <- [0 .. totalDim (Proxy :: Proxy (Signature p q r)
 --   For a homogeneous grade-k blade: ~⟨A⟩_k = (-1)^(k(k-1)/2) * ⟨A⟩_k
 reverseCl :: (Num a, Eq a) => Clifford p q r a -> Clifford p q r a
 reverseCl (Clifford m) =
-  Clifford $ Map.mapWithKey (\b nz -> if even (gradeSignExp (bladeGrade2 b)) then nz else NonZeroUnsafe (negate (unNonZero nz))) m
+  Clifford $ Map.mapWithKey (\b nz -> if even (gradeSignExp (bladeGrade b)) then nz else NonZeroUnsafe (negate (unNonZero nz))) m
   where
     gradeSignExp k = (k * (k - 1)) `div` 2
 
@@ -278,7 +300,7 @@ wedge (Clifford m1) (Clifford m2) =
     [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
-    -- Grade condition: bladeGrade2(resBlade) == bladeGrade2(b1) + bladeGrade2(b2)
+    -- Grade condition: bladeGrade(resBlade) == bladeGrade(b1) + bladeGrade(b2)
     -- This happens iff b1 and b2 share NO common basis vectors: (b1 .&. b2) == 0
     , (b1 .&. b2) == 0
     , let (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
@@ -303,11 +325,11 @@ leftContract (Clifford m1) (Clifford m2) =
     [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
-    , let r = bladeGrade2 b1
-          s = bladeGrade2 b2
+    , let r = bladeGrade b1
+          s = bladeGrade b2
     , r <= s
     , let (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
-    , bladeGrade2 resBlade == (s - r)
+    , bladeGrade resBlade == (s - r)
     , signVal /= 0
     ]
 
@@ -319,9 +341,9 @@ fatDot (Clifford m1) (Clifford m2) =
     [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
-    , let diff = abs (bladeGrade2 b1 - bladeGrade2 b2)
+    , let diff = abs (bladeGrade b1 - bladeGrade b2)
           (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
-    , bladeGrade2 resBlade == diff
+    , bladeGrade resBlade == diff
     , signVal /= 0
     ]
 
@@ -333,12 +355,12 @@ dotHestenes (Clifford m1) (Clifford m2) =
     [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
     | (b1, c1) <- Map.toList m1
     , (b2, c2) <- Map.toList m2
-    , let r = bladeGrade2 b1
-          s = bladeGrade2 b2
+    , let r = bladeGrade b1
+          s = bladeGrade b2
     , r > 0 && s > 0
     , let diff = abs (r - s)
           (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
-    , bladeGrade2 resBlade == diff
+    , bladeGrade resBlade == diff
     , signVal /= 0
     ]
 

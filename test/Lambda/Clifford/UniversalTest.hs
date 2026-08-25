@@ -200,21 +200,21 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
 
       , testProperty "Invariant 2 (Self-Swaps Parity): isEvenSwaps b b == even (k * (k - 1) `div` 2)" $
           \(b :: Blade) ->
-            let k = bladeGrade2 b
+            let k = bladeGrade b
             in isEvenSwaps b b == even ((k * (k - 1)) `div` 2)
 
       , testProperty "Invariant 3 (Complementarity on Disjoint Blades): isEvenSwaps b1 b2 == (even (k1 * k2) == isEvenSwaps b2 b1)" $
           \(b1 :: Blade) (b2Raw :: Blade) ->
             let b2 = b2Raw .&. complement b1  -- ensure b1 and b2 are disjoint (b1 .&. b2 == 0)
-                k1 = bladeGrade2 b1
-                k2 = bladeGrade2 b2
+                k1 = bladeGrade b1
+                k2 = bladeGrade b2
             in isEvenSwaps b1 b2 == (even (k1 * k2) == isEvenSwaps b2 b1)
 
       , testProperty "Invariant 4 (List Inversion Parity Equivalence): isEvenSwaps matches even of list inversions" $
           \(b1 :: Blade) (b2 :: Blade) ->
             let is = bladeToIndices b1
                 js = bladeToIndices b2
-                expectedEven = even (sum [ 1 | i <- is, j <- js, i > j ])
+                expectedEven = even (length [ () | i <- is, j <- js, i > j ])
             in isEvenSwaps b1 b2 == expectedEven
 
       , testCase "Concrete isEvenSwaps unit tests" $ do
@@ -225,6 +225,22 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
           isEvenSwaps 7 7 @?= False  -- e₁₂₃ * e₁₂₃ (3 swaps -> False)
           isEvenSwaps 3 3 @?= False  -- e₁₂ * e₁₂ (1 swap -> False)
           isEvenSwaps 15 15 @?= True -- e₁₂₃₄ * e₁₂₃₄ (6 swaps -> True)
+
+      , testCase "overlappingBasisSquares and bladeMetricFactor tests" $ do
+          let pCl20 = Proxy :: Proxy Cl2_0
+              pCl02 = Proxy :: Proxy Cl0_2
+              pPga  = Proxy :: Proxy Cl3_0_1
+          -- e₁₂ * e₁ (common vector is e₁)
+          overlappingBasisSquares pCl20 (3 .&. 1) @?= [(1, 1)]
+          bladeMetricFactor pCl20 3 1 @?= 1
+
+          -- e₁₂ * e₁₂ in Quaternions Cl(0,2) (common vectors e₁, e₂: both square to -1)
+          overlappingBasisSquares pCl02 (3 .&. 3) @?= [(1, -1), (2, -1)]
+          bladeMetricFactor pCl02 3 3 @?= 1  -- (-1) * (-1) = 1
+
+          -- e₀₁ * e₀ in PGA Cl(3,0,1) (e₀ is the 4th vector bit 3, squares to 0)
+          overlappingBasisSquares pPga (9 .&. 8) @?= [(4, 0)]
+          bladeMetricFactor pPga 9 8 @?= 0
       ]
 
   , testGroup "Show Formatting Tests"
