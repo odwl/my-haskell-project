@@ -30,6 +30,26 @@ nestedExpr = app Mul v4 (app Add v2 v3)
 instance Arbitrary Positive where
   arbitrary = p <$> frequency [(1, return 1), (9, choose (2, 1000))]
 
+-- | Bounded list of numbers (length 0..4) for exponential tree generation (exprs)
+newtype SmallNumbers = SmallNumbers { getSmallNumbers :: [Positive] }
+  deriving (Show, Eq)
+
+instance Arbitrary SmallNumbers where
+  arbitrary = do
+    len <- chooseInt (0, 4)
+    SmallNumbers <$> vectorOf len arbitrary
+  shrink (SmallNumbers xs) = SmallNumbers <$> shrink xs
+
+-- | Bounded numbers (length 1..3) for factorial search (solve)
+newtype SolveNumbers = SolveNumbers { getSolveNumbers :: [Positive] }
+  deriving (Show, Eq)
+
+instance Arbitrary SolveNumbers where
+  arbitrary = do
+    len <- chooseInt (1, 3)
+    SolveNumbers <$> vectorOf len arbitrary
+  shrink (SolveNumbers xs) = SolveNumbers <$> filter (not . null) (shrink xs)
+
 countDownTests :: TestTree
 countDownTests = testGroup "CountDown Tests"
   [ testGroup "Unit Tests"
@@ -129,21 +149,21 @@ countDownTests = testGroup "CountDown Tests"
     prop_splitNonEmpty (xs :: [Positive]) = 
       all (null *** null >>> (== (False, False))) $ split xs
 
-    prop_exprsPreservesValues (ns :: [Positive]) =
+    prop_exprsPreservesValues (SmallNumbers ns) =
       map values (exprs ns) === replicate (length (exprs ns)) ns
 
-    prop_exprsUnique (ns :: [Positive]) =
+    prop_exprsUnique (SmallNumbers ns) =
       length es === length (nub es)
       where
         es = exprs ns
 
-    prop_exprsWithinBound (ns :: [Positive]) =
+    prop_exprsWithinBound (SmallNumbers ns) =
       length (exprs ns) <= maxTrees
       where
         k = length ns
         maxTrees = if k == 0 then 0 else catalan (k - 1) * (4 ^ (k - 1))
 
-    prop_solveMatchesTarget (ns :: [Positive]) (target :: Positive) =
+    prop_solveMatchesTarget (SolveNumbers ns) (target :: Positive) =
       all (\e -> eval e == target) (solve ns target)
 
 --------------------------------------------------------------------------------

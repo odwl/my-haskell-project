@@ -15,14 +15,13 @@ import Data.Bits (shiftL, complement, bit, (.&.))
 import Data.Proxy (Proxy(..))
 import qualified Data.Map.Strict as Map
 import Data.List (sort, nub)
-import GHC.TypeLits (KnownNat)
 import Lambda.Clifford.Signature
 import Lambda.Clifford.Universal
 
 -- | QuickCheck Arbitrary generator for Clifford multivectors
-instance (KnownNat p, KnownNat q, KnownNat r, Arbitrary a, Num a, Eq a) => Arbitrary (Clifford p q r a) where
+instance (KnownSignature p q r, Arbitrary a, Num a, Eq a) => Arbitrary (Clifford p q r a) where
   arbitrary = do
-    let n = totalDim (Proxy :: Proxy (Signature p q r))
+    let n = totalDim @p @q @r
         maxBlade = (1 `shiftL` n) - 1
     coeffs <- vectorOf (fromIntegral (maxBlade + 1)) arbitrary
     return $ fromBladeList (zip [0 .. maxBlade] coeffs)

@@ -1,23 +1,23 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 
 module Lambda.Clifford.Universal
   ( -- * Core Universal Multivector Type 
     Clifford(..)
   , Blade
-  , unitBlade
   , bladeGrade
   , bladeToIndices
   , indicesToBlade
@@ -53,6 +53,7 @@ module Lambda.Clifford.Universal
   -- * Universal Property Homomorphism
   , universalFold
   -- * Infix Operators
+  , (∼)
   , (∧)
   , (·)
   , (∗)
@@ -63,16 +64,19 @@ module Lambda.Clifford.Universal
 
 import Control.Arrow ((>>>))
 import Control.Monad (guard)
-import Data.Bool (bool)
-import Data.Bits (Bits(..), popCount, countTrailingZeros)
-import Data.Maybe (maybeToList)
+import Data.Bits (Bits(..), countTrailingZeros, popCount)
+import Data.List (intercalate)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (maybeToList)
 import Data.Proxy (Proxy(..))
-import Data.List (intercalate)
-import GHC.TypeLits (Nat, KnownNat, natVal, type (<=), type (+))
+import GHC.TypeLits (KnownNat, Nat, natVal, type (+), type (<=))
 
 import Lambda.Clifford.Signature
+
+--------------------------------------------------------------------------------
+-- Blade
+--------------------------------------------------------------------------------
 
 -- | A Blade is a bitmask where bit k represents the presence of basis vector e_(k+1).
 --   * 0 (0b00) = 1 (Scalar, Grade 0)
@@ -80,10 +84,6 @@ import Lambda.Clifford.Signature
 --   * 2 (0b10) = e₂ (Vector, Grade 1)
 --   * 3 (0b11) = e₁₂ = e₁e₂ (Bivector, Grade 2)
 type Blade = Word
-
--- | The scalar unit basis blade (e_∅ = 1, Grade 0, bitmask 0b0)
-unitBlade :: Blade
-unitBlade = 0
 
 -- | Grade of a blade is the number of 1-bits (popCount)
 bladeGrade :: Blade -> Int 
@@ -130,7 +130,8 @@ basisBladeName b = "e" ++ map toSubscript (concatMap show (bladeToIndices b))
 -- | A scalar coefficient guaranteed to NEVER be zero.
 -- The constructor 'NonZeroUnsafe' is NOT exported to external users.
 newtype NonZero a = NonZeroUnsafe { unNonZero :: a }
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Functor)
+
 -- | Smart Constructor: Returns 'Nothing' if the value is zero.
 mkNonZero :: (Num a, Eq a) => a -> Maybe (NonZero a)
 mkNonZero 0 = Nothing
@@ -145,6 +146,10 @@ pattern NonZero x <- NonZeroUnsafe x
 oneNZ :: Num a => NonZero a
 oneNZ = NonZeroUnsafe 1
 
+--------------------------------------------------------------------------------
+-- Clifford
+--------------------------------------------------------------------------------
+
 -- | Universal Multivector parameterized by signature Cl(p, q, r) and scalar type a
 newtype Clifford (p :: Nat) (q :: Nat) (r :: Nat) a = Clifford
   { unClifford :: Map Blade (NonZero a) }
@@ -153,7 +158,7 @@ newtype Clifford (p :: Nat) (q :: Nat) (r :: Nat) a = Clifford
 -- | Construct a 1-vector basis element e_k from a dynamic runtime index (1 <= k <= n)
 basisIndex :: forall p q r a. (KnownSignature p q r, Num a, Eq a) => Int -> Clifford p q r a
 basisIndex k
-  | k >= 1 && k <= totalDim (Proxy :: Proxy (Signature p q r)) =
+  | k >= 1 && k <= totalDim @p @q @r =
       bladeNZ (bit (k - 1)) oneNZ
   | otherwise = error $ "basisIndex: index " ++ show k ++ " out of range"
  
@@ -281,21 +286,81 @@ geometricProduct (Clifford m1) (Clifford m2) =
     masks = signatureMasks (Proxy @(Signature p q r))
 {-# INLINE geometricProduct #-}
 
--- | Grade projection: extract all blade terms of homogeneous grade k
+
+-- | Grade projection: extract all blade terms of homogeneous grade k (⟨A⟩ₖ).
+--
+-- === Examples:
+--
+-- >>> let mv = scalar 5 + basis @1 * 3 - basis @2 * 4 + (basis @1 * basis @2) * 7 :: Clifford 2 0 0 Int
+-- >>> grade 0 mv
+-- 5
+-- >>> grade 1 mv
+-- 3·e₁ + -4·e₂
+-- >>> grade 2 mv
+-- 7·e₁₂
+-- >>> grade 3 mv
+-- 0
 grade :: (Num a, Eq a) => Int -> Clifford p q r a -> Clifford p q r a
 grade k (Clifford m) = Clifford (Map.filterWithKey (\b _ -> bladeGrade b == k) m)
 
 -- | Decompose into a list of homogeneous grade components [Grade 0, Grade 1, ...]
 grades :: forall p q r a. (KnownSignature p q r, Num a, Eq a) => Clifford p q r a -> [Clifford p q r a]
-grades mv = [ grade k mv | k <- [0 .. totalDim (Proxy :: Proxy (Signature p q r))] ]
+grades mv = do
+  k <- [0 .. totalDim @p @q @r]
+  pure (grade k mv)
 
--- | Clifford Reversion (~A): reverses the order of basis vectors
---   For a homogeneous grade-k blade: ~⟨A⟩_k = (-1)^(k(k-1)/2) * ⟨A⟩_k
+-- | Clifford Reversion (~A or Ã): the principal antiautomorphism reversing the order of basis 1-vectors in every blade.
+--
+-- For a product of vectors:
+--
+--   ~(v₁ v₂ ... vₖ) = vₖ ... v₂ v₁
+--
+-- For a homogeneous grade-k component, this introduces a sign factor:
+--
+--   ~⟨A⟩ₖ = (-1)^(k(k-1)/2) * ⟨A⟩ₖ
+--
+-- * Grade 0 (scalars):     +⟨A⟩₀  (invariant)
+-- * Grade 1 (vectors):     +⟨A⟩₁  (invariant)
+-- * Grade 2 (bivectors):   -⟨A⟩₂  (negated: ~(e₁ e₂) = e₂ e₁ = -e₁ e₂)
+-- * Grade 3 (trivectors):  -⟨A⟩₃  (negated: ~(e₁ e₂ e₃) = e₃ e₂ e₁ = -e₁ e₂ e₃)
+-- * Grade 4 (quadvectors): +⟨A⟩₄  (invariant)
+--
+-- Reversion satisfies the antiautomorphism property:
+--
+--   ~(A * B) = ~B * ~A
+--
+-- === Examples:
+--
+-- >>> let e1 = basis @1 :: Clifford 3 0 0 Int
+-- >>> let e2 = basis @2 :: Clifford 3 0 0 Int
+-- >>> let e3 = basis @3 :: Clifford 3 0 0 Int
+--
+-- Reversing a scalar or vector leaves it unchanged:
+-- >>> reverseCl (scalar 5)
+-- 5
+-- >>> reverseCl (3 * e1 + 4 * e2)
+-- 3·e₁ + 4·e₂
+--
+-- Reversing a bivector or trivector flips its sign:
+-- >>> reverseCl (e1 * e2)
+-- -1·e₁₂
+-- >>> reverseCl (e1 * e2 * e3)
+-- -1·e₁₂₃
+--
+-- Reversing a mixed multivector:
+-- >>> let mv = scalar 5 + basis @1 * 3 - basis @2 * 4 + (basis @1 * basis @2) * 7 :: Clifford 2 0 0 Int
+-- >>> reverseCl mv
+-- 5 + 3·e₁ + -4·e₂ + -7·e₁₂
 reverseCl :: (Num a, Eq a) => Clifford p q r a -> Clifford p q r a
-reverseCl (Clifford m) =
-  Clifford $ Map.mapWithKey (\b nz -> if even (gradeSignExp (bladeGrade b)) then nz else NonZeroUnsafe (negate (unNonZero nz))) m
+reverseCl (Clifford m) = Clifford (Map.mapWithKey reverseBladeTerm m)
   where
-    gradeSignExp k = (k * (k - 1)) `div` 2
+    reverseBladeTerm b nz
+      | isEvenReversion (bladeGrade b) = nz
+      | otherwise                      = negate <$> nz
+
+    -- Reversion sign (-1)^(k(k-1)/2) has 4-periodicity (+1, +1, -1, -1):
+    -- Bit 1 of grade k is 0 for grades [0, 1, 4, 5...] and 1 for grades [2, 3, 6, 7...]
+    isEvenReversion = (== 0) . (.&. 2)
 
 -- | Exterior / Wedge Product (∧): Grade-summing outer product
 --   ⟨A⟩_r ∧ ⟨B⟩_s = ⟨A * B⟩_(r+s)
@@ -404,12 +469,17 @@ instance (KnownSignature p q r, Num a, Eq a) => Num (Clifford p q r a) where
       m1
       m2
   (*) = geometricProduct
-  negate (Clifford m) = Clifford (Map.map (\nz -> NonZeroUnsafe (negate (unNonZero nz))) m)
+  negate (Clifford m) = Clifford (Map.map (negate <$>) m)
   abs _ = scalar 1 -- symbolic ring abs
   signum _ = scalar (fromInteger 1)
   fromInteger n = scalar (fromInteger n)
 
--- | Infix Operators
+-- | Infix & Prefix Operators
+infix 8 ∼
+-- | Clifford Reversion Operator (∼): ~⟨A⟩ₖ = (-1)^(k(k-1)/2) · ⟨A⟩ₖ
+(∼) :: (Num a, Eq a) => Clifford p q r a -> Clifford p q r a
+(∼) = reverseCl
+
 infixl 7 ∧
 (∧) :: (KnownSignature p q r, Num a, Eq a) => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 (∧) = wedge

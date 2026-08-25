@@ -1,9 +1,13 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Lambda.Clifford.Signature
@@ -30,7 +34,7 @@ module Lambda.Clifford.Signature
 
 import Data.Bits (shiftL)
 import Data.Proxy (Proxy(..))
-import GHC.TypeLits (Nat, KnownNat, natVal)
+import GHC.TypeLits (Nat, KnownNat, natVal, type (+))
 
 -- | Metric signature (p, q, r) of a real vector space V:
 --   * p: number of positive basis vectors (e_i² = +1)
@@ -43,11 +47,11 @@ data Metric = Pos | Neg | Zero
   deriving (Eq, Show, Enum)
 
 -- | Typeclass for reifying metric signatures from type-level Nats
-class (KnownNat p, KnownNat q, KnownNat r) => KnownSignature (p :: Nat) (q :: Nat) (r :: Nat) where
+class (KnownNat p, KnownNat q, KnownNat r, KnownNat (p + q + r)) => KnownSignature (p :: Nat) (q :: Nat) (r :: Nat) where
   sigProxy :: Proxy (Signature p q r)
   sigProxy = Proxy
 
-instance (KnownNat p, KnownNat q, KnownNat r) => KnownSignature p q r
+instance (KnownNat p, KnownNat q, KnownNat r, KnownNat (p + q + r)) => KnownSignature p q r
 
 -- | Precomputed bitmasks for metric signature subspace partitioning:
 --   * 'negMask': covers basis vectors where e_j² = -1 (bits p .. p+q-1)
@@ -77,8 +81,9 @@ signatureMasks proxy = SignatureMasks
 {-# INLINE signatureMasks #-}
 
 -- | Total dimension of generating vector space V: n = p + q + r
-totalDim :: forall p q r. (KnownNat p, KnownNat q, KnownNat r) => Proxy (Signature p q r) -> Int
-totalDim proxy = let (p, q, r) = signatureDims proxy in p + q + r
+totalDim :: forall p q r. KnownNat (p + q + r) => Int
+totalDim = fromIntegral (natVal (Proxy @(p + q + r)))
+{-# INLINE totalDim #-}
 
 -- | Query the square of the k-th basis vector e_k (1-indexed: 1 <= k <= n):
 --   * 1 <= k <= p         => +1
