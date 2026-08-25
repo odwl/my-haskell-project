@@ -10,6 +10,9 @@ module Lambda.Clifford.Signature
   ( Signature(..)
   , Metric(..)
   , KnownSignature(..)
+  , signatureDims
+  , SignatureMasks(..)
+  , signatureMasks
   , basisSquare
   , totalDim
   , signatureName
@@ -25,6 +28,7 @@ module Lambda.Clifford.Signature
   , Cl3_0_1
   ) where
 
+import Data.Bits (shiftL)
 import Data.Proxy (Proxy(..))
 import GHC.TypeLits (Nat, KnownNat, natVal)
 
@@ -45,35 +49,55 @@ class (KnownNat p, KnownNat q, KnownNat r) => KnownSignature (p :: Nat) (q :: Na
 
 instance (KnownNat p, KnownNat q, KnownNat r) => KnownSignature p q r
 
+-- | Precomputed bitmasks for metric signature subspace partitioning:
+--   * 'negMask': covers basis vectors where e_j² = -1 (bits p .. p+q-1)
+--   * 'nullMask': covers basis vectors where e_k² = 0  (bits p+q .. p+q+r-1)
+data SignatureMasks = SignatureMasks
+  { negMask  :: !Word
+  , nullMask :: !Word
+  } deriving (Eq, Ord, Show, Read)
+
+-- | Reify type-level signature (p, q, r) into runtime (Int, Int, Int) dimensions
+signatureDims :: forall p q r. (KnownNat p, KnownNat q, KnownNat r) => Proxy (Signature p q r) -> (Int, Int, Int)
+signatureDims _ =
+  ( fromIntegral (natVal (Proxy :: Proxy p))
+  , fromIntegral (natVal (Proxy :: Proxy q))
+  , fromIntegral (natVal (Proxy :: Proxy r))
+  )
+{-# INLINE signatureDims #-}
+
+-- | Reify type-level signature (p, q, r) into runtime 'SignatureMasks'
+signatureMasks :: forall p q r. (KnownNat p, KnownNat q, KnownNat r) => Proxy (Signature p q r) -> SignatureMasks
+signatureMasks proxy = SignatureMasks
+  { negMask  = shiftL (shiftL 1 q - 1) p
+  , nullMask = shiftL (shiftL 1 r - 1) (p + q)
+  }
+  where
+    (p, q, r) = signatureDims proxy
+{-# INLINE signatureMasks #-}
+
 -- | Total dimension of generating vector space V: n = p + q + r
 totalDim :: forall p q r. (KnownNat p, KnownNat q, KnownNat r) => Proxy (Signature p q r) -> Int
-totalDim _ = 
-  fromIntegral (natVal (Proxy :: Proxy p)) +
-  fromIntegral (natVal (Proxy :: Proxy q)) +
-  fromIntegral (natVal (Proxy :: Proxy r))
+totalDim proxy = let (p, q, r) = signatureDims proxy in p + q + r
 
 -- | Query the square of the k-th basis vector e_k (1-indexed: 1 <= k <= n):
 --   * 1 <= k <= p         => +1
 --   * p < k <= p + q      => -1
 --   * p + q < k <= p+q+r  =>  0
 basisSquare :: forall p q r. (KnownNat p, KnownNat q, KnownNat r) => Proxy (Signature p q r) -> Int -> Int
-basisSquare _ k
+basisSquare proxy k
   | k <= p          =  1
   | k <= p + q      = -1
   | k <= p + q + r  =  0
   | otherwise       = error $ "basisSquare: index " ++ show k ++ " out of bounds for dimension " ++ show (p + q + r)
   where
-    p = fromIntegral (natVal (Proxy :: Proxy p))
-    q = fromIntegral (natVal (Proxy :: Proxy q))
-    r = fromIntegral (natVal (Proxy :: Proxy r))
+    (p, q, r) = signatureDims proxy
 
 -- | Human-readable name of standard signatures
 signatureName :: forall p q r. (KnownNat p, KnownNat q, KnownNat r) => Proxy (Signature p q r) -> String
-signatureName _ = "Cl(" ++ show p ++ ", " ++ show q ++ (if r > 0 then ", " ++ show r else "") ++ ")"
+signatureName proxy = "Cl(" ++ show p ++ ", " ++ show q ++ (if r > 0 then ", " ++ show r else "") ++ ")"
   where
-    p = natVal (Proxy :: Proxy p)
-    q = natVal (Proxy :: Proxy q)
-    r = natVal (Proxy :: Proxy r)
+    (p, q, r) = signatureDims proxy
 
 -- | Type aliases for common geometric and physical Clifford algebras:
 type Cl0_0   = Signature 0 0 0  -- ^ Real scalars ℝ

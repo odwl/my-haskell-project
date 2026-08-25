@@ -11,7 +11,7 @@ module Lambda.Clifford.UniversalTest (universalCliffordTests) where
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck hiding ((.&.))
-import Data.Bits (shiftL, complement, (.&.))
+import Data.Bits (shiftL, complement, bit, (.&.))
 import Data.Proxy (Proxy(..))
 import qualified Data.Map.Strict as Map
 import Data.List (sort, nub)
@@ -225,22 +225,97 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
           isEvenSwaps 7 7 @?= False  -- e₁₂₃ * e₁₂₃ (3 swaps -> False)
           isEvenSwaps 3 3 @?= False  -- e₁₂ * e₁₂ (1 swap -> False)
           isEvenSwaps 15 15 @?= True -- e₁₂₃₄ * e₁₂₃₄ (6 swaps -> True)
+      ]
 
-      , testCase "overlappingBasisSquares and bladeMetricFactor tests" $ do
-          let pCl20 = Proxy :: Proxy Cl2_0
-              pCl02 = Proxy :: Proxy Cl0_2
-              pPga  = Proxy :: Proxy Cl3_0_1
-          -- e₁₂ * e₁ (common vector is e₁)
-          overlappingBasisSquares pCl20 (3 .&. 1) @?= [(1, 1)]
-          bladeMetricFactor pCl20 3 1 @?= 1
+  , testGroup "Basis Blade Multiplication (multiplyBlades) Invariants"
+      [ testProperty "Invariant 1 (Unital Identity): 1 * b == b and b * 1 == b" $
+          forAll (choose (0, 31 :: Word)) $ \b ->
+            let masks = signatureMasks (Proxy @(Signature 2 3 0))
+            in (multiplyBlades masks b 0 == Just (b, True)) &&
+               (multiplyBlades masks 0 b == Just (b, True))
 
-          -- e₁₂ * e₁₂ in Quaternions Cl(0,2) (common vectors e₁, e₂: both square to -1)
-          overlappingBasisSquares pCl02 (3 .&. 3) @?= [(1, -1), (2, -1)]
-          bladeMetricFactor pCl02 3 3 @?= 1  -- (-1) * (-1) = 1
+      , testCase "Invariant 2 (Basis 1-Vector Squares): e_k² in {+1, -1, 0}" $ do
+          let masksCl20 = signatureMasks (Proxy @Cl2_0)
+              masksCl02 = signatureMasks (Proxy @Cl0_2)
+              masksSTA  = signatureMasks (Proxy @Cl1_3)
+              masksPGA  = signatureMasks (Proxy @Cl3_0_1)
 
-          -- e₀₁ * e₀ in PGA Cl(3,0,1) (e₀ is the 4th vector bit 3, squares to 0)
-          overlappingBasisSquares pPga (9 .&. 8) @?= [(4, 0)]
-          bladeMetricFactor pPga 9 8 @?= 0
+          -- Cl(2,0,0) Euclidean: e₁² = +1, e₂² = +1
+          multiplyBlades masksCl20 (bit 0) (bit 0) @?= Just (0, True)
+          multiplyBlades masksCl20 (bit 1) (bit 1) @?= Just (0, True)
+          -- Cl(0,2,0) Quaternions: e₁² = -1, e₂² = -1
+          multiplyBlades masksCl02 (bit 0) (bit 0) @?= Just (0, False)
+          multiplyBlades masksCl02 (bit 1) (bit 1) @?= Just (0, False)
+          -- Cl(1,3,0) STA: e₁² = +1, e₂² = -1, e₃² = -1, e₄² = -1
+          multiplyBlades masksSTA (bit 0) (bit 0) @?= Just (0, True)
+          multiplyBlades masksSTA (bit 1) (bit 1) @?= Just (0, False)
+          multiplyBlades masksSTA (bit 2) (bit 2) @?= Just (0, False)
+          multiplyBlades masksSTA (bit 3) (bit 3) @?= Just (0, False)
+          -- Cl(3,0,1) PGA: e₁² = +1, e₂² = +1, e₃² = +1, e₀² = 0 (bit 3 is 4th vector)
+          multiplyBlades masksPGA (bit 0) (bit 0) @?= Just (0, True)
+          multiplyBlades masksPGA (bit 1) (bit 1) @?= Just (0, True)
+          multiplyBlades masksPGA (bit 2) (bit 2) @?= Just (0, True)
+          multiplyBlades masksPGA (bit 3) (bit 3) @?= Nothing
+
+      , testProperty "Invariant 3 (Orthogonal 1-Vector Anticommutation): e_j * e_k == -(e_k * e_j)" $
+          forAll (choose (0, 3 :: Int)) $ \j ->
+          forAll (choose (0, 3 :: Int)) $ \k ->
+            (j /= k) ==>
+              let masks = signatureMasks (Proxy @Cl1_3)
+              in case (multiplyBlades masks (bit j) (bit k), multiplyBlades masks (bit k) (bit j)) of
+                   (Just (b1, s1), Just (b2, s2)) -> b1 == b2 && s1 /= s2
+                   _ -> False
+
+      , testProperty "Invariant 4 (Self-Square is Always a Pure Scalar): b * b is Grade 0 (blade 0) or Nothing" $
+          forAll (choose (0, 15 :: Word)) $ \b ->
+            let masksSTA = signatureMasks (Proxy @Cl1_3)
+                masksPGA = signatureMasks (Proxy @Cl3_0_1)
+                checkSTA = case multiplyBlades masksSTA b b of
+                             Nothing -> True
+                             Just (resB, _) -> resB == 0
+                checkPGA = case multiplyBlades masksPGA b b of
+                             Nothing -> True
+                             Just (resB, _) -> resB == 0
+            in checkSTA && checkPGA
+
+      , testProperty "Invariant 5 (Degenerate Subspace Annihilation in PGA): (b1 .&. b2 .&. nullMask) /= 0 ==> product == Nothing" $
+          forAll (choose (0, 15 :: Word)) $ \b1 ->
+          forAll (choose (0, 15 :: Word)) $ \b2 ->
+            let masksPGA = signatureMasks (Proxy @Cl3_0_1)
+            in ((b1 .&. b2 .&. nullMask masksPGA) /= 0) ==>
+                 (multiplyBlades masksPGA b1 b2 == Nothing)
+
+      , testProperty "Invariant 6 (Grade Additivity on Disjoint Blades): b1 .&. b2 == 0 ==> grade == grade b1 + grade b2" $
+          forAll (choose (0, 15 :: Word)) $ \b1 ->
+          forAll (choose (0, 15 :: Word)) $ \b2 ->
+            (b1 .&. b2 == 0) ==>
+              let masksSTA = signatureMasks (Proxy @Cl1_3)
+              in case multiplyBlades masksSTA b1 b2 of
+                   Just (resB, _) -> bladeGrade resB == bladeGrade b1 + bladeGrade b2
+                   Nothing        -> False
+
+      , testProperty "Invariant 7 (Associativity of Basis Blades): (b1 * b2) * b3 == b1 * (b2 * b3)" $
+          forAll (choose (0, 7 :: Word)) $ \b1 ->
+          forAll (choose (0, 7 :: Word)) $ \b2 ->
+          forAll (choose (0, 7 :: Word)) $ \b3 ->
+            let lhs = (blade b1 1 * blade b2 1 :: Clifford 2 1 0 Int) * blade b3 1
+                rhs = blade b1 1 * (blade b2 1 * blade b3 1 :: Clifford 2 1 0 Int)
+            in lhs == rhs
+
+      , testProperty "Invariant 8 (Agreement with Geometric Product): multiplyBlades b1 b2 matches e_I * e_J" $
+          forAll (choose (0, 15 :: Word)) $ \b1 ->
+          forAll (choose (0, 15 :: Word)) $ \b2 ->
+            let masksSTA    = signatureMasks (Proxy @Cl1_3)
+                masksPGA    = signatureMasks (Proxy @Cl3_0_1)
+                expectedSTA = blade b1 1 * blade b2 1 :: Clifford 1 3 0 Int
+                actualSTA   = case multiplyBlades masksSTA b1 b2 of
+                                Nothing            -> 0
+                                Just (resB, isPos) -> blade resB (if isPos then 1 else -1)
+                expectedPGA = blade b1 1 * blade b2 1 :: Clifford 3 0 1 Int
+                actualPGA   = case multiplyBlades masksPGA b1 b2 of
+                                Nothing            -> 0
+                                Just (resB, isPos) -> blade resB (if isPos then 1 else -1)
+            in actualSTA == expectedSTA && actualPGA == expectedPGA
       ]
 
   , testGroup "Show Formatting Tests"

@@ -17,20 +17,21 @@ module Lambda.Clifford.Universal
   ( -- * Core Universal Multivector Type 
     Clifford(..)
   , Blade
+  , unitBlade
   , bladeGrade
   , bladeToIndices
   , indicesToBlade
   , basisBladeName
   , isEvenSwaps
-  , multBlades
-  , overlappingBasisSquares
-  , bladeMetricFactor
+  , multiplyBlades
   -- * Non-Zero Scalar Restriction
   , NonZero(..)
   , pattern NonZero
   , mkNonZero
   , oneNZ
   -- * Constructors
+  , zeroClifford
+  , unitClifford
   , scalar
   , basis
   , basisIndex
@@ -61,8 +62,10 @@ module Lambda.Clifford.Universal
   ) where
 
 import Control.Arrow ((>>>))
+import Control.Monad (guard)
 import Data.Bool (bool)
 import Data.Bits (Bits(..), popCount, countTrailingZeros)
+import Data.Maybe (maybeToList)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Proxy (Proxy(..))
@@ -77,6 +80,10 @@ import Lambda.Clifford.Signature
 --   * 2 (0b10) = e₂ (Vector, Grade 1)
 --   * 3 (0b11) = e₁₂ = e₁e₂ (Bivector, Grade 2)
 type Blade = Word
+
+-- | The scalar unit basis blade (e_∅ = 1, Grade 0, bitmask 0b0)
+unitBlade :: Blade
+unitBlade = 0
 
 -- | Grade of a blade is the number of 1-bits (popCount)
 bladeGrade :: Blade -> Int 
@@ -159,6 +166,14 @@ blade b c = case mkNonZero c of
 bladeNZ :: Blade -> NonZero a -> Clifford p q r a
 bladeNZ b nz = Clifford (Map.singleton b nz)
 
+-- | The additive zero multivector (0)
+zeroClifford :: (Num a, Eq a) => Clifford p q r a
+zeroClifford = Clifford Map.empty
+
+-- | The scalar unit multivector (1, multiplicative identity)
+unitClifford :: (Num a, Eq a) => Clifford p q r a
+unitClifford = scalar 1
+
 -- | Construct a pure Grade-0 scalar multivector
 scalar :: forall p q r a. (Num a, Eq a) => a -> Clifford p q r a
 scalar = blade 0
@@ -219,61 +234,52 @@ isEvenSwaps b1 b2 = swapsToAdd == isEvenSwaps b1 b2'
         b2' = clearBit b2 j 
 {-# INLINE isEvenSwaps #-}
 
--- | Symmetric difference (combined blade) of two basis blades:
-multBlades :: (Num a, Eq a) => Blade -> Blade -> Clifford p q r a
-multBlades b1 b2 = blade (xor b1 b2) (bool (-1) 1 (isEvenSwaps b1 b2))
-
--- | List individual (basisVectorIndex, e_k²) values for a blade (or overlapping blade b1 .&. b2):
---   e.g. overlappingBasisSquares proxy (b1 .&. b2) = [(1, 1), (2, -1)]
-overlappingBasisSquares :: forall p q r. KnownSignature p q r
-                        => Proxy (Signature p q r) -> Blade -> [(Int, Int)]
-overlappingBasisSquares proxy b =
-  [ (k, basisSquare proxy k)
-  | k <- bladeToIndices b
-  ]
-
--- | Fast O(1) product of all e_k² metric factors for overlapping basis vectors in b1 and b2:
---   Evaluates to 1, -1, or 0 (if any e_k² == 0 in degenerate signature like PGA).
-bladeMetricFactor :: forall p q r. (KnownNat p, KnownNat q, KnownNat r)
-                  => Proxy (Signature p q r) -> Blade -> Blade -> Int
-bladeMetricFactor _ b1 b2
-  | (commonBits .&. nullMask) /= 0 = 0
-  | even (popCount (commonBits .&. negMask)) = 1
-  | otherwise = -1
+-- | Direct basis blade multiplication under precomputed 'SignatureMasks':
+--   Returns 'Just (resBlade, isPositive)', or 'Nothing' if annihilated in a degenerate subspace.
+--
+-- === Examples:
+--
+-- Euclidean 2D GA @Cl(2, 0, 0)@:
+-- >>> multiplyBlades (SignatureMasks 0 0) 1 2    -- e₁ * e₂ = +e₁₂
+-- Just (3,True)
+-- >>> multiplyBlades (SignatureMasks 0 0) 2 1    -- e₂ * e₁ = -e₁₂
+-- Just (3,False)
+--
+-- Quaternions @Cl(0, 2, 0)@ where @e₁² = -1, e₂² = -1@ (negMask = 0b11 = 3):
+-- >>> multiplyBlades (SignatureMasks 3 0) 1 1    -- i² = -1
+-- Just (0,False)
+-- >>> multiplyBlades (SignatureMasks 3 0) 3 3    -- (e₁₂)² = -1
+-- Just (0,False)
+--
+-- 3D Projective Geometric Algebra (PGA) @Cl(3, 0, 1)@ where @e₀² = 0@ (nullMask = 0b1000 = 8):
+-- >>> multiplyBlades (SignatureMasks 0 8) 9 8    -- e₀₁ * e₀ = 0
+-- Nothing
+multiplyBlades :: SignatureMasks -> Blade -> Blade -> Maybe (Blade, Bool)
+multiplyBlades _ 0 b2 = Just (b2, True)
+multiplyBlades _ b1 0 = Just (b1, True)
+multiplyBlades (SignatureMasks negMask nullMask) b1 b2 
+  | hasDegenerateBasis = Nothing
+  | otherwise          = Just (xor b1 b2, isEvenMetric == isEvenSwap)
   where
-    commonBits = b1 .&. b2
-    pVal = fromIntegral (natVal (Proxy :: Proxy p)) :: Int
-    qVal = fromIntegral (natVal (Proxy :: Proxy q)) :: Int
-    rVal = fromIntegral (natVal (Proxy :: Proxy r)) :: Int
-
-    negMask  = ((1 `shiftL` qVal) - 1) `shiftL` pVal
-    nullMask = ((1 `shiftL` rVal) - 1) `shiftL` (pVal + qVal)
-
--- | Multiply two basis blades under metric signature Cl(p, q, r):
---   1. Combined blade = b1 `xor` b2
---   2. Sign parity = (-1)^(number of bit swaps needed to sort indices)
---   3. Metric scaling = product of basisSquare(k+1) for all common bits in (b1 .&. b2)
-multiplyBlades :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
-               => Proxy (Signature p q r) -> Blade -> Blade -> (Blade, a)
-multiplyBlades proxy b1 b2
-  | metricFactor == 0 = (0, 0)
-  | otherwise         = (b1 `xor` b2, fromIntegral (swapSign * metricFactor))
-  where
-    swapSign = if isEvenSwaps b1 b2 then 1 else -1
-    metricFactor = bladeMetricFactor proxy b1 b2
-
+    commonBits         = b1 .&. b2
+    hasDegenerateBasis = (commonBits .&. nullMask) /= 0
+    isEvenMetric       = even (popCount (commonBits .&. negMask))
+    isEvenSwap         = isEvenSwaps b1 b2
+{-# INLINE multiplyBlades #-}
 
 -- | The Universal Geometric Product (*) on arbitrary dimensions
 geometricProduct :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
                  => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 geometricProduct (Clifford m1) (Clifford m2) =
-  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
-    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
-    | (b1, c1) <- Map.toList m1
-    , (b2, c2) <- Map.toList m2
-    , let (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
-    , signVal /= 0
-    ]
+  fromBladeList $ do
+    (b1, c1) <- Map.toList m1
+    (b2, c2) <- Map.toList m2
+    (resBlade, isPos) <- maybeToList (multiplyBlades masks b1 b2)
+    let prod = unNonZero c1 * unNonZero c2
+    pure (resBlade, if isPos then prod else negate prod)
+  where
+    masks = signatureMasks (Proxy @(Signature p q r))
+{-# INLINE geometricProduct #-}
 
 -- | Grade projection: extract all blade terms of homogeneous grade k
 grade :: (Num a, Eq a) => Int -> Clifford p q r a -> Clifford p q r a
@@ -296,16 +302,18 @@ reverseCl (Clifford m) =
 wedge :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
       => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 wedge (Clifford m1) (Clifford m2) =
-  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
-    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
-    | (b1, c1) <- Map.toList m1
-    , (b2, c2) <- Map.toList m2
+  fromBladeList $ do
+    (b1, c1) <- Map.toList m1
+    (b2, c2) <- Map.toList m2
     -- Grade condition: bladeGrade(resBlade) == bladeGrade(b1) + bladeGrade(b2)
     -- This happens iff b1 and b2 share NO common basis vectors: (b1 .&. b2) == 0
-    , (b1 .&. b2) == 0
-    , let (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
-    , signVal /= 0
-    ]
+    guard (b1 .&. b2 == 0)
+    (resBlade, isPos) <- maybeToList (multiplyBlades masks b1 b2)
+    let prod = unNonZero c1 * unNonZero c2
+    pure (resBlade, if isPos then prod else negate prod)
+  where
+    masks = signatureMasks (Proxy @(Signature p q r))
+{-# INLINE wedge #-}
 
 -- | Scalar Product (⟨A * B⟩₀): extracts Grade-0 scalar component of geometric product
 scalarProd :: (KnownSignature p q r, Num a, Eq a) => Clifford p q r a -> Clifford p q r a -> a
@@ -321,48 +329,54 @@ cliffordScalar a b = scalarProd a (reverseCl b)
 leftContract :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
              => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 leftContract (Clifford m1) (Clifford m2) =
-  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
-    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
-    | (b1, c1) <- Map.toList m1
-    , (b2, c2) <- Map.toList m2
-    , let r = bladeGrade b1
-          s = bladeGrade b2
-    , r <= s
-    , let (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
-    , bladeGrade resBlade == (s - r)
-    , signVal /= 0
-    ]
+  fromBladeList $ do
+    (b1, c1) <- Map.toList m1
+    (b2, c2) <- Map.toList m2
+    let r = bladeGrade b1
+        s = bladeGrade b2
+    guard (r <= s)
+    (resBlade, isPos) <- maybeToList (multiplyBlades masks b1 b2)
+    guard (bladeGrade resBlade == (s - r))
+    let prod = unNonZero c1 * unNonZero c2
+    pure (resBlade, if isPos then prod else negate prod)
+  where
+    masks = signatureMasks (Proxy @(Signature p q r))
+{-# INLINE leftContract #-}
 
 -- | Fat Dot Product (●): ⟨A⟩_r ● ⟨B⟩_s = ⟨A * B⟩_|r - s| for all grades r, s >= 0
 fatDot :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
        => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 fatDot (Clifford m1) (Clifford m2) =
-  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
-    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
-    | (b1, c1) <- Map.toList m1
-    , (b2, c2) <- Map.toList m2
-    , let diff = abs (bladeGrade b1 - bladeGrade b2)
-          (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
-    , bladeGrade resBlade == diff
-    , signVal /= 0
-    ]
+  fromBladeList $ do
+    (b1, c1) <- Map.toList m1
+    (b2, c2) <- Map.toList m2
+    let diff = abs (bladeGrade b1 - bladeGrade b2)
+    (resBlade, isPos) <- maybeToList (multiplyBlades masks b1 b2)
+    guard (bladeGrade resBlade == diff)
+    let prod = unNonZero c1 * unNonZero c2
+    pure (resBlade, if isPos then prod else negate prod)
+  where
+    masks = signatureMasks (Proxy @(Signature p q r))
+{-# INLINE fatDot #-}
 
 -- | Hestenes Inner Product (•): ⟨A⟩_r • ⟨B⟩_s = ⟨A * B⟩_|r - s| (for r, s > 0, scalars drop to 0)
 dotHestenes :: forall p q r a. (KnownSignature p q r, Num a, Eq a)
             => Clifford p q r a -> Clifford p q r a -> Clifford p q r a
 dotHestenes (Clifford m1) (Clifford m2) =
-  Clifford $ Map.mapMaybe mkNonZero $ Map.fromListWith (+)
-    [ (resBlade, unNonZero c1 * unNonZero c2 * signVal)
-    | (b1, c1) <- Map.toList m1
-    , (b2, c2) <- Map.toList m2
-    , let r = bladeGrade b1
-          s = bladeGrade b2
-    , r > 0 && s > 0
-    , let diff = abs (r - s)
-          (resBlade, signVal) = multiplyBlades (Proxy :: Proxy (Signature p q r)) b1 b2
-    , bladeGrade resBlade == diff
-    , signVal /= 0
-    ]
+  fromBladeList $ do
+    (b1, c1) <- Map.toList m1
+    (b2, c2) <- Map.toList m2
+    let r = bladeGrade b1
+        s = bladeGrade b2
+    guard (r > 0 && s > 0)
+    let diff = abs (r - s)
+    (resBlade, isPos) <- maybeToList (multiplyBlades masks b1 b2)
+    guard (bladeGrade resBlade == diff)
+    let prod = unNonZero c1 * unNonZero c2
+    pure (resBlade, if isPos then prod else negate prod)
+  where
+    masks = signatureMasks (Proxy @(Signature p q r))
+{-# INLINE dotHestenes #-}
 
 -- | The Universal Property Homomorphism (Universal Fold):
 --   Given an evaluation function for 1-vectors in an algebra `evalBasis :: Int -> alg`,
