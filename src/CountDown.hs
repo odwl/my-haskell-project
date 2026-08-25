@@ -1,3 +1,23 @@
+{-|
+Module      : CountDown
+Description : Solver for the Countdown Numbers Game with generic sequence abstraction.
+Reference   : "The Countdown Problem" by Graham Hutton (Journal of Functional Programming, 2002)
+              URL: https://www.cs.nott.ac.uk/~pszgmh/countdown.pdf
+
+The Countdown Numbers Game:
+Given a sequence of positive integers (e.g. [1, 3, 7, 10, 25, 50]) and a target 
+positive integer (e.g. 765), construct arithmetic expressions using basic operators 
+(+, -, *, /) that evaluate precisely to the target.
+
+Rules & Invariants:
+1. Each number from the input sequence can be used at most once.
+2. Every intermediate and final result must be a Positive integer (> 0).
+3. Subtraction (x - y) requires x > y (no zero or negative intermediate values).
+4. Division (x / y) requires exact integer division (x `mod` y == 0) and y /= 1.
+5. Algebraic Symmetry Pruning (Hutton's Optimization):
+   - Add: x + y is only generated when x <= y (eliminates commutativity duplicates).
+   - Mul: x * y is only generated when x <= y and x /= 1 (eliminates identity and commutativity duplicates).
+-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DerivingStrategies #-}
