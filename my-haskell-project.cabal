@@ -78,6 +78,7 @@ library
     Lambda.MultiVector
     Lambda.Clifford.Signature
     Lambda.Clifford.Universal
+    Lambda.Clifford.Versor
     Fib.Algo
     CountDown
 
@@ -160,6 +161,7 @@ test-suite clifford-test
   other-modules:
     Lambda.MultiVectorTest
     Lambda.Clifford.UniversalTest
+    Lambda.Clifford.VersorTest
   build-depends:
     QuickCheck,
     containers,
@@ -224,6 +226,7 @@ test-suite all-tests
     Lambda.RequiredTypeArgumentsTest
     Lambda.MultiVectorTest
     Lambda.Clifford.UniversalTest
+    Lambda.Clifford.VersorTest
     CountDownTest
 
   build-depends:

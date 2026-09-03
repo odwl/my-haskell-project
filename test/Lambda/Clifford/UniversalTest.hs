@@ -11,15 +11,16 @@ module Lambda.Clifford.UniversalTest (universalCliffordTests) where
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck hiding ((.&.))
-import Data.Bits (shiftL, complement, bit, (.&.))
+import Data.Bits (shiftL, complement, bit, (.&.), popCount)
 import Data.Proxy (Proxy(..))
+import Data.Ratio ((%))
 import qualified Data.Map.Strict as Map
 import Data.List (sort, nub)
 import Lambda.Clifford.Signature
 import Lambda.Clifford.Universal
 
 -- | QuickCheck Arbitrary generator for Clifford multivectors
-instance (KnownSignature p q r, Arbitrary a, Num a, Eq a) => Arbitrary (Clifford p q r a) where
+instance (KnownSignature p q r, Arbitrary a, ExactScalar a) => Arbitrary (Clifford p q r a) where
   arbitrary = do
     let n = totalDim @p @q @r
         maxBlade = (1 `shiftL` n) - 1
@@ -112,6 +113,94 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
           \(a :: Clifford 2 0 0 Int) b c ->
             scalarProd (a ∧ b) c == scalarProd a (b ⨼ c)
 
+      , testProperty "Left Contraction STA Cl(1,3) Duality: ⟨(A ∧ B) * C⟩₀ = ⟨A * (B ⨼ C)⟩₀" $
+          \(a :: Clifford 1 3 0 Int) b c ->
+            scalarProd (a ∧ b) c == scalarProd a (b ⨼ c)
+
+      , testProperty "Left Contraction Grade Condition: b1 ⨼ b2 == (if r <= s then grade (s - r) (b1 * b2) else 0)" $
+          forAll (choose (0, 15 :: Word)) $ \b1 ->
+          forAll (choose (0, 15 :: Word)) $ \b2 ->
+            let v1 = blade b1 1 :: Clifford 1 3 0 Int
+                v2 = blade b2 1 :: Clifford 1 3 0 Int
+                r  = bladeGrade b1
+                s  = bladeGrade b2
+                expected = if r <= s then grade (s - r) (v1 * v2) else 0
+            in (v1 ⨼ v2) == expected
+
+      , testProperty "Graded Leibniz Derivation on Vectors & Multivector Cl(3,0): a ⨼ (b ∧ C) == (a ⨼ b) ∧ C - b ∧ (a ⨼ C)" $
+          \(aRaw :: Clifford 3 0 0 Int) bRaw (c :: Clifford 3 0 0 Int) ->
+            let a = grade 1 aRaw
+                b = grade 1 bRaw
+            in (a ⨼ (b ∧ c)) == ((a ⨼ b) ∧ c - b ∧ (a ⨼ c))
+
+      , testProperty "Graded Leibniz Derivation on Vectors & Multivector STA Cl(1,3): a ⨼ (b ∧ C) == (a ⨼ b) ∧ C - b ∧ (a ⨼ C)" $
+          \(aRaw :: Clifford 1 3 0 Int) bRaw (c :: Clifford 1 3 0 Int) ->
+            let a = grade 1 aRaw
+                b = grade 1 bRaw
+            in (a ⨼ (b ∧ c)) == ((a ⨼ b) ∧ c - b ∧ (a ⨼ c))
+
+      , testProperty "Associativity of Wedge and Left Contraction Cl(3,0): (A ∧ B) ⨼ C == A ⨼ (B ⨼ C)" $
+          \(a :: Clifford 3 0 0 Int) b c ->
+            ((a ∧ b) ⨼ c) == (a ⨼ (b ⨼ c))
+
+      , testProperty "Associativity of Wedge and Left Contraction STA Cl(1,3): (A ∧ B) ⨼ C == A ⨼ (B ⨼ C)" $
+          \(a :: Clifford 1 3 0 Int) b c ->
+            ((a ∧ b) ⨼ c) == (a ⨼ (b ⨼ c))
+
+      , testProperty "Right Contraction Adjoint Duality: ⟨A * (B ∧ C)⟩₀ = ⟨(A ⨽ B) * C⟩₀" $
+          \(a :: Clifford 2 0 0 Int) b c ->
+            scalarProd a (b ∧ c) == scalarProd (a ⨽ b) c
+
+      , testProperty "Right Contraction STA Cl(1,3) Duality: ⟨A * (B ∧ C)⟩₀ = ⟨(A ⨽ B) * C⟩₀" $
+          \(a :: Clifford 1 3 0 Int) b c ->
+            scalarProd a (b ∧ c) == scalarProd (a ⨽ b) c
+
+      , testProperty "Right Contraction Grade Condition: b1 ⨽ b2 == (if r >= s then grade (r - s) (b1 * b2) else 0)" $
+          forAll (choose (0, 15 :: Word)) $ \b1 ->
+          forAll (choose (0, 15 :: Word)) $ \b2 ->
+            let v1 = blade b1 1 :: Clifford 1 3 0 Int
+                v2 = blade b2 1 :: Clifford 1 3 0 Int
+                r  = bladeGrade b1
+                s  = bladeGrade b2
+                expected = if r >= s then grade (r - s) (v1 * v2) else 0
+            in (v1 ⨽ v2) == expected
+
+      , testProperty "Fat Dot Grade Condition: b1 ● b2 == grade |r - s| (b1 * b2)" $
+          forAll (choose (0, 15 :: Word)) $ \b1 ->
+          forAll (choose (0, 15 :: Word)) $ \b2 ->
+            let v1 = blade b1 1 :: Clifford 1 3 0 Int
+                v2 = blade b2 1 :: Clifford 1 3 0 Int
+                r  = bladeGrade b1
+                s  = bladeGrade b2
+                expected = grade (abs (r - s)) (v1 * v2)
+            in (v1 ● v2) == expected
+
+      , testProperty "Hestenes Dot Grade Condition: b1 • b2 == (if r > 0 && s > 0 then grade |r - s| (b1 * b2) else 0)" $
+          forAll (choose (0, 15 :: Word)) $ \b1 ->
+          forAll (choose (0, 15 :: Word)) $ \b2 ->
+            let v1 = blade b1 1 :: Clifford 1 3 0 Int
+                v2 = blade b2 1 :: Clifford 1 3 0 Int
+                r  = bladeGrade b1
+                s  = bladeGrade b2
+                expected = if r > 0 && s > 0 then grade (abs (r - s)) (v1 * v2) else 0
+            in (v1 • v2) == expected
+
+      , testProperty "Fat Dot Decomposition Cl(2,0): A ● B == (A ⨼ B) + (A ⨽ B) - (A · B)" $
+          \(a :: Clifford 2 0 0 Int) b ->
+            (a ● b) == (a ⨼ b) + (a ⨽ b) - (a · b)
+
+      , testProperty "Fat Dot Decomposition STA Cl(1,3): A ● B == (A ⨼ B) + (A ⨽ B) - (A · B)" $
+          \(a :: Clifford 1 3 0 Int) b ->
+            (a ● b) == (a ⨼ b) + (a ⨽ b) - (a · b)
+
+      , testProperty "Contraction Reversion Duality Cl(2,0): A ⨽ B == ~(~B ⨼ ~A)" $
+          \(a :: Clifford 2 0 0 Int) b ->
+            (a ⨽ b) == reverseCl (reverseCl b ⨼ reverseCl a)
+
+      , testProperty "Contraction Reversion Duality STA Cl(1,3): A ⨽ B == ~(~B ⨼ ~A)" $
+          \(a :: Clifford 1 3 0 Int) b ->
+            (a ⨽ b) == reverseCl (reverseCl b ⨼ reverseCl a)
+
       , testProperty "Reversion Antiautomorphism: ~(A * B) = ~B * ~A" $
           \(a :: Clifford 2 0 0 Int) b ->
             reverseCl (a * b) == reverseCl b * reverseCl a
@@ -152,6 +241,64 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
               diff = v - v
           diff @?= scalar 0
           unClifford diff @?= Map.empty
+      ]
+
+  , testGroup "Exact Rational Arithmetic Cl(p,q,r) Rational"
+      [ testCase "Rational fractional addition, subtraction, and exact zero cancellation" $ do
+          let v1 = basis @1 * scalar (1 % 3) + basis @2 * scalar (2 % 3) :: Clifford 2 0 0 Rational
+              v2 = basis @1 * scalar (1 % 3) + basis @2 * scalar (2 % 3) :: Clifford 2 0 0 Rational
+              diff = v1 - v2
+          diff @?= 0
+          unClifford diff @?= Map.empty
+
+      , testCase "Rational wedge and contraction on fractional multivectors" $ do
+          let e1 = basis @1 :: Clifford 2 0 0 Rational
+              e2 = basis @2 :: Clifford 2 0 0 Rational
+              u = e1 * scalar (1 % 2)
+              v = e2 * scalar (2 % 3)
+              plane = u ∧ v
+          plane @?= (blade 3 (1 % 3) :: Clifford 2 0 0 Rational)
+          (u ⨼ plane) @?= (e2 * scalar (1 % 6) :: Clifford 2 0 0 Rational)
+          (plane ⨽ v) @?= (e1 * scalar (2 % 9) :: Clifford 2 0 0 Rational)
+      ]
+
+  , testGroup "Commutator and Semi-Symmetric (Jordan) Products"
+      [ testProperty "Commutator Anti-Symmetry: commutator A B == -(commutator B A)" $
+          \(a :: Clifford 2 0 0 Int) b -> commutator a b == negate (commutator b a)
+
+      , testProperty "Anti-Commutator Symmetry: antiCommutator A B == antiCommutator B A" $
+          \(a :: Clifford 2 0 0 Int) b -> antiCommutator a b == antiCommutator b a
+
+      , testProperty "Jordan-Lie Decomposition: A * B == (A ⊙ B) + (A × B)" $
+          \(a :: Clifford 2 0 0 Rational) b -> (a ⊙ b) + (a × b) == a * b
+
+      , testCase "Vector Jordan Product is Scalar Dot: u ⊙ v == u · v" $ do
+          let u = basis @1 * 3 + basis @2 * 4 :: Clifford 2 0 0 Rational
+              v = basis @1 * 1 + basis @2 * 2 :: Clifford 2 0 0 Rational
+          (u ⊙ v) @?= (u · v)
+          (u ⊙ v) @?= scalar 11
+
+      , testCase "Vector Commutator Product is Wedge: u × v == u ∧ v" $ do
+          let u = basis @1 * 3 + basis @2 * 4 :: Clifford 2 0 0 Rational
+              v = basis @1 * 1 + basis @2 * 2 :: Clifford 2 0 0 Rational
+          (u × v) @?= (u ∧ v)
+          (u × v) @?= blade 3 2
+      ]
+
+  , testGroup "Forced Euclidean Contractions (Metric-Agnostic)"
+      [ testCase "Minkowski STA Cl(1,3) spacelike vector squaring: Metric vs Euclidean" $ do
+          let gamma1 = basis @2 :: Clifford 1 3 0 Int  -- spacelike vector (gamma1² = -1)
+          (gamma1 ⨼ gamma1) @?= scalar (-1)           -- Metric-aware contraction
+          leftContractEucl gamma1 gamma1 @?= scalar 1   -- Forced Euclidean ignores negative metric!
+
+      , testCase "PGA Cl(2,0,1) null vector squaring: Metric vs Euclidean" $ do
+          let e0 = basis @3 :: Clifford 2 0 1 Int      -- null vector (e0² = 0)
+          (e0 ⨼ e0) @?= 0                              -- Metric-aware contraction annihilates
+          leftContractEucl e0 e0 @?= scalar 1          -- Forced Euclidean ignores null degeneracy!
+          scalarProdEucl e0 e0 @?= 1
+
+      , testProperty "Euclidean Contraction Invariant in Cl(2,0) matches standard Left Contraction" $
+          \(a :: Clifford 2 0 0 Int) b -> leftContractEucl a b == (a ⨼ b)
       ]
 
   , testGroup "Blade List Invariants & Round-Trip"
@@ -315,6 +462,18 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
                                 Nothing            -> 0
                                 Just (resB, isPos) -> blade resB (if isPos then 1 else -1)
             in actualSTA == expectedSTA && actualPGA == expectedPGA
+
+      , testProperty "Invariant 9 (General Grade Formula for Arbitrary Blades): grade(b1 * b2) == r + s - 2 * popCount (b1 .&. b2)" $
+          forAll (choose (0, 15 :: Word)) $ \b1 ->
+          forAll (choose (0, 15 :: Word)) $ \b2 ->
+            let masksSTA = signatureMasks (Proxy @Cl1_3)
+                r = bladeGrade b1
+                s = bladeGrade b2
+                k = popCount (b1 .&. b2)
+                expectedGrade = r + s - 2 * k
+            in case multiplyBlades masksSTA b1 b2 of
+                 Nothing -> True
+                 Just (resB, _) -> bladeGrade resB == expectedGrade
       ]
 
   , testGroup "Show Formatting Tests"
@@ -339,5 +498,94 @@ universalCliffordTests = testGroup "Universal Clifford Algebra Tests"
       , testCase "4D Spacetime STA multivector shows higher basis blades correctly" $ do
           let sta = basis @1 * 2 + (basis @2 * basis @3 * basis @4) * 9 :: Clifford 1 3 0 Int
           show sta @?= "2·e₁ + 9·e₂₃₄"
+      ]
+
+  , testGroup "Scalar Product (scalarProd) & Extractors Invariants"
+      [ testProperty "Cyclic Trace Commutativity Cl(2,0): ⟨A * B⟩₀ = ⟨B * A⟩₀" $
+          \(a :: Clifford 2 0 0 Int) b ->
+            scalarProd a b == scalarProd b a
+
+      , testProperty "Cyclic Trace Commutativity Cl(1,3) STA: ⟨A * B⟩₀ = ⟨B * A⟩₀" $
+          \(a :: Clifford 1 3 0 Int) b ->
+            scalarProd a b == scalarProd b a
+
+      , testProperty "Cyclic Trace Commutativity Cl(3,0,1) PGA: ⟨A * B⟩₀ = ⟨B * A⟩₀" $
+          \(a :: Clifford 3 0 1 Int) b ->
+            scalarProd a b == scalarProd b a
+
+      , testProperty "Cyclic Trace on 3 Multivectors: ⟨(A * B) * C⟩₀ = ⟨(B * C) * A⟩₀" $
+          \(a :: Clifford 2 0 0 Int) b c ->
+            scalarProd (a * b) c == scalarProd (b * c) a &&
+            scalarProd (a * b) c == scalarProd (c * a) b
+
+      , testProperty "Bilinear Distributivity: ⟨A * (B + C)⟩₀ = ⟨A * B⟩₀ + ⟨A * C⟩₀" $
+          \(a :: Clifford 2 0 0 Int) b c ->
+            scalarProd a (b + c) == scalarProd a b + scalarProd a c &&
+            scalarProd (a + b) c == scalarProd a c + scalarProd b c
+
+      , testProperty "Grade Orthogonality: ⟨⟨A⟩ᵣ * ⟨B⟩ₛ⟩₀ = 0 when r /= s" $
+          \(a :: Clifford 2 0 0 Int) b ->
+            and [ scalarProd (grade r a) (grade s b) == 0
+                | r <- [0 .. 2]
+                , s <- [0 .. 2]
+                , r /= s
+                ]
+
+      , testProperty "Agreement with scalarCoeff: scalarProd A B == scalarCoeff (A * B)" $
+          \(a :: Clifford 2 0 0 Int) b ->
+            scalarProd a b == scalarCoeff (a * b)
+
+      , testCase "bladeCoeff and scalarCoeff extraction on inhomogeneous multivector" $ do
+          let mv = scalar 5 + basis @1 * 3 - basis @2 * 4 + (basis @1 * basis @2) * 7 :: Clifford 2 0 0 Int
+          scalarCoeff mv @?= 5
+          bladeCoeff 0 mv @?= 5
+          bladeCoeff 1 mv @?= 3
+          bladeCoeff 2 mv @?= -4
+          bladeCoeff 3 mv @?= 7
+          bladeCoeff 4 mv @?= 0 -- Absent blade defaults to 0
+
+      , testProperty "Positive-Definiteness of cliffordScalar: ⟨A * ~A⟩₀ > 0 for all A /= 0 in Cl(2,0)" $
+          \(a :: Clifford 2 0 0 Int) ->
+            let s = cliffordScalar a a
+            in (a == 0 && s == 0) || (a /= 0 && s > 0)
+
+      , testProperty "Positive-Definiteness of cliffordScalar: ⟨A * ~A⟩₀ > 0 for all A /= 0 in Cl(3,0)" $
+          \(a :: Clifford 3 0 0 Int) ->
+            let s = cliffordScalar a a
+            in (a == 0 && s == 0) || (a /= 0 && s > 0)
+
+      , testProperty "Symmetry of cliffordScalar: ⟨A * ~B⟩₀ = ⟨B * ~A⟩₀ across Cl(2,0)" $
+          \(a :: Clifford 2 0 0 Int) b ->
+            cliffordScalar a b == cliffordScalar b a
+
+      , testProperty "Symmetry of cliffordScalar: ⟨A * ~B⟩₀ = ⟨B * ~A⟩₀ across Cl(1,3) STA" $
+          \(a :: Clifford 1 3 0 Int) b ->
+            cliffordScalar a b == cliffordScalar b a
+
+      , testProperty "Symmetry of cliffordScalar: ⟨A * ~B⟩₀ = ⟨B * ~A⟩₀ across Cl(3,0,1) PGA" $
+          \(a :: Clifford 3 0 1 Int) b ->
+            cliffordScalar a b == cliffordScalar b a
+
+      , testProperty "Bilinearity of cliffordScalar: ⟨A * ~(B + C)⟩₀ = ⟨A * ~B⟩₀ + ⟨A * ~C⟩₀" $
+          \(a :: Clifford 2 0 0 Int) b c ->
+            cliffordScalar a (b + c) == cliffordScalar a b + cliffordScalar a c &&
+            cliffordScalar (a + b) c == cliffordScalar a c + cliffordScalar b c
+
+      , testProperty "Reversion Invariance of cliffordScalar: ⟨~A * ~~B⟩₀ = ⟨A * ~B⟩₀" $
+          \(a :: Clifford 2 0 0 Int) b ->
+            cliffordScalar (reverseCl a) (reverseCl b) == cliffordScalar a b
+
+      , testProperty "Orthonormality of Basis Blades in Euclidean Cl(2,0)" $
+          forAll (choose (0, 3 :: Word)) $ \b1 ->
+          forAll (choose (0, 3 :: Word)) $ \b2 ->
+            let blade1 = blade b1 1 :: Clifford 2 0 0 Int
+                blade2 = blade b2 1 :: Clifford 2 0 0 Int
+                expected = if b1 == b2 then 1 else 0
+            in cliffordScalar blade1 blade2 == expected
+
+      , testCase "Euclidean Bivector Square: scalarProd e12 e12 == -1 vs cliffordScalar e12 e12 == 1" $ do
+          let e12 = basis @1 * basis @2 :: Clifford 2 0 0 Int
+          scalarProd e12 e12 @?= -1
+          cliffordScalar e12 e12 @?= 1
       ]
   ]

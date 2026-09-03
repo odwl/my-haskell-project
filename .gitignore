@@ -79,4 +79,15 @@ credentials.json
 *.pickle
 token.pickle
 
+### Personal, Legal & Knowledge Base ###
+docs/knowledge_base/
+*.ics
+
+### Python Scripts & Local Tooling ###
+*.py
+update_doc.py
+
+### Books & Large Media ###
+books/
+
 
