@@ -70,8 +70,12 @@ Must explicitly record:
      - **Native Tables**: Structured Executive Timeline tables with custom shaded header rows and padded cells.
      - **Embedded Hyperlinks**: Interactive links embedded cleanly into readable anchor text.
 2. **Bi-Directional Private Calendar Sync**:
+   - Run `python3 scripts/sync_calendar.py` to synchronize all extracted flights from `travel_itinerary_2026.md` into the user's Google Calendar.
    - Insert valid upcoming flights, hotel stays, vehicle pickups/returns, and dining reservations directly into the user's primary private calendar using explicit event titles (using proper English, e.g., *"travelling"*).
    - Embed booking reference numbers and PNRs directly inside the event Description or Title to serve as stable tracking keys.
 3. **Automated Cancellation & Refund Scrubbing (Self-Cleaning Mode)**:
-   - Actively parse incoming cancellation notices, flight refund receipts, or revoked bookings.
+   - Run `python3 scripts/sync_calendar.py` to actively parse incoming cancellation notices, flight refund receipts, or revoked bookings.
    - Whenever a booking reference or PNR is identified as cancelled, query the Calendar API (`service.events().list(q=<PNR_OR_REF>)`) and automatically execute an API deletion (`service.events().delete(...)`).
+4. **Online Retail Orders & Package Deliveries Synchronization**:
+   - Synchronize the `## Online Orders & Package Deliveries` section (tracking active and delivered parcels from Bergzeit, Running Warehouse, Zalando, Galaxus/Digitec, Travelpro, James Perse, etc.) into the same master Google Doc (`1N4YjroxgRAdQPOrMrNQYGiRiMMyX4GkNAat9yOWvpk4`) using `.agents/skills/track-package-orders/scripts/sync_google_doc.py`.
+
