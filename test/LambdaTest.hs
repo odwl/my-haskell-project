@@ -16,6 +16,7 @@ import Lambda.StateTest (stateTests)
 import Lambda.SubdistTest (subdistTests)
 import Lambda.MultiVectorTest (multiVectorTests)
 import Lambda.Clifford.UniversalTest (universalCliffordTests)
+import Lambda.StreamTest (streamTests)
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -88,5 +89,6 @@ lambdaSuite =
       limitTests,
       sandBoxSuite,
       multiVectorTests,
-      universalCliffordTests
+      universalCliffordTests,
+      streamTests
     ]

@@ -36,8 +36,26 @@ skills, but must not be used as a backup destination.
 | :--- | :--- | :--- | :--- |
 | **Cloudtop hot mirror** | Every 30 min | `odwl3:~/.gemini/jetski/central_backup/` | Local machine unavailability |
 | **GitHub auto-push** | Daily 20:30 | `git@github.com:odwl/my-haskell-project.git` | Code/skill loss, gives full commit history |
-| **Drive versioned snapshot** | Daily 20:30 | **Corporate Drive** → **Jetski Backups** (14-day rolling) | Corruption, deletion, total machine loss |
-| **Books library sync** | Weekly Sun 21:00 | **Corporate Drive** → **Jetski Books** | Loss of the 1.1 GB PDF reference library |
+| **Drive versioned snapshot** | Daily 20:30 | `Jetski Backups/Snapshots/` (14-day rolling) | Corruption, deletion, total machine loss |
+| **Books library sync** | Weekly Sun 21:00 | `Jetski Backups/Books/` | Loss of the 1.1 GB PDF reference library |
+
+### Drive Folder Layout
+
+Everything lives under a single parent folder on corporate Drive — never create
+additional top-level backup folders.
+
+```
+Jetski Backups/                          (1EtcgqB0wlLD8aWVdlVdHZCGvFXi9Yjnf)
+├── Snapshots/                           daily jetski_backup_YYYY-MM-DD.tar.gz, 14 retained
+│     └── jetski_backup_2026-09-14.tar.gz
+└── Books/                               mirrored PDF library, sub-foldered by topic
+      ├── physics/  algebra/  category/  ...
+```
+
+Both scripts resolve their destination by walking a folder *path* (`BACKUP_FOLDER_PATH`,
+`ROOT_FOLDER_PATH`), creating any missing level. To relocate or rename, change the path
+constant in all three scripts — `backup_to_drive_and_git.py`, `sync_books_to_drive.py`,
+and `restore_from_drive.py` — they must agree or restore will not find the archives.
 
 > A `rsync` mirror is NOT a backup: corruption propagates. Only the Drive snapshots are
 > versioned and therefore recoverable from a bad state.
@@ -118,9 +136,32 @@ tail -n 40 /tmp/books_sync.log
 
 A healthy run ends with `=== BACKUP FINISHED SUCCESSFULLY ===`. Always confirm:
 1. `GitHub push completed successfully.`
-2. `Snapshot archive created successfully (NNN MB).` — expect **450–600 MB**; a sudden drop
-   below ~300 MB indicates a missing backup set and must be investigated.
-3. `Upload complete!` with a `webViewLink`.
+2. `Snapshot archive created successfully (NNN MB).` — expect **~600-650 MB**; a sudden drop
+   below ~400 MB indicates a missing backup set and must be investigated.
+3. `OK - all 10 critical paths present (N entries).` — the archive self-check.
+4. `Upload complete!` with a `webViewLink`.
+
+### Archive Self-Verification
+
+Before uploading, `verify_archive()` runs `tar -tzf` over the finished archive and asserts
+every entry in `CRITICAL_PATHS` is present:
+
+| Path | Why it matters |
+| :--- | :--- |
+| `jetski/gmail_mcp/token.json` | Corporate Drive/Gmail auth — without it, restore cannot even fetch a backup |
+| `jetski/gmail_mcp/odewolf_token.json` | Personal Gmail/Calendar auth for content skills |
+| `jetski/conversations/` | Chat history |
+| `jetski/brain/` | Artifacts and session logs |
+| `gemini/config/mcp_config.json` | MCP server wiring |
+| `project/.../docs/knowledge_base/` | Gitignored — the Drive archive is its ONLY backup |
+| `project/.../.agents/skills/` | Skills |
+| `project/.../.git/` | Commit history |
+| `local/bin/` | The backup tooling itself |
+| `system/RESTORE.md` | Recovery instructions |
+
+If any are missing the script raises and **does not upload**, on the principle that a
+silently incomplete backup is more dangerous than a visibly failed one. When adding a new
+`BACKUP_SETS` entry, add a matching `CRITICAL_PATHS` assertion.
 
 ---
 
